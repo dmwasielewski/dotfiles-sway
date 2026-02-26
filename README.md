@@ -4,14 +4,15 @@ Personal dotfiles for Fedora Atomic Sway setup.
 
 ## What's included
 
-- Sway window manager config (borders, gaps, keybindings, idle/lock)
+- Sway window manager config (borders, keybindings, idle/lock, screenshots)
 - Waybar status bar config (bottom position, default Fedora layout)
 - Foot terminal config
+- Mako notification daemon (5s auto-dismiss)
+- Clipboard history manager (clipman + rofi)
 - XDG user directories
 - Vivaldi browser (Flatpak)
 - `damian` Fedora 43 toolbox container
 - Screenshot tool (grim + slurp)
-- Notification daemon (mako)
 - Hardware acceleration (VA-API via mesa)
 
 ## Fresh install
@@ -56,13 +57,14 @@ GB layout with Polish characters via PL variant. No switching needed.
 
 ## Bluetooth devices
 
-Pair devices manually using `bluetoothctl` — the GUI applet may have connection issues:
-```bash
+Pair devices manually using bluetoothctl — the GUI applet may have connection issues:
+
+\`\`\`bash
 bluetoothctl
 power on
 scan on
 pair <MAC_ADDRESS>
-```
+\`\`\`
 
 ## Structure
 
@@ -71,6 +73,7 @@ dotfiles-sway/
 ├── sway/                    # Sway window manager config
 ├── waybar/                  # Waybar status bar config
 ├── foot/                    # Foot terminal config
+├── mako/                    # Mako notification config
 ├── scripts/
 │   └── check-hardware.sh   # Hardware verification script
 ├── setup.sh                 # Symlinks, Flatpaks, toolbox

@@ -7,7 +7,7 @@
 # Autostart
 exec mako
 exec wl-paste -t text --watch clipman store --no-persist
-bindsym $mod+c exec clipman pick --tool=rofi
+
 
 ### Variables
 #
@@ -104,6 +104,9 @@ default_floating_border none
 
     # Show keyboard shortcuts cheatsheet
     # bindsym $mod+F1 exec swaynag -t warning -m 'Mod+V split vertical | Mod+B split horizontal | Mod+E toggle split | Mod+F fullscreen | Mod+Shift+Space float | Mod+R resize | Mod+1-9 workspace'
+
+    # Clipman 
+    bindsym $mod+c exec clipman pick --tool=rofi
 
     # Screenshots
     bindsym Print exec grim ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png
