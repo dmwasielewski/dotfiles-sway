@@ -36,4 +36,13 @@ toolbox create --image registry.fedoraproject.org/fedora-toolbox:43 damian
 echo "==> Installing Flatpaks..."
 flatpak install -y flathub com.vivaldi.Vivaldi
 
+# Fonts
+echo "==> Installing JetBrainsMono Nerd Font..."
+mkdir -p ~/.local/share/fonts
+curl -OL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
+unzip JetBrainsMono.zip -d ~/.local/share/fonts/JetBrainsMono
+rm JetBrainsMono.zip
+fc-cache -fv
+
+
 echo "==> Done."
