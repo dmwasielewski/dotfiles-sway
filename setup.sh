@@ -17,6 +17,11 @@ ln -sf "$DOTFILES/waybar/config"      ~/.config/waybar/config
 ln -sf "$DOTFILES/foot/foot.ini"      ~/.config/foot/foot.ini
 ln -sf "$DOTFILES/user-dirs.dirs"     ~/.config/user-dirs.dirs
 
+# Toolbox
+echo "==> Creating toolbox container..."
+toolbox create --image registry.fedoraproject.org/fedora-toolbox:41 damian
+
+
 # Flatpaks
 echo "==> Installing Flatpaks..."
 flatpak install -y flathub com.vivaldi.Vivaldi
