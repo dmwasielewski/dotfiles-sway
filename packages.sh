@@ -18,4 +18,20 @@ if lspci | grep -qi "AMD\|ATI"; then
     echo "==> If video is not smooth after reboot, run: vainfo"
 fi
 
+# Check for nomodeset (breaks AMD GPU)
+if rpm-ostree kargs | grep -q "nomodeset"; then
+    echo "==> WARNING: nomodeset detected - removing it (breaks AMD GPU acceleration)"
+    rpm-ostree kargs --delete=nomodeset
+fi
+
+# Verify hardware acceleration
+echo "==> Verifying hardware acceleration..."
+if ls /dev/dri/renderD128 &>/dev/null; then
+    echo "==> render node found - hardware acceleration available"
+else
+    echo "==> WARNING: /dev/dri/renderD128 missing - check GPU drivers"
+fi
+
+
+
 echo "==> Done. Please reboot: systemctl reboot"
