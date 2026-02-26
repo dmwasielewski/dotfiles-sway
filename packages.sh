@@ -37,6 +37,9 @@ else
     echo "==> WARNING: /dev/dri/renderD128 missing - check GPU drivers"
 fi
 
-
+# Firewall
+echo "==> Configuring firewall..."
+sudo firewall-cmd --remove-service=dhcpv6-client --permanent
+sudo firewall-cmd --reload
 
 echo "==> Done. Please reboot: systemctl reboot"
