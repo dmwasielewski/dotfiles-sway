@@ -6,7 +6,8 @@
 
 # Autostart
 exec mako
-
+exec wl-paste -t text --watch clipman store --no-persist
+bindsym $mod+c exec clipman pick --tool=rofi
 
 ### Variables
 #
