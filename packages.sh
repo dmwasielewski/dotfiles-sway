@@ -2,7 +2,12 @@
 # Run this once after fresh install, then reboot
 echo "==> Layering system packages (reboot required after)..."
 
-PACKAGES="mako libva-utils"
+
+# mako      - notification daemon
+# libva-utils - VA-API hardware acceleration tools
+# cliphist  - clipboard history manager
+PACKAGES="mako libva-utils cliphist"
+
 
 # Intel GPU check
 if lspci | grep -qi "Intel.*Graphics"; then
