@@ -61,7 +61,17 @@ input "type:keyboard" {
 }
 
 default_border none
+
+gaps inner 0
+gaps outer 0
+default_border pixel 2
+client.focused          #5294e2 #5294e2 #ffffff #5294e2 #5294e2
+#client.unfocused        #333333 #333333 #888888 #333333 #333333
+client.focused          #d97706 #d97706 #ffffff #d97706 #d97706
+
 default_floating_border none
+
+
 
 
 # Example configuration:
@@ -82,6 +92,9 @@ default_floating_border none
 #
     # Start a terminal
     bindsym $mod+Return exec $term
+
+    # Show keyboard shortcuts cheatsheet
+    # bindsym $mod+F1 exec swaynag -t warning -m 'Mod+V split vertical | Mod+B split horizontal | Mod+E toggle split | Mod+F fullscreen | Mod+Shift+Space float | Mod+R resize | Mod+1-9 workspace'
 
     # Kill focused window
     bindsym $mod+Shift+q kill
