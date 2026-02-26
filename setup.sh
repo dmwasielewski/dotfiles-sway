@@ -9,17 +9,24 @@ mkdir -p ~/.config/sway
 mkdir -p ~/.config/waybar
 mkdir -p ~/.config/foot
 
+echo "==> Creating User directories..."
+mkdir -p ~/Pictures
+
+echo "==> Suppressing system screenshot warning..."
+mkdir -p ~/.config/sway/config.d
+echo -n > ~/.config/sway/config.d/60-bindings-screenshot.conf
 
 # Symlinks
 echo "==> Creating symlinks..."
 ln -sf "$DOTFILES/sway/config"        ~/.config/sway/config
 ln -sf "$DOTFILES/waybar/config"      ~/.config/waybar/config
+ln -sf "$DOTFILES/waybar/style.css"   ~/.config/waybar/style.css
 ln -sf "$DOTFILES/foot/foot.ini"      ~/.config/foot/foot.ini
 ln -sf "$DOTFILES/user-dirs.dirs"     ~/.config/user-dirs.dirs
 
 # Toolbox
 echo "==> Creating toolbox container..."
-toolbox create --image registry.fedoraproject.org/fedora-toolbox:41 damian
+toolbox create --image registry.fedoraproject.org/fedora-toolbox:43 damian
 
 
 # Flatpaks
