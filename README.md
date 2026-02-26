@@ -14,6 +14,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - `damian` Fedora 43 toolbox container
 - Screenshot tool (grim + slurp)
 - Hardware acceleration (VA-API via mesa)
+- JetBrainsMono Nerd Font (terminal + Waybar)
 
 ## Fresh install
 
