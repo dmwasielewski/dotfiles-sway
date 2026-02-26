@@ -54,6 +54,16 @@ bash ~/dotfiles-sway/scripts/check-hardware.sh
 
 GB layout with Polish characters via PL variant. No switching needed.
 
+## Bluetooth devices
+
+Pair devices manually using `bluetoothctl` — the GUI applet may have connection issues:
+```bash
+bluetoothctl
+power on
+scan on
+pair <MAC_ADDRESS>
+```
+
 ## Structure
 
 \`\`\`
