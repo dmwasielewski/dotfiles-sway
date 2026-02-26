@@ -1,5 +1,21 @@
 #!/bin/bash
 # Run this once after fresh install, then reboot
 echo "==> Layering system packages (reboot required after)..."
-rpm-ostree install mako
+
+PACKAGES="mako libva-utils"
+
+# Intel GPU check
+if lspci | grep -qi "Intel.*Graphics"; then
+    echo "==> Intel GPU detected - adding intel-media-driver"
+    PACKAGES="$PACKAGES intel-media-driver"
+fi
+
+rpm-ostree install $PACKAGES
+
+# AMD GPU check
+if lspci | grep -qi "AMD\|ATI"; then
+    echo "==> AMD GPU detected - mesa-va-drivers should already be present"
+    echo "==> If video is not smooth after reboot, run: vainfo"
+fi
+
 echo "==> Done. Please reboot: systemctl reboot"
