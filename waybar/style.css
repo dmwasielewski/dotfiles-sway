@@ -194,12 +194,12 @@ button:hover {
     background-color: #1a2a1a;
     color: #6ab56a;
 }
-
+/*
 #battery.good {
     background-color: #1a2a1a;
     color: #6ab56a;
 }
-
+*/
 
 #battery.full {
     background-color: #1e2230;

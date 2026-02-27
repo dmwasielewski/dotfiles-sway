@@ -141,13 +141,13 @@
     "backlight": {
         // "device": "acpi_video1",
         "format": "{percent}% {icon}",
-        "format-icons": ["󰃞","󰃞","󰃟","󰃟","󰃠","󰃠","󰃠","🌕"]
+        "format-icons": ["󰃞 ","󰃞 ","󰃞 ","󰃟","󰃟","󰃠","󰃠","󰃠","🌕"]
 
     },
     "battery": {
         "states": {
             "good": 95,
-            "warning": 30,
+            "warning": 40,
             "critical": 20
         },
         "format": "{capacity}% {icon}",
