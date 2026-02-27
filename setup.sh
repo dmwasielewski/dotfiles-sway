@@ -62,6 +62,10 @@ unzip fontawesome-free-6.7.2-desktop.zip -d ~/.local/share/fonts/FontAwesome
 rm fontawesome-free-6.7.2-desktop.zip
 fc-cache -fv
 
-
+# Distrobox 
+# Security container
+echo "==> Creating security container..."
+bash "$DOTFILES/scripts/setup-security-container.sh"
 
 echo "==> Done."
+ 

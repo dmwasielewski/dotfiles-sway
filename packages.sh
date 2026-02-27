@@ -6,8 +6,7 @@ echo "==> Layering system packages (reboot required after)..."
 # mako      - notification daemon
 # libva-utils - VA-API hardware acceleration tools
 # clipman  - clipboard history manager
-PACKAGES="mako libva-utils clipman"
-
+PACKAGES="mako libva-utils clipman distrobox"
 
 # Intel GPU check
 if lspci | grep -qi "Intel.*Graphics"; then
