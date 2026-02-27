@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=WhatsApp
+Exec=/usr/bin/flatpak run com.vivaldi.Vivaldi --app=https://web.whatsapp.com
+Icon=com.vivaldi.Vivaldi
+Type=Application
+Categories=Network;
