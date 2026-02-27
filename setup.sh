@@ -1,4 +1,3 @@
-
 #!/bin/bash
 set -e
 
@@ -25,10 +24,10 @@ ln -sf "$DOTFILES/waybar/config"      ~/.config/waybar/config
 ln -sf "$DOTFILES/waybar/style.css"   ~/.config/waybar/style.css
 ln -sf "$DOTFILES/foot/foot.ini"      ~/.config/foot/foot.ini
 ln -sf "$DOTFILES/user-dirs.dirs"     ~/.config/user-dirs.dirs
-ln -sf "$DOTFILES/mako/config" ~/.config/mako/config
-ln -sf "$DOTFILES/applications/claude-ai.desktop" ~/.local/share/applications/claude-ai.desktop
-ln -sf "$DOTFILES/applications/chatgpt.desktop" ~/.local/share/applications/chatgpt.desktop
-ln -sf "$DOTFILES/applications/whatsapp.desktop" ~/.local/share/applications/whatsapp.desktop
+ln -sf "$DOTFILES/mako/config"        ~/.config/mako/config
+ln -sf "$DOTFILES/applications/claude-ai.desktop"  ~/.local/share/applications/claude-ai.desktop
+ln -sf "$DOTFILES/applications/chatgpt.desktop"    ~/.local/share/applications/chatgpt.desktop
+ln -sf "$DOTFILES/applications/whatsapp.desktop"   ~/.local/share/applications/whatsapp.desktop
 update-desktop-database ~/.local/share/applications/
 
 # Make scripts executable
@@ -37,7 +36,6 @@ chmod +x "$DOTFILES/scripts/"*.sh
 # Toolbox
 echo "==> Creating toolbox container..."
 toolbox create --image registry.fedoraproject.org/fedora-toolbox:43 damian
-
 
 # Flatpaks
 echo "==> Installing Flatpaks..."
@@ -49,7 +47,6 @@ flatpak install -y flathub md.obsidian.Obsidian
 flatpak install -y flathub com.spotify.Client
 flatpak install -y flathub com.obsproject.Studio
 flatpak install -y flathub org.jdownloader.JDownloader
-
 
 # Fonts
 echo "==> Installing JetBrainsMono Nerd Font..."
@@ -65,14 +62,8 @@ unzip fontawesome-free-*.zip -d ~/.local/share/fonts/FontAwesome
 rm fontawesome-free-*.zip
 fc-cache -fv
 
-# Distrobox 
-
-# Security container
-# NOTE: Run this manually after reboot (requires distrobox from packages.sh)
-# bash "$DOTFILES/scripts/setup-security-container.sh"
-
-echo "==> Creating security container..."
-bash "$DOTFILES/scripts/setup-security-container.sh"
-
 echo "==> Done."
- 
+echo ""
+echo "==> Next steps:"
+echo "    1. Run packages.sh then reboot: bash ~/dotfiles-sway/packages.sh"
+echo "    2. After reboot create security container: bash ~/dotfiles-sway/scripts/setup-security-container.sh"

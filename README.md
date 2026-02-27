@@ -29,32 +29,29 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - WhatsApp — opens as minimal window without browser UI
 
 ### System
-- `damian` Fedora 43 toolbox container
+- `damian` Fedora 43 toolbox container (Fedora dev environment)
+- `security` Ubuntu 24.04 distrobox container (nmap, wireshark, netcat, htop, btop)
+- distrobox — for Ubuntu containers
 - Screenshot tool (grim + slurp)
 - Hardware acceleration (VA-API via mesa/amdgpu)
 - Firewall baseline (public zone, SSH + mDNS only)
-- `security` Ubuntu 24.04 distrobox container (nmap, wireshark, netcat, htop, btop)
-- distrobox (for Ubuntu containers)
-
 
 ## Fresh install
 
 ### Prerequisites
 
 1. Generate SSH key and add to GitHub:
-
-\`\`\`bash
+```bash
 ssh-keygen -t ed25519 -C "your@email.com"
 cat ~/.ssh/id_ed25519.pub
-\`\`\`
+```
 
 Then add the key at: https://github.com/settings/ssh/new
 
 2. Run bootstrap:
-
-\`\`\`bash
+```bash
 bash <(curl -s https://raw.githubusercontent.com/dmwasielewski/dotfiles-sway/main/bootstrap.sh)
-\`\`\`
+```
 
 Bootstrap will:
 - Clone this repository
@@ -62,16 +59,19 @@ Bootstrap will:
 - Run packages.sh (system packages via rpm-ostree)
 
 3. Reboot after bootstrap completes:
-
-\`\`\`bash
+```bash
 systemctl reboot
-\`\`\`
+```
 
-4. Verify hardware after reboot:
+4. After reboot create the security container:
+```bash
+bash ~/dotfiles-sway/scripts/setup-security-container.sh
+```
 
-\`\`\`bash
+5. Verify hardware after reboot:
+```bash
 bash ~/dotfiles-sway/scripts/check-hardware.sh
-\`\`\`
+```
 
 ## Keyboard layout
 
@@ -80,34 +80,33 @@ GB layout with Polish characters via PL variant. No switching needed.
 ## Bluetooth devices
 
 Pair devices manually using bluetoothctl — the GUI applet may have connection issues:
-
-\`\`\`bash
+```bash
 bluetoothctl
 power on
 scan on
 pair <MAC_ADDRESS>
-\`\`\`
+```
 
 ## Notes
 
 - `pavucontrol` is already included in Fedora Atomic base — no separate install needed
-- NordVPN: install manually via toolbox when needed
-- Security container: run `bash ~/dotfiles-sway/scripts/setup-security-container.sh` to rebuild manually
+- NordVPN: no Flatpak available — install via official NordVPN Linux CLI script when needed
+- Security container must be created after first reboot (distrobox installed via packages.sh)
+- Rebuild security container manually: `bash ~/dotfiles-sway/scripts/setup-security-container.sh`
 - Enter security container: `distrobox enter security`
 
-
-
 ## Structure
-````
+```
 dotfiles-sway/
 ├── sway/                    # Sway window manager config
 ├── waybar/                  # Waybar status bar config + style
 ├── foot/                    # Foot terminal config
 ├── mako/                    # Mako notification config
-├── applications/            # PWA desktop shortcuts
+├── applications/            # PWA desktop shortcuts (Claude, ChatGPT, WhatsApp)
 ├── scripts/
-│   └── check-hardware.sh   # Hardware verification script
+│   ├── check-hardware.sh              # Hardware verification script
+│   └── setup-security-container.sh   # Ubuntu security container setup
 ├── setup.sh                 # Symlinks, Flatpaks, toolbox, fonts
 ├── packages.sh              # rpm-ostree system packages
 └── bootstrap.sh             # Fresh install entry point
-````
+```
