@@ -90,18 +90,18 @@ pair <MAC_ADDRESS>
 - `pavucontrol` is already included in Fedora Atomic base — no separate install needed
 - NordVPN: install manually via toolbox when needed
 
-## Structure
 
-\`\`\`
+## Structure
+````
 dotfiles-sway/
 ├── sway/                    # Sway window manager config
 ├── waybar/                  # Waybar status bar config + style
 ├── foot/                    # Foot terminal config
 ├── mako/                    # Mako notification config
-├── applications/            # PWA desktop shortcuts (Claude, ChatGPT, WhatsApp)
+├── applications/            # PWA desktop shortcuts
 ├── scripts/
 │   └── check-hardware.sh   # Hardware verification script
 ├── setup.sh                 # Symlinks, Flatpaks, toolbox, fonts
 ├── packages.sh              # rpm-ostree system packages
 └── bootstrap.sh             # Fresh install entry point
-\`\`\`
+````
