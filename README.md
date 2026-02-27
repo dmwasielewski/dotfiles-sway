@@ -33,6 +33,9 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Screenshot tool (grim + slurp)
 - Hardware acceleration (VA-API via mesa/amdgpu)
 - Firewall baseline (public zone, SSH + mDNS only)
+- `security` Ubuntu 24.04 distrobox container (nmap, wireshark, netcat, htop, btop)
+- distrobox (for Ubuntu containers)
+
 
 ## Fresh install
 
@@ -89,6 +92,9 @@ pair <MAC_ADDRESS>
 
 - `pavucontrol` is already included in Fedora Atomic base — no separate install needed
 - NordVPN: install manually via toolbox when needed
+- Security container: run `bash ~/dotfiles-sway/scripts/setup-security-container.sh` to rebuild manually
+- Enter security container: `distrobox enter security`
+
 
 
 ## Structure
