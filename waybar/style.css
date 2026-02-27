@@ -1,5 +1,5 @@
 * {
-    font-family: 'JetBrainsMono Nerd Font', 'Noto Sans Mono', monospace;
+    font-family: 'JetBrainsMono Nerd Font', 'Font Awesome 6 Free', 'Font Awesome 6 Brands', monospace;
     font-size: 13px;
 }
 
@@ -90,8 +90,10 @@ button:hover {
 
 /* ── CPU — muted blue ───────────────────────────────────── */
 #cpu {
-    background-color: #1e2a3a;
-    color: #6a8caf;
+
+    background-color: #1e2230;
+    color: #8a9bb5;
+
 }
 
 #cpu.warning {
@@ -100,14 +102,20 @@ button:hover {
 }
 
 #cpu.critical {
-    background-color: #3a1515;
-    color: #e05555;
+    background-color: #2a0000;
+    color: #ff0000;
+    animation-name: blink;
+    animation-duration: 0.5s;
+    animation-timing-function: steps(12);
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+
 }
 
 /* ── Memory — muted purple ──────────────────────────────── */
 #memory {
-    background-color: #221e30;
-    color: #8a6aaf;
+    background-color: #1e2230;
+    color: #8a9bb5;
 }
 
 #memory.warning {
@@ -116,19 +124,30 @@ button:hover {
 }
 
 #memory.critical {
-    background-color: #3a1515;
-    color: #e05555;
+    background-color: #2a0000;
+    color: #ff0000;
+    animation-name: blink;
+    animation-duration: 0.5s;
+    animation-timing-function: steps(12);
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+
 }
 
 /* ── Temperature — muted teal ───────────────────────────── */
 #temperature {
-    background-color: #1a2a2a;
-    color: #5a9999;
+    background-color: #1e2230;
+    color: #8a9bb5;   
+}
+
+#temperature.warning {
+    background-color: #2a2010;
+    color: #c8a060;
 }
 
 #temperature.critical {
-    background-color: #3a1515;
-    color: #e05555;
+    background-color: #2a0000;
+    color: #ff0000;
     animation-name: blink;
     animation-duration: 0.5s;
     animation-timing-function: steps(12);
@@ -138,19 +157,19 @@ button:hover {
 
 /* ── Network — muted slate ──────────────────────────────── */
 #network {
-    background-color: #1e2530;
-    color: #607a99;
+    background-color: #1e2230;
+    color: #8a9bb5;
 }
 
 #network.disconnected {
-    background-color: #3a1515;
-    color: #e05555;
+    background-color: #2a0000;
+    color: #ff0000;
 }
 
 /* ── Audio — muted olive ────────────────────────────────── */
 #pulseaudio {
-    background-color: #252515;
-    color: #999955;
+    background-color: #1e2230;
+    color: #8a9bb5;   
 }
 
 #pulseaudio.muted {
@@ -160,20 +179,31 @@ button:hover {
 
 /* Volume at 100% — red warning */
 #pulseaudio.overamplified {
-    background-color: #3a1515;
-    color: #e05555;
+    background-color: #2a0000;
+    color: #ff3333;
 }
 
 /* ── Battery ────────────────────────────────────────────── */
 #battery {
-    background-color: #1a2a1a;
-    color: #5a9955;
+    background-color: #1e2230;
+    color: #8a9bb5;
 }
 
 #battery.charging,
 #battery.plugged {
     background-color: #1a2a1a;
     color: #6ab56a;
+}
+/*
+#battery.good {
+    background-color: #1a2a1a;
+    color: #6ab56a;
+}
+*/
+
+#battery.full {
+    background-color: #1e2230;
+    color: #8a9bb5;
 }
 
 #battery.warning:not(.charging) {
@@ -182,8 +212,8 @@ button:hover {
 }
 
 #battery.critical:not(.charging) {
-    background-color: #3a1515;
-    color: #e05555;
+    background-color: #2a0000;
+    color: #ff0000;
     animation-name: blink;
     animation-duration: 0.5s;
     animation-timing-function: steps(12);
@@ -201,7 +231,7 @@ button:hover {
 /* ── Backlight ──────────────────────────────────────────── */
 #backlight {
     background-color: #1e2230;
-    color: #7a8a9a;
+    color: #8a9bb5;
 }
 
 /* ── Power profile ──────────────────────────────────────── */
@@ -210,13 +240,13 @@ button:hover {
 }
 
 #power-profiles-daemon.performance {
-    background-color: #3a1515;
-    color: #e05555;
+    background-color: #2a0000;
+    color: #ff3333;
 }
 
 #power-profiles-daemon.balanced {
-    background-color: #1e2a3a;
-    color: #6a8caf;
+    background-color: #1e2230;
+    color: #8a9bb5;
 }
 
 #power-profiles-daemon.power-saver {
@@ -227,7 +257,7 @@ button:hover {
 /* ── Language ───────────────────────────────────────────── */
 #language {
     background-color: #1e2230;
-    color: #7a8499;
+    color: #8a9bb5;
     min-width: 16px;
 }
 
@@ -248,12 +278,12 @@ button:hover {
 /* ── Idle inhibitor ─────────────────────────────────────── */
 #idle_inhibitor {
     background-color: #1e2230;
-    color: #4a5060;
+    color: #8a9bb5;
 }
 
 #idle_inhibitor.activated {
-    background-color: #2a3a2a;
-    color: #6ab56a;
+    background-color: #1a2a1a;
+    color: #5a9955;
 }
 
 /* ── Scratchpad ─────────────────────────────────────────── */
@@ -267,7 +297,7 @@ button:hover {
 
 /* ── Mode ───────────────────────────────────────────────── */
 #mode {
-    background-color: #2a2010;
-    color: #c8a060;
+    background-color: #1e2230;
+    color: #8a9bb5;
     box-shadow: inset 0 -2px #c8a060;
 }
