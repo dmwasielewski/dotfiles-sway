@@ -30,6 +30,8 @@ ln -sf "$DOTFILES/applications/claude-ai.desktop" ~/.local/share/applications/cl
 ln -sf "$DOTFILES/applications/chatgpt.desktop" ~/.local/share/applications/chatgpt.desktop
 update-desktop-database ~/.local/share/applications/
 
+# Make scripts executable
+chmod +x "$DOTFILES/scripts/"*.sh
 
 # Toolbox
 echo "==> Creating toolbox container..."
