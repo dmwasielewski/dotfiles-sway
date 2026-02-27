@@ -74,10 +74,13 @@ default_border none
 
 gaps inner 0
 gaps outer 0
-default_border pixel 2
-client.focused          #5294e2 #5294e2 #ffffff #5294e2 #5294e2
+default_border pixel 1
+#client.focused          #5294e2 #5294e2 #ffffff #5294e2 #5294e2
 #client.unfocused        #333333 #333333 #888888 #333333 #333333
-client.focused          #d97706 #d97706 #ffffff #d97706 #d97706
+#client.focused          #d97706 #d97706 #ffffff #d97706 #d97706
+#client.focused          #b86200 #b86200 #ffffff #b86200 #b86200
+#client.focused          #8a4800 #8a4800 #ffffff #8a4800 #8a4800
+client.focused          #5c3000 #5c3000 #ffffff #5c3000 #5c3000
 
 default_floating_border none
 
