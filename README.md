@@ -56,6 +56,11 @@ bash ~/dotfiles-sway/scripts/check-hardware.sh
 
 GB layout with Polish characters via PL variant. No switching needed.
 
+## App shortcuts
+
+Claude AI and ChatGPT are available as launcher shortcuts (Mod+D).
+They open as minimal Vivaldi PWA windows without browser UI.
+
 ## Bluetooth devices
 
 Pair devices manually using bluetoothctl — the GUI applet may have connection issues:
@@ -75,6 +80,7 @@ dotfiles-sway/
 ├── waybar/                  # Waybar status bar config
 ├── foot/                    # Foot terminal config
 ├── mako/                    # Mako notification config
+├── applications/            # PWA desktop shortcuts (Claude, ChatGPT)
 ├── scripts/
 │   └── check-hardware.sh   # Hardware verification script
 ├── setup.sh                 # Symlinks, Flatpaks, toolbox

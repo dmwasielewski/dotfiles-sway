@@ -9,6 +9,7 @@ mkdir -p ~/.config/sway
 mkdir -p ~/.config/waybar
 mkdir -p ~/.config/foot
 mkdir -p ~/.config/mako
+mkdir -p ~/.local/share/applications
 
 echo "==> Creating User directories..."
 mkdir -p ~/Pictures
@@ -25,6 +26,9 @@ ln -sf "$DOTFILES/waybar/style.css"   ~/.config/waybar/style.css
 ln -sf "$DOTFILES/foot/foot.ini"      ~/.config/foot/foot.ini
 ln -sf "$DOTFILES/user-dirs.dirs"     ~/.config/user-dirs.dirs
 ln -sf "$DOTFILES/mako/config" ~/.config/mako/config
+ln -sf "$DOTFILES/applications/claude-ai.desktop" ~/.local/share/applications/claude-ai.desktop
+ln -sf "$DOTFILES/applications/chatgpt.desktop" ~/.local/share/applications/chatgpt.desktop
+update-desktop-database ~/.local/share/applications/
 
 
 # Toolbox
@@ -43,6 +47,13 @@ curl -OL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBra
 unzip JetBrainsMono.zip -d ~/.local/share/fonts/JetBrainsMono
 rm JetBrainsMono.zip
 fc-cache -fv
+
+echo "==> Installing Font Awesome..."
+curl -OL https://github.com/FortAwesome/Font-Awesome/releases/latest/download/fontawesome-free-6.7.2-desktop.zip
+unzip fontawesome-free-6.7.2-desktop.zip -d ~/.local/share/fonts/FontAwesome
+rm fontawesome-free-6.7.2-desktop.zip
+fc-cache -fv
+
 
 
 echo "==> Done."
