@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+# Ask for sudo password upfront and extend timeout to 15 minutes (for installation)
+sudo -v
+echo "Defaults timestamp_timeout=15" | sudo tee /etc/sudoers.d/timeout > /dev/null
+
 # Run this once after fresh install, then reboot
 echo "==> Layering system packages (reboot required after)..."
 
