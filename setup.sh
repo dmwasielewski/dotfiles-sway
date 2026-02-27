@@ -39,6 +39,8 @@ toolbox create --image registry.fedoraproject.org/fedora-toolbox:43 damian
 # Flatpaks
 echo "==> Installing Flatpaks..."
 flatpak install -y flathub com.vivaldi.Vivaldi
+flatpak install -y flathub io.mpv.Mpv
+
 
 # Fonts
 echo "==> Installing JetBrainsMono Nerd Font..."
