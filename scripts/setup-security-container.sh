@@ -1,8 +1,13 @@
 #!/bin/bash
 set -e
 
-echo "==> Creating security container..."
-distrobox create --name security --image ubuntu:24.04
+# Skip if container already exists
+if distrobox list | grep -q "security"; then
+    echo "==> Container 'security' already exists — skipping creation."
+else
+    echo "==> Creating security container..."
+    distrobox create --name security --image ubuntu:24.04
+fi
 
 echo "==> Installing security tools..."
 distrobox run --name security -- bash -c "

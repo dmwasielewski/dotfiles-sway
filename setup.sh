@@ -3,6 +3,12 @@ set -e
 
 DOTFILES="$HOME/dotfiles-sway"
 
+# Check dependencies
+if ! command -v unzip &>/dev/null; then
+    echo "ERROR: unzip not found. Install it first: sudo rpm-ostree install unzip, then reboot."
+    exit 1
+fi
+
 echo "==> Creating config directories..."
 mkdir -p ~/.config/sway
 mkdir -p ~/.config/waybar
@@ -10,7 +16,7 @@ mkdir -p ~/.config/foot
 mkdir -p ~/.config/mako
 mkdir -p ~/.local/share/applications
 
-echo "==> Creating User directories..."
+echo "==> Creating user directories..."
 mkdir -p ~/Pictures
 
 echo "==> Suppressing system screenshot warning..."
@@ -19,23 +25,27 @@ echo -n > ~/.config/sway/config.d/60-bindings-screenshot.conf
 
 # Symlinks
 echo "==> Creating symlinks..."
-ln -sf "$DOTFILES/sway/config"        ~/.config/sway/config
-ln -sf "$DOTFILES/waybar/config"      ~/.config/waybar/config
-ln -sf "$DOTFILES/waybar/style.css"   ~/.config/waybar/style.css
-ln -sf "$DOTFILES/foot/foot.ini"      ~/.config/foot/foot.ini
-ln -sf "$DOTFILES/user-dirs.dirs"     ~/.config/user-dirs.dirs
-ln -sf "$DOTFILES/mako/config"        ~/.config/mako/config
-ln -sf "$DOTFILES/applications/claude-ai.desktop"  ~/.local/share/applications/claude-ai.desktop
-ln -sf "$DOTFILES/applications/chatgpt.desktop"    ~/.local/share/applications/chatgpt.desktop
-ln -sf "$DOTFILES/applications/whatsapp.desktop"   ~/.local/share/applications/whatsapp.desktop
+ln -sf "$DOTFILES/sway/config"                                ~/.config/sway/config
+ln -sf "$DOTFILES/waybar/config"                              ~/.config/waybar/config
+ln -sf "$DOTFILES/waybar/style.css"                           ~/.config/waybar/style.css
+ln -sf "$DOTFILES/foot/foot.ini"                              ~/.config/foot/foot.ini
+ln -sf "$DOTFILES/user-dirs.dirs"                             ~/.config/user-dirs.dirs
+ln -sf "$DOTFILES/mako/config"                                ~/.config/mako/config
+ln -sf "$DOTFILES/applications/claude-ai.desktop"             ~/.local/share/applications/claude-ai.desktop
+ln -sf "$DOTFILES/applications/chatgpt.desktop"               ~/.local/share/applications/chatgpt.desktop
+ln -sf "$DOTFILES/applications/whatsapp.desktop"              ~/.local/share/applications/whatsapp.desktop
 update-desktop-database ~/.local/share/applications/
 
 # Make scripts executable
 chmod +x "$DOTFILES/scripts/"*.sh
 
-# Toolbox
+# Toolbox — skip if already exists
 echo "==> Creating toolbox container..."
-toolbox create --image registry.fedoraproject.org/fedora-toolbox:43 damian
+if toolbox list | grep -q "damian"; then
+    echo "==> Toolbox 'damian' already exists — skipping."
+else
+    toolbox create --image registry.fedoraproject.org/fedora-toolbox:43 damian
+fi
 
 # Flatpaks
 echo "==> Installing Flatpaks..."
@@ -57,7 +67,8 @@ rm JetBrainsMono.zip
 fc-cache -fv
 
 echo "==> Installing Font Awesome..."
-curl -OL https://github.com/FortAwesome/Font-Awesome/releases/latest/download/fontawesome-free-6.7.2-desktop.zip
+FA_URL=$(curl -s https://api.github.com/repos/FortAwesome/Font-Awesome/releases/latest | grep browser_download_url | grep desktop.zip | cut -d'"' -f4)
+curl -OL "$FA_URL"
 unzip fontawesome-free-*.zip -d ~/.local/share/fonts/FontAwesome
 rm fontawesome-free-*.zip
 fc-cache -fv
@@ -66,4 +77,4 @@ echo "==> Done."
 echo ""
 echo "==> Next steps:"
 echo "    1. Run packages.sh then reboot: bash ~/dotfiles-sway/packages.sh"
-echo "    2. After reboot create security container: bash ~/dotfiles-sway/scripts/setup-security-container.sh"
+echo "    2. After reboot run: bash ~/dotfiles-sway/scripts/setup-security-container.sh"

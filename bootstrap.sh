@@ -16,5 +16,7 @@ bash ~/dotfiles-sway/packages.sh
 echo ""
 echo "=========================================="
 echo " Reboot now: systemctl reboot"
-echo " After reboot verify: bash ~/dotfiles-sway/scripts/check-hardware.sh"
+echo " After reboot run:"
+echo "   1. bash ~/dotfiles-sway/scripts/check-hardware.sh"
+echo "   2. bash ~/dotfiles-sway/scripts/setup-security-container.sh"
 echo "=========================================="

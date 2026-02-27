@@ -1,12 +1,15 @@
 #!/bin/bash
+set -e
+
 # Run this once after fresh install, then reboot
 echo "==> Layering system packages (reboot required after)..."
 
-
-# mako      - notification daemon
+# mako        - notification daemon
 # libva-utils - VA-API hardware acceleration tools
-# clipman  - clipboard history manager
-PACKAGES="mako libva-utils clipman distrobox"
+# clipman     - clipboard history manager
+# distrobox   - Ubuntu container support
+# unzip       - required by setup.sh for font installation
+PACKAGES="mako libva-utils clipman distrobox unzip"
 
 # Intel GPU check
 if lspci | grep -qi "Intel.*Graphics"; then
