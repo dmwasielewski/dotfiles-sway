@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Claude AI
+Exec=/usr/bin/flatpak run com.vivaldi.Vivaldi --app=https://claude.ai
+Icon=com.vivaldi.Vivaldi
+Type=Application
+Categories=Network;
