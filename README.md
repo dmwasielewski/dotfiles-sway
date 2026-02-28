@@ -7,6 +7,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 ### Window manager & UI
 - Sway window manager config (borders, keybindings, idle/lock, screenshots, touchpad)
 - Waybar status bar (bottom, muted dark theme, colour thresholds for CPU/RAM/temp/battery)
+- Autostart layout: terminals on ws1, Claude/ChatGPT on ws2, Obsidian on ws3, Vivaldi on ws4
 - Foot terminal config
 - Mako notification daemon (5s auto-dismiss)
 - Clipboard history manager (clipman + rofi)
