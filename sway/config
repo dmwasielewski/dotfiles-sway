@@ -280,24 +280,43 @@ bindsym $mod+r mode "resize"
 include '$(/usr/libexec/sway/layered-include "/usr/share/sway/config.d/*.conf" "/etc/sway/config.d/*.conf" "${XDG_CONFIG_HOME:-$HOME/.config}/sway/config.d/*.conf")'
 
 # ── Autostart ───────────────────────────────────────────
+# ── Workspace IDs ──
+
 set $ws1 1
 set $ws2 2
 set $ws3 3
 set $ws4 4
 
-workspace $ws1
-workspace $ws2
-workspace $ws3
-workspace $ws4
+# ── Workspace bootstrap ──
 
-assign [app_id="foot"] $ws1
-assign [title=".*ChatGPT.*"] $ws2
-assign [title=".*Claude.*"] $ws2
-assign [title=".*WhatsApp.*"] $ws2
-assign [title=".*Obsidian.*"] $ws3
-assign [app_id="Vivaldi-flatpak"] $ws4
+exec_always swaymsg workspace number 1
+exec_always swaymsg workspace number 1 && exec foot
+exec_always swaymsg workspace number 1 && exec foot
 
-exec foot
-exec foot
-exec flatpak run com.vivaldi.Vivaldi
-exec flatpak run md.obsidian.Obsidian
+exec_always swaymsg workspace number 2 && exec flatpak run com.vivaldi.Vivaldi --app=https://chatgpt.com
+exec_always swaymsg workspace number 2 && exec flatpak run com.vivaldi.Vivaldi --app=https://claude.ai
+
+exec_always swaymsg workspace number 3 && exec flatpak run md.obsidian.Obsidian
+
+exec_always swaymsg workspace number 4 && exec flatpak run com.vivaldi.Vivaldi
+
+# ── Routing rules ──
+
+for_window [app_id="foot"] move to workspace number 1
+
+for_window [app_id="vivaldi-chatgpt.com__-Default"] move to workspace number 2
+for_window [app_id="vivaldi-claude.ai__-Default"] move to workspace number 2
+
+for_window [title=".*Obsidian.*"] move to workspace number 3
+
+for_window [app_id="Vivaldi-flatpak"] move to workspace number 4
+for_window [title="^Vivaldi"] move to workspace number 4
+
+# ── Other apps ──
+
+for_window [title=".*WhatsApp.*"] move to workspace number 9
+
+# ── Final focus after startup ──
+
+#exec_always swaymsg workspace number 4
+
