@@ -95,6 +95,7 @@ pair <MAC_ADDRESS>
 - Security container must be created after first reboot (distrobox installed via packages.sh)
 - Rebuild security container manually: `bash ~/dotfiles-sway/scripts/setup-security-container.sh`
 - Enter security container: `distrobox enter security`
+- Default browser set to Vivaldi via xdg-settings
 
 ## Structure
 ```

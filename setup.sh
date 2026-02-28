@@ -73,6 +73,9 @@ unzip fontawesome-free-*.zip -d ~/.local/share/fonts/FontAwesome
 rm fontawesome-free-*.zip
 fc-cache -fv
 
+# Set Vivaldi as default browser
+xdg-settings set default-web-browser com.vivaldi.Vivaldi.desktop
+
 echo "==> Done."
 echo ""
 echo "==> Next steps:"
