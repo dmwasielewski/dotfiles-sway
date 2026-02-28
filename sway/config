@@ -286,22 +286,18 @@ set $ws3 3
 set $ws4 4
 
 workspace $ws1
-workspace $ws2 
-workspace $ws3 
-workspace $ws4 
+workspace $ws2
+workspace $ws3
+workspace $ws4
 
 assign [app_id="foot"] $ws1
 assign [title=".*ChatGPT.*"] $ws2
 assign [title=".*Claude.*"] $ws2
+assign [title=".*WhatsApp.*"] $ws2
 assign [title=".*Obsidian.*"] $ws3
 assign [app_id="Vivaldi-flatpak"] $ws4
 
 exec foot
 exec foot
-
-exec_always bash -c 'pgrep -x vivaldi-bin || flatpak run com.vivaldi.Vivaldi --app=https://chat.openai.com'
-exec_always bash -c 'pgrep -x vivaldi-bin || flatpak run com.vivaldi.Vivaldi --app=https://claude.ai'
-exec_always bash -c 'pgrep -x vivaldi-bin || flatpak run com.vivaldi.Vivaldi'
-
+exec flatpak run com.vivaldi.Vivaldi
 exec flatpak run md.obsidian.Obsidian
-
