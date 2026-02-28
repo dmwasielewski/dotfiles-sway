@@ -278,3 +278,29 @@ bindsym $mod+r mode "resize"
 # the trick, it's all in the `wordexp(3)`.
 #
 include '$(/usr/libexec/sway/layered-include "/usr/share/sway/config.d/*.conf" "/etc/sway/config.d/*.conf" "${XDG_CONFIG_HOME:-$HOME/.config}/sway/config.d/*.conf")'
+
+# ── Autostart ───────────────────────────────────────────
+set $ws1 1
+set $ws2 2
+set $ws3 3
+set $ws4 4
+
+workspace $ws1
+workspace $ws2 
+workspace $ws3 
+workspace $ws4 
+
+assign [app_id="foot"] $ws1
+assign [app_id="^vivaldi-"] $ws2
+assign [title=".*Obsidian.*"] $ws3
+assign [app_id="Vivaldi-flatpak"] $ws4
+
+exec foot
+exec foot
+
+exec_always bash -c 'pgrep -x vivaldi-bin || flatpak run com.vivaldi.Vivaldi --app=https://chat.openai.com'
+exec_always bash -c 'pgrep -x vivaldi-bin || flatpak run com.vivaldi.Vivaldi --app=https://claude.ai'
+exec_always bash -c 'pgrep -x vivaldi-bin || flatpak run com.vivaldi.Vivaldi'
+
+exec flatpak run md.obsidian.Obsidian
+#exec flatpak run com.vivaldi.Vivaldi
