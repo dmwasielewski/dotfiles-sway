@@ -289,16 +289,15 @@ set $ws4 4
 
 # ── Workspace bootstrap ──
 
-exec_always swaymsg workspace number 1
-exec_always swaymsg workspace number 1 && exec foot
-exec_always swaymsg workspace number 1 && exec foot
+exec swaymsg workspace number 1 && exec foot
+exec swaymsg workspace number 1 && exec foot
 
-exec_always swaymsg workspace number 2 && exec flatpak run com.vivaldi.Vivaldi --app=https://chatgpt.com
-exec_always swaymsg workspace number 2 && exec flatpak run com.vivaldi.Vivaldi --app=https://claude.ai
+exec swaymsg workspace number 2 && exec flatpak run com.vivaldi.Vivaldi --app=https://chatgpt.com
+exec swaymsg workspace number 2 && exec flatpak run com.vivaldi.Vivaldi --app=https://claude.ai
 
-exec_always swaymsg workspace number 3 && exec flatpak run md.obsidian.Obsidian
+exec swaymsg workspace number 3 && exec flatpak run md.obsidian.Obsidian
 
-exec_always swaymsg workspace number 4 && exec flatpak run com.vivaldi.Vivaldi
+exec swaymsg workspace number 4 && exec flatpak run com.vivaldi.Vivaldi
 
 # ── Routing rules ──
 
