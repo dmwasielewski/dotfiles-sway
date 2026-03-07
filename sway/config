@@ -289,15 +289,16 @@ set $ws4 4
 
 # ── Workspace bootstrap ──
 
-exec swaymsg workspace number 1 && exec foot
-exec swaymsg workspace number 1 && exec foot
+#exec swaymsg workspace number 1 && exec foot
+#exec swaymsg workspace number 1 && exec foot
+exec swaymsg workspace number 1 && exec foot --app-id=foot tmux new-session -A -s main
 
-exec swaymsg workspace number 2 && exec flatpak run com.vivaldi.Vivaldi --app=https://chatgpt.com
-exec swaymsg workspace number 2 && exec flatpak run com.vivaldi.Vivaldi --app=https://claude.ai
+exec_always swaymsg workspace number 2 && exec flatpak run com.vivaldi.Vivaldi --app=https://chatgpt.com  --profile-directory="ChatGPT"
+exec_always swaymsg workspace number 2 && exec flatpak run com.vivaldi.Vivaldi --app=https://claude.ai  --profile-directory="Claude"
 
 exec swaymsg workspace number 3 && exec flatpak run md.obsidian.Obsidian
 
-exec swaymsg workspace number 4 && exec flatpak run com.vivaldi.Vivaldi
+exec_always swaymsg workspace number 4 && exec flatpak run com.vivaldi.Vivaldi
 
 # ── Routing rules ──
 
