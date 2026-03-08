@@ -18,7 +18,7 @@ for path in profiles:
         pass
 PYEOF
 
-sleep 2
+sleep 6
 
 flatpak run com.vivaldi.Vivaldi &
 disown
