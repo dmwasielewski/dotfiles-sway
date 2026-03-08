@@ -31,6 +31,7 @@ ln -sf "$DOTFILES/waybar/style.css"                           ~/.config/waybar/s
 ln -sf "$DOTFILES/foot/foot.ini"                              ~/.config/foot/foot.ini
 ln -sf "$DOTFILES/user-dirs.dirs"                             ~/.config/user-dirs.dirs
 ln -sf "$DOTFILES/mako/config"                                ~/.config/mako/config
+ln -sf "$DOTFILES/.bashrc"                                    ~/.bashrc
 ln -sf "$DOTFILES/applications/claude-ai.desktop"             ~/.local/share/applications/claude-ai.desktop
 ln -sf "$DOTFILES/applications/chatgpt.desktop"               ~/.local/share/applications/chatgpt.desktop
 ln -sf "$DOTFILES/applications/whatsapp.desktop"              ~/.local/share/applications/whatsapp.desktop
