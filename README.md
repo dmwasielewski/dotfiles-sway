@@ -122,3 +122,43 @@ To fix manually (Vivaldi must be closed first):
 pkill -f vivaldi; sleep 2
 bash ~/dotfiles-sway/scripts/fix-vivaldi-profiles.sh
 ```
+
+## Developer ecosystem
+
+### Architecture
+```
+Host (rpm-ostree immutable)
+│
+├─ Flatpak apps
+│   └─ Obsidian, Vivaldi, VSCode, Bitwarden, Spotify, OBS, mpv, JDownloader
+│
+├─ toolbox: damian (Fedora 43) — dev/DevOps
+│   ├─ node 22
+│   ├─ npm
+│   ├─ git
+│   ├─ gh (GitHub CLI)
+│   └─ claude (Claude Code 2.1.71)
+│
+└─ distrobox: security (Ubuntu 24.04) — security testing
+    ├─ nmap
+    ├─ wireshark
+    ├─ netcat
+    ├─ htop
+    └─ btop
+```
+
+### Setup damian container
+```bash
+bash ~/dotfiles-sway/scripts/setup-damian-container.sh
+```
+
+### Enter damian container
+```bash
+toolbox enter damian
+```
+
+### Run Claude Code
+```bash
+# Inside damian container
+claude
+```
