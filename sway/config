@@ -292,6 +292,7 @@ set $ws4 4
 #exec swaymsg workspace number 1 && exec foot
 #exec swaymsg workspace number 1 && exec foot
 #exec swaymsg workspace number 1 && exec foot --app-id=foot tmux new-session -A -s main
+exec ~/dotfiles-sway/scripts/fix-vivaldi-profiles.sh
 
 #exec_always swaymsg workspace number 2 && exec flatpak run com.vivaldi.Vivaldi --app=https://chatgpt.com  --profile-directory="ChatGPT"
 #exec_always swaymsg workspace number 2 && exec flatpak run com.vivaldi.Vivaldi --app=https://claude.ai  --profile-directory="Claude"
@@ -302,6 +303,7 @@ set $ws4 4
 
 
 exec foot --app-id=foot tmux new-session -A -s main
+exec ~/dotfiles-sway/scripts/fix-vivaldi-profiles.sh
 exec sleep 2 && flatpak run com.vivaldi.Vivaldi --app=https://chatgpt.com --profile-directory="ChatGPT"
 exec sleep 3 && flatpak run com.vivaldi.Vivaldi --app=https://claude.ai --profile-directory="Claude"
 exec sleep 1 && flatpak run md.obsidian.Obsidian
@@ -309,7 +311,7 @@ exec flatpak run com.vivaldi.Vivaldi
 
 # ── Routing rules ──
 for_window [app_id="foot"] move to workspace number 1
-for_window [app_id="vivaldi-chatgpt.com__-Claude"] move to workspace number 2
+for_window [app_id="vivaldi-chatgpt.com__-ChatGPT"] move to workspace number 2
 for_window [app_id="vivaldi-claude.ai__-Claude"] move to workspace number 2
 for_window [title=".*Obsidian.*"] move to workspace number 3
 for_window [app_id="Vivaldi-flatpak"] move to workspace number 4
