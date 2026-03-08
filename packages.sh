@@ -13,8 +13,7 @@ echo "==> Layering system packages (reboot required after)..."
 # clipman     - clipboard history manager
 # distrobox   - Ubuntu container support
 # unzip       - required by setup.sh for font installation
-# tmux        - terminal multiplexer
-PACKAGES="mako libva-utils clipman distrobox unzip tmux"
+PACKAGES="mako libva-utils clipman distrobox unzip"
 
 # Intel GPU check
 if lspci | grep -qi "Intel.*Graphics"; then

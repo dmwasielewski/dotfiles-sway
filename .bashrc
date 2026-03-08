@@ -24,8 +24,3 @@ if [ -d ~/.bashrc.d ]; then
 fi
 unset rc
 
-# Auto-refresh SWAYSOCK for swaymsg inside tmux
-if [ -n "$TMUX" ]; then
-    _sock=$(tmux showenv SWAYSOCK 2>/dev/null | cut -d= -f2)
-    [ -n "$_sock" ] && export SWAYSOCK="$_sock"
-fi
