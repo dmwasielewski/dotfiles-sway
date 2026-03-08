@@ -289,20 +289,16 @@ set $ws4 4
 
 # ── Workspace bootstrap ──
 
-exec ~/dotfiles-sway/scripts/fix-vivaldi-profiles.sh
 exec foot
-exec flatpak run com.vivaldi.Vivaldi --app=https://chatgpt.com --profile-directory="ChatGPT"
-exec flatpak run com.vivaldi.Vivaldi --app=https://claude.ai --profile-directory="Claude"
-exec flatpak run md.obsidian.Obsidian
-exec flatpak run com.vivaldi.Vivaldi
+exec ~/dotfiles-sway/scripts/autostart.sh
 
 # ── Routing rules ──
-for_window [app_id="foot"] move to workspace number 1
-for_window [app_id="vivaldi-chatgpt.com__-ChatGPT"] move to workspace number 2
-for_window [app_id="vivaldi-claude.ai__-Claude"] move to workspace number 2
-for_window [title=".*Obsidian.*"] move to workspace number 3
-for_window [app_id="Vivaldi-flatpak"] move to workspace number 4
+assign [app_id="foot"] workspace number 1
+assign [app_id="vivaldi-chatgpt.com__-Claude"] workspace number 2
+assign [app_id="vivaldi-claude.ai__-Claude"] workspace number 2
+assign [title=".*Obsidian.*"] workspace number 3
+assign [app_id="Vivaldi-flatpak"] workspace number 4
 
 # ── Other apps ──
-for_window [title=".*WhatsApp.*"] move to workspace number 9
+assign [title=".*WhatsApp.*"] workspace number 9
 
