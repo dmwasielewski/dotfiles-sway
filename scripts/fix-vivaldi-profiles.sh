@@ -6,7 +6,6 @@ import json, os, glob
 profiles = glob.glob(os.path.expanduser(
     "~/.var/app/com.vivaldi.Vivaldi/config/vivaldi/*/Preferences"
 ))
-
 for path in profiles:
     try:
         with open(path) as f:

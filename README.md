@@ -112,3 +112,13 @@ dotfiles-sway/
 ├── packages.sh              # rpm-ostree system packages
 └── bootstrap.sh             # Fresh install entry point
 ```
+
+## Vivaldi profile recovery
+
+If Vivaldi shows Session Recovery dialog after reboot, the crash flag fix runs automatically on every sway start via `scripts/fix-vivaldi-profiles.sh`.
+
+To fix manually (Vivaldi must be closed first):
+```bash
+pkill -f vivaldi; sleep 2
+bash ~/dotfiles-sway/scripts/fix-vivaldi-profiles.sh
+```

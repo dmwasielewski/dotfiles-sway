@@ -291,7 +291,8 @@ set $ws4 4
 
 #exec swaymsg workspace number 1 && exec foot
 #exec swaymsg workspace number 1 && exec foot
-#exec swaymsg workspace number 1 && exec foot --app-id=foot tmux new-session -A -s main
+#exec swaymsg workspace number 1 && exec ~/dotfiles-sway/scripts/fix-vivaldi-profiles.sh
+exec foot --app-id=foot tmux new-session -A -s main
 exec ~/dotfiles-sway/scripts/fix-vivaldi-profiles.sh
 
 #exec_always swaymsg workspace number 2 && exec flatpak run com.vivaldi.Vivaldi --app=https://chatgpt.com  --profile-directory="ChatGPT"
@@ -302,6 +303,7 @@ exec ~/dotfiles-sway/scripts/fix-vivaldi-profiles.sh
 #exec_always swaymsg workspace number 4 && exec flatpak run com.vivaldi.Vivaldi
 
 
+exec ~/dotfiles-sway/scripts/fix-vivaldi-profiles.sh
 exec foot --app-id=foot tmux new-session -A -s main
 exec ~/dotfiles-sway/scripts/fix-vivaldi-profiles.sh
 exec sleep 2 && flatpak run com.vivaldi.Vivaldi --app=https://chatgpt.com --profile-directory="ChatGPT"
