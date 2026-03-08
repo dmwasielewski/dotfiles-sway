@@ -18,18 +18,19 @@ for path in profiles:
         pass
 PYEOF
 
-# Wait for Wayland to be fully ready
 sleep 2
 
-# Start Vivaldi main first — let it fully initialise
 flatpak run com.vivaldi.Vivaldi &
+disown
 sleep 4
 
-# Now start PWAs — Vivaldi already running, PWAs open in new windows
 flatpak run com.vivaldi.Vivaldi --app=https://chatgpt.com --profile-directory="ChatGPT" &
-sleep 2
-flatpak run com.vivaldi.Vivaldi --app=https://claude.ai --profile-directory="Claude" &
+disown
 sleep 2
 
-# Obsidian last
+flatpak run com.vivaldi.Vivaldi --app=https://claude.ai --profile-directory="Claude" &
+disown
+sleep 2
+
 flatpak run md.obsidian.Obsidian &
+disown
