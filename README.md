@@ -64,12 +64,17 @@ Bootstrap will:
 systemctl reboot
 ```
 
-4. After reboot create the security container:
+4. After reboot set up the damian dev container (node, npm, gh, Claude Code):
+```bash
+bash ~/dotfiles-sway/scripts/setup-damian-container.sh
+```
+
+5. Create the security container:
 ```bash
 bash ~/dotfiles-sway/scripts/setup-security-container.sh
 ```
 
-5. Verify hardware after reboot:
+6. Verify hardware after reboot:
 ```bash
 bash ~/dotfiles-sway/scripts/check-hardware.sh
 ```
@@ -106,8 +111,11 @@ dotfiles-sway/
 ├── mako/                    # Mako notification config
 ├── applications/            # PWA desktop shortcuts (Claude, ChatGPT, WhatsApp)
 ├── scripts/
-│   ├── check-hardware.sh              # Hardware verification script
-│   └── setup-security-container.sh   # Ubuntu security container setup
+│   ├── autostart.sh                   # Sway autostart: Vivaldi, Claude PWA, ChatGPT PWA, Obsidian
+│   ├── fix-vivaldi-profiles.sh        # Fix Vivaldi crash/session recovery dialog
+│   ├── setup-damian-container.sh      # Fedora toolbox: node, npm, gh, Claude Code
+│   ├── setup-security-container.sh    # Ubuntu distrobox: nmap, wireshark, netcat, htop, btop
+│   └── check-hardware.sh             # Hardware verification script
 ├── setup.sh                 # Symlinks, Flatpaks, toolbox, fonts
 ├── packages.sh              # rpm-ostree system packages
 └── bootstrap.sh             # Fresh install entry point

@@ -68,11 +68,15 @@ rm JetBrainsMono.zip
 fc-cache -fv
 
 echo "==> Installing Font Awesome..."
-FA_URL=$(curl -s https://api.github.com/repos/FortAwesome/Font-Awesome/releases/latest | grep browser_download_url | grep desktop.zip | cut -d'"' -f4)
-curl -OL "$FA_URL"
-unzip fontawesome-free-*.zip -d ~/.local/share/fonts/FontAwesome
-rm fontawesome-free-*.zip
-fc-cache -fv
+FA_URL=$(curl -s https://api.github.com/repos/FortAwesome/Font-Awesome/releases/latest | grep "browser_download_url" | grep "desktop.zip" | cut -d'"' -f4)
+if [ -z "$FA_URL" ]; then
+    echo "WARNING: Could not resolve Font Awesome download URL — skipping. Install manually from https://fontawesome.com"
+else
+    curl -OL "$FA_URL"
+    unzip fontawesome-free-*.zip -d ~/.local/share/fonts/FontAwesome
+    rm fontawesome-free-*.zip
+    fc-cache -fv
+fi
 
 # Set Vivaldi as default browser
 xdg-settings set default-web-browser com.vivaldi.Vivaldi.desktop
@@ -81,4 +85,5 @@ echo "==> Done."
 echo ""
 echo "==> Next steps:"
 echo "    1. Run packages.sh then reboot: bash ~/dotfiles-sway/packages.sh"
-echo "    2. After reboot run: bash ~/dotfiles-sway/scripts/setup-security-container.sh"
+echo "    2. After reboot run: bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
+echo "    3. After reboot run: bash ~/dotfiles-sway/scripts/setup-security-container.sh"
