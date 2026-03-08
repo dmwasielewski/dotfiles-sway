@@ -35,3 +35,8 @@ echo " damian container ready!"
 echo " Enter container: toolbox enter damian"
 echo " Run Claude Code: claude"
 echo "=========================================="
+echo ""
+echo "==> ANTHROPIC_API_KEY setup..."
+echo "Add your key to ~/.bashrc inside the container:"
+echo '  echo '"'"'export ANTHROPIC_API_KEY="your-key-here"'"'"' >> ~/.bashrc'
+echo "Get your key at: https://console.anthropic.com/settings/keys"
