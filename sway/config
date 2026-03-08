@@ -290,6 +290,8 @@ set $ws4 4
 # ── Workspace bootstrap ──
 
 exec foot
+exec flatpak run md.obsidian.Obsidian
+exec flatpak run com.vivaldi.Vivaldi
 bindsym $mod+Shift+s exec ~/dotfiles-sway/scripts/autostart.sh
 
 # ── Routing rules ──
