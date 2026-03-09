@@ -32,6 +32,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 ### System
 - `damian` Fedora 43 toolbox container (Fedora dev environment)
 - `security` Ubuntu 24.04 distrobox container — full security/pentesting toolkit
+- KVM/QEMU virtualisation — virt-manager, Windows 11 / Windows Server capable
 - distrobox — for Ubuntu containers
 - Screenshot tool (grim + slurp)
 - Hardware acceleration (VA-API via mesa/amdgpu)
@@ -66,19 +67,25 @@ Bootstrap will:
 systemctl reboot
 ```
 
-4. After reboot set up the damian dev container (node, npm, gh, Claude Code):
+4. After reboot verify hardware:
+```bash
+bash ~/dotfiles-sway/scripts/check-hardware.sh
+```
+
+5. Set up KVM virtualisation:
+```bash
+bash ~/dotfiles-sway/scripts/setup-kvm.sh
+```
+> Then log out and back in for group changes to take effect.
+
+6. Set up the damian dev container (node, npm, gh, Claude Code):
 ```bash
 bash ~/dotfiles-sway/scripts/setup-damian-container.sh
 ```
 
-5. Create the security container:
+7. Create the security container:
 ```bash
 bash ~/dotfiles-sway/scripts/setup-security-container.sh
-```
-
-6. Verify hardware after reboot:
-```bash
-bash ~/dotfiles-sway/scripts/check-hardware.sh
 ```
 
 ---
@@ -264,8 +271,9 @@ dotfiles-sway/
 ├── scripts/
 │   ├── autostart.sh                   # Sway autostart: Vivaldi, Claude PWA, ChatGPT PWA, Obsidian
 │   ├── fix-vivaldi-profiles.sh        # Fix Vivaldi crash/session recovery dialog
+│   ├── setup-kvm.sh                   # KVM/QEMU virtualisation setup (libvirtd, groups, network)
 │   ├── setup-damian-container.sh      # Fedora toolbox: node, npm, gh, Claude Code
-│   ├── setup-security-container.sh    # Ubuntu distrobox: nmap, wireshark, netcat, htop, btop
+│   ├── setup-security-container.sh    # Ubuntu distrobox: full pentesting toolkit
 │   └── check-hardware.sh             # Hardware verification script
 ├── setup.sh                 # Symlinks, Flatpaks, toolbox, fonts
 ├── packages.sh              # rpm-ostree system packages
@@ -327,6 +335,64 @@ toolbox enter damian
 ```bash
 # Inside damian container
 claude
+```
+
+---
+
+## KVM Virtualisation
+
+QEMU/KVM installed via rpm-ostree — hardware-accelerated virtualisation using AMD-V.
+
+### Hardware (Ryzen 5 5600H — 6c/12t, 38 GB RAM, 1.8 TB NVMe)
+| VM | vCPU | RAM | Disk |
+|---|---|---|---|
+| Windows 11 | 4 | 8 GB | 80 GB |
+| Windows Server 2022 | 2 | 4 GB | 60 GB |
+| Kali Linux | 2 | 4 GB | 40 GB |
+| All three simultaneously | 8 | 16 GB | 180 GB |
+
+All three can run at the same time — laptop has plenty of headroom.
+
+### Setup (run after reboot post bootstrap)
+```bash
+bash ~/dotfiles-sway/scripts/setup-kvm.sh
+```
+Then log out and back in for group membership to take effect.
+
+### Launch virt-manager
+```bash
+virt-manager
+```
+
+### Default network
+NAT network (`default`) is enabled and set to autostart. VMs get IPs in `192.168.122.0/24`.
+
+### Windows 11 — TPM & Secure Boot
+Windows 11 requires TPM 2.0 and Secure Boot. In virt-manager:
+1. **Firmware:** UEFI with Secure Boot (`/usr/share/edk2/ovmf/OVMF_CODE.secboot.fd`)
+2. **TPM:** Add hardware → TPM → Model: TIS, Version: 2.0
+3. **CPU:** Copy host CPU configuration (enables nested virt features)
+
+### Windows Server / Active Directory lab
+Recommended for AD practice:
+- OS: Windows Server 2022 Evaluation (free 180-day ISO from Microsoft)
+- After install: `Install-WindowsFeature AD-Domain-Services` → `Install-ADDSForest`
+- Connect from Fedora: `remmina` or `xfreerdp`
+
+### Useful commands
+```bash
+# List VMs
+virsh list --all
+
+# Start/stop VM
+virsh start <vm-name>
+virsh shutdown <vm-name>
+
+# VM console
+virt-viewer <vm-name>
+
+# Check KVM
+ls /dev/kvm && kvm-ok 2>/dev/null || echo "check: lscpu | grep Virtualization"
 ```
 
 ---

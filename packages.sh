@@ -13,7 +13,13 @@ echo "==> Layering system packages (reboot required after)..."
 # clipman     - clipboard history manager
 # distrobox   - Ubuntu container support
 # unzip       - required by setup.sh for font installation
-PACKAGES="mako libva-utils clipman distrobox unzip"
+# qemu-kvm    - KVM virtualisation engine
+# libvirt     - virtualisation management daemon
+# libvirt-daemon-config-network - default NAT network for VMs
+# virt-manager  - GUI VM manager
+# virt-viewer   - VM display viewer
+# bridge-utils  - network bridging for VMs
+PACKAGES="mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer bridge-utils"
 
 # Intel GPU check
 if lspci | grep -qi "Intel.*Graphics"; then
