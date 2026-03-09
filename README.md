@@ -31,7 +31,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 
 ### System
 - `damian` Fedora 43 toolbox container (Fedora dev environment)
-- `security` Ubuntu 24.04 distrobox container (nmap, wireshark, netcat, htop, btop)
+- `security` Ubuntu 24.04 distrobox container — full security/pentesting toolkit
 - distrobox — for Ubuntu containers
 - Screenshot tool (grim + slurp)
 - Hardware acceleration (VA-API via mesa/amdgpu)
@@ -302,12 +302,15 @@ Host (rpm-ostree immutable)
 │   ├─ gh (GitHub CLI)
 │   └─ claude (Claude Code)
 │
-└─ distrobox: security (Ubuntu 24.04) — security testing
-    ├─ nmap
-    ├─ wireshark
-    ├─ netcat
-    ├─ htop
-    └─ btop
+└─ distrobox: security (Ubuntu 24.04) — pentesting & security research
+    ├─ Network:    nmap, masscan, wireshark, tcpdump, netcat, socat
+    ├─ Web:        nikto, sqlmap, gobuster, ffuf, dirb, wfuzz, burpsuite
+    ├─ Passwords:  hydra, john, hashcat, medusa
+    ├─ Exploit:    metasploit, evil-winrm, impacket, pwntools
+    ├─ Recon:      enum4linux-ng, dnsutils, whois, net-tools
+    ├─ Forensics:  binwalk, foremost, steghide, exiftool, aircrack-ng
+    ├─ Wordlists:  SecLists at /opt/SecLists
+    └─ Utils:      tmux, vim, jq, htop, btop, curl, wget, git, python3
 ```
 
 ### Setup damian container
@@ -324,4 +327,68 @@ toolbox enter damian
 ```bash
 # Inside damian container
 claude
+```
+
+---
+
+## Security container
+
+Ubuntu 24.04 distrobox container with a full pentesting toolkit.
+
+### Setup
+```bash
+bash ~/dotfiles-sway/scripts/setup-security-container.sh
+```
+
+### Enter
+```bash
+distrobox enter security
+```
+
+### Tools installed
+
+| Category | Tools |
+|---|---|
+| Network scanning | `nmap`, `masscan`, `wireshark`, `tcpdump`, `netcat`, `socat` |
+| Web | `nikto`, `sqlmap`, `gobuster`, `ffuf`, `dirb`, `wfuzz` |
+| Password attacks | `hydra`, `john`, `hashcat`, `medusa` |
+| Exploitation | `msfconsole` / `msfvenom`, `evil-winrm`, `impacket`, `pwntools` |
+| Enumeration | `enum4linux-ng`, `dnsutils`, `whois`, `net-tools` |
+| Forensics & stego | `binwalk`, `foremost`, `steghide`, `exiftool` |
+| Wireless | `aircrack-ng` |
+| Wordlists | SecLists at `/opt/SecLists` |
+| Utilities | `tmux`, `vim`, `jq`, `htop`, `btop`, `python3`, `git` |
+
+### Key paths
+```
+/opt/SecLists      — SecLists wordlists (passwords, web, fuzzing, etc.)
+/opt/enum4linux-ng — enum4linux-ng source
+/opt/metasploit-framework — Metasploit installation
+```
+
+### Common usage
+```bash
+# Port scan
+nmap -sV -sC -oN scan.txt <target>
+
+# Fast port scan
+masscan -p1-65535 <target> --rate=1000
+
+# Web directory brute force
+gobuster dir -u http://<target> -w /opt/SecLists/Discovery/Web-Content/common.txt
+
+# Password attack (SSH)
+hydra -l admin -P /opt/SecLists/Passwords/rockyou.txt ssh://<target>
+
+# SQL injection
+sqlmap -u "http://<target>/page?id=1" --dbs
+
+# Metasploit
+msfconsole
+
+# WinRM shell
+evil-winrm -i <target> -u <user> -p <password>
+
+# SMB enumeration
+enum4linux-ng <target>
 ```
