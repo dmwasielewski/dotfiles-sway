@@ -295,6 +295,28 @@ button:hover {
     background-color: transparent;
 }
 
+/* ── Claude Code status ─────────────────────────────────── */
+#custom-claude {
+    background-color: #1e2230;
+    color: #8a9bb5;
+    padding: 0 10px;
+}
+
+#custom-claude.in_progress {
+    background-color: #1a2a1a;
+    color: #6ab56a;
+}
+
+#custom-claude.waiting_for_user {
+    background-color: #2a2010;
+    color: #c8a060;
+}
+
+#custom-claude.error {
+    background-color: #2a0000;
+    color: #ff3333;
+}
+
 /* ── Mode ───────────────────────────────────────────────── */
 #mode {
     background-color: #1e2230;

@@ -6,7 +6,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 
 ### Window manager & UI
 - Sway window manager config (borders, keybindings, idle/lock, screenshots, touchpad)
-- Waybar status bar (bottom, muted dark theme, colour thresholds for CPU/RAM/temp/battery)
+- Waybar status bar (bottom, muted dark theme, colour thresholds for CPU/RAM/temp/battery, Claude Code status via ccstatusline)
 - Autostart layout: terminal on ws1, Vivaldi on ws2, Obsidian on ws3, Claude/ChatGPT PWA on ws4
 - Foot terminal config
 - Mako notification daemon (5s auto-dismiss)
@@ -110,8 +110,9 @@ Solid black (`#000000`) — no image, no distractions.
 ### Idle & lock
 | Timeout | Action |
 |---|---|
-| 600s (10 min) | Screen locks (`swaylock`, black screen) + display off |
-| 900s (15 min) | System suspends (`systemctl suspend`) |
+| 600s (10 min) | Display off (`output * power off`) |
+| 900s (15 min) | Screen locks (`swaylock`, black screen) |
+| 1200s (20 min) | System suspends (`systemctl suspend`) |
 | Before sleep | Screen locks automatically |
 
 ### Touchpad
@@ -141,6 +142,7 @@ Solid black (`#000000`) — no image, no distractions.
 | `Mod+Shift+C` | Reload Sway config |
 | `Mod+Shift+E` | Exit Sway session |
 | `Mod+C` | Clipboard history picker (clipman + rofi) |
+| `Mod+Shift+Escape` | Lock screen immediately (loginctl) |
 | `Print` | Full screenshot → `~/Pictures/` |
 | `Mod+Print` | Region screenshot (slurp) → `~/Pictures/` |
 
@@ -216,7 +218,7 @@ Dark muted blue-slate palette — low contrast, easy on the eyes.
 
 **Centre:** `window` (focused window title)
 
-**Right:** `idle_inhibitor` · `pulseaudio` · `network` · `power-profiles-daemon` · `cpu` · `memory` · `temperature` · `backlight` · `language` · `battery` · `clock` · `tray`
+**Right:** `claude` · `idle_inhibitor` · `pulseaudio` · `network` · `power-profiles-daemon` · `cpu` · `memory` · `temperature` · `backlight` · `language` · `battery` · `clock` · `tray`
 
 ### Alert thresholds
 
@@ -308,7 +310,8 @@ Host (rpm-ostree immutable)
 │   ├─ npm
 │   ├─ git
 │   ├─ gh (GitHub CLI)
-│   └─ claude (Claude Code)
+│   ├─ claude (Claude Code)
+│   └─ ccstatusline (Claude Code Waybar integration)
 │
 └─ distrobox: security (Ubuntu 24.04) — pentesting & security research
     ├─ Network:    nmap, masscan, wireshark, tcpdump, netcat, socat
@@ -336,6 +339,24 @@ toolbox enter damian
 # Inside damian container
 claude
 ```
+
+### ccstatusline — Claude Code status in Waybar
+
+`ccstatusline` is bundled with `@anthropic-ai/claude-code` — no separate install needed.
+
+Waybar calls it every 5 seconds from the host via the shared home directory:
+```
+~/.npm-global/bin/ccstatusline waybar
+```
+
+The `custom/claude` Waybar module changes colour based on Claude Code state:
+
+| State | Colour |
+|---|---|
+| `idle` | Muted blue (default) |
+| `in_progress` | Green — Claude is working |
+| `waiting_for_user` | Amber — waiting for your input |
+| `error` | Red |
 
 ---
 

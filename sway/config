@@ -50,12 +50,10 @@ output * bg #000000 solid_color
 # Example configuration:
 #
  exec swayidle -w \
-          timeout 600 'swaylock -f -c 000000 & swaymsg "output * power off"' \
+          timeout 600 'swaymsg "output * power off"' \
           resume 'swaymsg "output * power on"' \
-          timeout 900 'systemctl suspend' \
-
-	 # timeout 300 'swaylock -f -c 000000' \
-         # timeout 600 'swaymsg "output * power off"' resume 'swaymsg "output * power on"' \
+          timeout 900 'swaylock -f -c 000000' \
+          timeout 1200 'systemctl suspend' \
           before-sleep 'swaylock -f -c 000000'
 #
 # This will lock your screen after 300 seconds of inactivity, then turn off
@@ -124,6 +122,9 @@ input "type:touchpad" {
     # Screenshots
     bindsym Print exec grim ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png
     bindsym $mod+Print exec grim -g "$(slurp)" ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png
+
+    # Lock screen
+    bindsym $mod+Shift+Escape exec loginctl lock-session
 
     # Kill focused window
     bindsym $mod+Shift+q kill

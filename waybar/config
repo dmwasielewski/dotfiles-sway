@@ -15,6 +15,7 @@
         "sway/window"
     ],
     "modules-right": [
+        "custom/claude",
         "idle_inhibitor",
         "pulseaudio",
         "network",
@@ -45,6 +46,12 @@
     //         "default": ""
     //     }
     // },
+    "custom/claude": {
+        "exec": "$HOME/.npm-global/bin/ccstatusline waybar 2>/dev/null",
+        "return-type": "json",
+        "interval": 5,
+        "tooltip": true
+    },
     "keyboard-state": {
         "numlock": true,
         "capslock": true,
