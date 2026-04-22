@@ -58,6 +58,7 @@ flatpak install -y flathub md.obsidian.Obsidian
 flatpak install -y flathub com.spotify.Client
 flatpak install -y flathub com.obsproject.Studio
 flatpak install -y flathub org.jdownloader.JDownloader
+flatpak install -y flathub com.vixalien.sticky
 
 # Fonts
 echo "==> Installing JetBrainsMono Nerd Font..."

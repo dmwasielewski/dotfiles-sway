@@ -23,6 +23,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - OBS Studio — screen recording
 - mpv — video player
 - JDownloader — download manager
+- Sticky — desktop sticky notes (com.vixalien.sticky)
 
 ### PWA shortcuts (Mod+D launcher)
 - Claude AI — opens as minimal window without browser UI
@@ -32,7 +33,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 ### System
 - `damian` Fedora 43 toolbox container (Fedora dev environment)
 - `security` Ubuntu 24.04 distrobox container — full security/pentesting toolkit
-- KVM/QEMU virtualisation — virt-manager, Windows 11 / Windows Server capable
+- KVM/QEMU virtualisation — virt-manager, virt-install, Windows 11 / Windows Server capable
 - distrobox — for Ubuntu containers
 - Screenshot tool (grim + slurp)
 - Hardware acceleration (VA-API via mesa/amdgpu)
