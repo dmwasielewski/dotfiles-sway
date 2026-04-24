@@ -55,12 +55,14 @@ dotfiles-sway/
 │   ├── chatgpt.desktop                ← ChatGPT PWA shortcut
 │   └── whatsapp.desktop               ← WhatsApp PWA shortcut
 └── scripts/
+    ├── lib-install.sh                 ← Shared helpers: state tracking, run_step()
+    ├── verify.sh                      ← Full post-install verification — checks every component
     ├── autostart.sh                   ← Sway autostart: opens apps on correct workspaces
     ├── fix-vivaldi-profiles.sh        ← Fixes Vivaldi crash/session recovery dialog on start
-    ├── check-hardware.sh              ← Verifies VA-API, GPU, KVM after reboot
-    ├── setup-kvm.sh                   ← KVM/QEMU setup (libvirtd, user groups, NAT network)
-    ├── setup-damian-container.sh      ← Fedora toolbox: node, npm, gh, Claude Code
-    └── setup-security-container.sh   ← Ubuntu 24.04 distrobox: full pentesting toolkit
+    ├── check-hardware.sh              ← Verifies VA-API, GPU, KVM after reboot — writes state
+    ├── setup-kvm.sh                   ← KVM/QEMU setup (libvirtd, user groups, NAT network) — writes state
+    ├── setup-damian-container.sh      ← Toolbox damian: node, npm, gh, Claude Code + plugins — writes state
+    └── setup-security-container.sh   ← Distrobox security: pentesting toolkit — writes state
 ```
 
 ---
@@ -452,7 +454,10 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code.
 - [x] Hardware check script (VA-API, GPU, KVM)
 - [x] Vivaldi profile crash fix (auto on Sway start)
 - [x] Firewall baseline (public zone, SSH + mDNS only)
-- [x] bootstrap.sh — single entry point for fresh install
+- [x] bootstrap.sh — single entry point for fresh install, with step-by-step error tracking
+- [x] verify.sh — full post-install verification with checklist, failure summary, and fix commands
+- [x] lib-install.sh — shared state tracking (`~/.dotfiles-install-state`) used by all scripts
+- [x] All install scripts write state — on error, shows exactly what failed and how to resume
 
 ## What is planned / in progress
 

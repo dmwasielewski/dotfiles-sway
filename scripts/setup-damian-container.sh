@@ -1,56 +1,99 @@
 #!/bin/bash
-# Setup damian toolbox container — Fedora 43 dev environment
-# Run this after first reboot: bash ~/dotfiles-sway/scripts/setup-damian-container.sh
+# setup-damian-container.sh — Fedora 43 toolbox: node, npm, gh, Claude Code + plugins
+# Run after first reboot: bash ~/dotfiles-sway/scripts/setup-damian-container.sh
 
-set -e
+set -euo pipefail
+
+DOTFILES="$HOME/dotfiles-sway"
+source "$DOTFILES/scripts/lib-install.sh"
 
 CONTAINER="damian"
 
-echo "==> Creating toolbox container..."
-if toolbox list | grep -q "$CONTAINER"; then
-    echo "==> Toolbox '$CONTAINER' already exists — skipping."
+echo ""
+echo -e "${BOLD}${CYAN}╔══════════════════════════════════════════╗${NC}"
+echo -e "${BOLD}${CYAN}║   Toolbox 'damian' — setup               ║${NC}"
+echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════╝${NC}"
+echo ""
+
+# ── Create toolbox if missing ────────────────────────────────────────────
+if toolbox list 2>/dev/null | grep -qw "$CONTAINER"; then
+    echo -e "${YELLOW}==> Toolbox '$CONTAINER' already exists — skipping.${NC}"
+    step_done "TOOLBOX_CREATED"
 else
-    toolbox create --image registry.fedoraproject.org/fedora-toolbox:43 "$CONTAINER"
+    run_step "TOOLBOX_CREATED" "Creating toolbox '$CONTAINER'" \
+        toolbox create --image registry.fedoraproject.org/fedora-toolbox:43 "$CONTAINER"
 fi
 
-echo "==> Installing packages in $CONTAINER..."
-toolbox run --container "$CONTAINER" sudo dnf install -y nodejs npm gh
+# ── Install packages ─────────────────────────────────────────────────────
+run_step "TOOLBOX_PACKAGES" "Installing node, npm, gh, git inside toolbox" \
+    toolbox run --container "$CONTAINER" sudo dnf install -y nodejs npm gh git
 
-echo "==> Configuring npm prefix (user-space)..."
-toolbox run --container "$CONTAINER" bash -c '
-    mkdir -p ~/.npm-global
-    npm config set prefix ~/.npm-global
-    grep -q "npm-global" ~/.bashrc || echo "export PATH=\$PATH:~/.npm-global/bin" >> ~/.bashrc
-'
+# ── Configure npm prefix ─────────────────────────────────────────────────
+run_step "TOOLBOX_NPM_PREFIX" "Configuring npm prefix (~/.npm-global)" \
+    toolbox run --container "$CONTAINER" bash -c '
+        mkdir -p ~/.npm-global
+        npm config set prefix ~/.npm-global
+        grep -q "npm-global" ~/.bashrc || echo "export PATH=\$PATH:~/.npm-global/bin" >> ~/.bashrc
+    '
 
-echo "==> Installing Claude Code..."
-toolbox run --container "$CONTAINER" bash -c '
-    source ~/.bashrc
-    PATH=$PATH:~/.npm-global/bin npm install -g @anthropic-ai/claude-code
-'
+# ── Install Claude Code ──────────────────────────────────────────────────
+run_step "CLAUDE_CODE_INSTALLED" "Installing Claude Code" \
+    toolbox run --container "$CONTAINER" bash -c '
+        source ~/.bashrc
+        PATH=$PATH:~/.npm-global/bin npm install -g @anthropic-ai/claude-code
+    '
 
-echo "==> Installing Claude Code plugins..."
+# ── Install Claude Code plugins ──────────────────────────────────────────
+echo -e "\n${CYAN}==> Installing Claude Code plugins...${NC}"
 toolbox run --container "$CONTAINER" bash -c '
     source ~/.bashrc
     PATH=$PATH:~/.npm-global/bin
     claude plugin install superpowers@claude-plugins-official --yes 2>/dev/null || true
     claude plugin install code-simplifier@claude-plugins-official --yes 2>/dev/null || true
     claude plugin install context7@claude-plugins-official --yes 2>/dev/null || true
-    echo "Plugins installed."
-'
+' && step_done "CLAUDE_PLUGINS_INSTALLED" \
+  || { step_failed "CLAUDE_PLUGINS_INSTALLED"
+       echo -e "${YELLOW}⚠ Plugins: install manually after entering the container:${NC}"
+       echo -e "  toolbox enter damian"
+       echo -e "  claude plugin install superpowers@claude-plugins-official --yes"
+     }
 
+# ── Verify ───────────────────────────────────────────────────────────────
+echo -e "\n${CYAN}==> Verifying toolbox 'damian'...${NC}"
+VERIFY_FAIL=0
+for tool in node npm gh claude git; do
+    if toolbox run --container "$CONTAINER" which "$tool" &>/dev/null 2>&1; then
+        echo -e "  ${GREEN}✓${NC} $tool"
+    else
+        echo -e "  ${RED}✗${NC} $tool — MISSING"
+        ((VERIFY_FAIL++))
+    fi
+done
+
+if [[ $VERIFY_FAIL -eq 0 ]]; then
+    step_done "DAMIAN_CONTAINER_READY"
+else
+    step_failed "DAMIAN_CONTAINER_READY"
+fi
+
+# ── Summary ──────────────────────────────────────────────────────────────
 echo ""
-echo "=========================================="
-echo " damian container ready!"
-echo " Enter container: toolbox enter damian"
-echo " Run Claude Code: claude"
-echo "=========================================="
+echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${BOLD} Toolbox 'damian' ready!${NC}"
+echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-echo "==> ANTHROPIC_API_KEY setup..."
-echo "Add your key to ~/.bashrc inside the container:"
-echo '  echo '"'"'export ANTHROPIC_API_KEY="your-key-here"'"'"' >> ~/.bashrc'
-echo "Get your key at: https://console.anthropic.com/settings/keys"
+echo -e " Enter container:  ${CYAN}toolbox enter damian${NC}"
+echo -e " Run Claude Code:  ${CYAN}claude${NC}"
 echo ""
-echo "==> claude login (OAuth via browser — manual step):"
-echo "  toolbox enter damian"
-echo "  claude login"
+echo -e " ${YELLOW}Manual steps required:${NC}"
+echo ""
+echo -e "  1. Set your API key (inside damian container):"
+echo -e "     ${CYAN}echo 'export ANTHROPIC_API_KEY=\"your-key\"' >> ~/.bashrc${NC}"
+echo -e "     Get key: https://console.anthropic.com/settings/keys"
+echo ""
+echo -e "  2. Log in to Claude Code:"
+echo -e "     ${CYAN}toolbox enter damian${NC}  →  ${CYAN}claude login${NC}"
+echo ""
+echo -e "  3. Log in to GitHub CLI:"
+echo -e "     ${CYAN}toolbox enter damian${NC}  →  ${CYAN}gh auth login${NC}"
+echo ""
