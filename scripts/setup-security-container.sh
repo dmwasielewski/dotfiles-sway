@@ -1,5 +1,5 @@
 #!/bin/bash
-# setup-security-container.sh — Ubuntu 24.04 distrobox with full pentesting toolkit
+# setup-security-container.sh — Ubuntu 26.04 LTS distrobox with full pentesting toolkit
 # Run after first reboot: bash ~/dotfiles-sway/scripts/setup-security-container.sh
 
 set -euo pipefail
@@ -19,7 +19,7 @@ if distrobox list 2>/dev/null | grep -q "security"; then
     step_done "SECURITY_CREATED"
 else
     run_step "SECURITY_CREATED" "Creating security container (Ubuntu 24.04)" \
-        distrobox create --name security --image ubuntu:24.04
+        distrobox create --name security --image ubuntu:26.04
 fi
 
 # ── Base packages ────────────────────────────────────────────────────────

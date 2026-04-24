@@ -172,7 +172,7 @@ Managed by `scripts/setup-damian-container.sh`. Use `toolbox enter damian` to en
 
 npm prefix is set to `~/.npm-global` — global npm packages visible from host too.
 
-### Layer 4: distrobox `security` (Ubuntu 24.04 pentesting)
+### Layer 4: distrobox `security` (Ubuntu 26.04 LTS pentesting)
 
 Managed by `scripts/setup-security-container.sh`. Use `distrobox enter security` to enter.
 
