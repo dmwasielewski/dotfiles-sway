@@ -15,6 +15,7 @@ mkdir -p ~/.config/waybar
 mkdir -p ~/.config/foot
 mkdir -p ~/.config/mako
 mkdir -p ~/.local/share/applications
+mkdir -p ~/.claude
 
 echo "==> Creating user directories..."
 mkdir -p ~/Pictures
@@ -35,6 +36,7 @@ ln -sf "$DOTFILES/.bashrc"                                    ~/.bashrc
 ln -sf "$DOTFILES/applications/claude-ai.desktop"             ~/.local/share/applications/claude-ai.desktop
 ln -sf "$DOTFILES/applications/chatgpt.desktop"               ~/.local/share/applications/chatgpt.desktop
 ln -sf "$DOTFILES/applications/whatsapp.desktop"              ~/.local/share/applications/whatsapp.desktop
+ln -sf "$DOTFILES/claude/settings.json"                        ~/.claude/settings.json
 update-desktop-database ~/.local/share/applications/
 
 # Make scripts executable

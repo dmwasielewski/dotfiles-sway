@@ -341,6 +341,97 @@ These rules apply whenever an AI assists with this project:
 
 ---
 
+## Claude Code configuration
+
+Claude Code is installed inside the `damian` toolbox container. Its configuration is stored in `~/.claude/` which is shared with the host.
+
+### settings.json
+
+Location: `~/.claude/settings.json` — symlinked from `dotfiles-sway/claude/settings.json` by `setup.sh`.
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "ccstatusline",
+    "padding": 0
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "context7@claude-plugins-official": true
+  }
+}
+```
+
+- `ccstatusline` — displays Claude Code state in Waybar (idle/working/waiting/error)
+- Plugins are enabled globally for all projects
+
+### Plugins installed
+
+All three plugins are installed automatically by `setup-damian-container.sh`:
+
+| Plugin ID | Version | Purpose |
+|---|---|---|
+| `superpowers@claude-plugins-official` | 5.0.7 | Skills system — brainstorming, debugging, TDD, code review, plans, git worktrees, etc. |
+| `code-simplifier@claude-plugins-official` | 1.0.0 | Code review and simplification skill |
+| `context7@claude-plugins-official` | latest | Fetches live library/framework documentation on demand |
+
+Plugins are installed from the official marketplace: `anthropics/claude-plugins-official` on GitHub.
+
+Install command (run inside the `damian` container):
+```bash
+claude plugin install superpowers@claude-plugins-official --yes
+claude plugin install code-simplifier@claude-plugins-official --yes
+claude plugin install context7@claude-plugins-official --yes
+```
+
+### MCP servers (cloud — require OAuth login)
+
+These connect via the Claude.ai account and **cannot be automated** — they require browser-based OAuth login on first use. They work automatically after login is done once.
+
+| MCP | Purpose |
+|---|---|
+| Gmail | Read/send email, manage labels |
+| Google Calendar | List/create/update events |
+| Google Drive | Read/create files |
+| Slack | Read channels, send messages (requires re-auth) |
+| context7 | Library docs (via plugin — no auth needed) |
+| sequential-thinking | Structured reasoning tool |
+
+To connect MCPs: open `claude.ai` → Settings → Integrations → connect each service.
+
+### Post-install manual steps for Claude Code
+
+These cannot be automated and must be done manually after first boot:
+
+1. **API key** — add to `~/.bashrc` inside the `damian` container:
+   ```bash
+   echo 'export ANTHROPIC_API_KEY="your-key-here"' >> ~/.bashrc
+   ```
+   Get key at: `https://console.anthropic.com/settings/keys`
+
+2. **Claude login** (OAuth):
+   ```bash
+   toolbox enter damian
+   claude login
+   ```
+
+3. **MCP integrations** — log in to each at `claude.ai` → Settings → Integrations
+
+---
+
+## ChatGPT
+
+ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code.
+
+- **Shortcut:** `applications/chatgpt.desktop` — symlinked to `~/.local/share/applications/`
+- **Autostart:** opens on workspace 4 alongside Claude AI PWA
+- **Launcher:** accessible via `Mod+D` (rofi) as "ChatGPT"
+- **No installation needed** — it's a web PWA opened in Vivaldi
+
+---
+
 ## What is complete
 
 - [x] Sway config (borders, keybindings, idle/lock, touchpad, autostart)
@@ -351,8 +442,10 @@ These rules apply whenever an AI assists with this project:
 - [x] Fonts (JetBrainsMono Nerd Font, Font Awesome)
 - [x] All Flatpak apps installed via setup.sh
 - [x] All system packages via packages.sh (rpm-ostree)
-- [x] PWA shortcuts (Claude, ChatGPT, WhatsApp)
+- [x] PWA shortcuts (Claude AI, ChatGPT, WhatsApp)
 - [x] toolbox `damian` with node, npm, gh, Claude Code
+- [x] Claude Code settings.json symlinked from dotfiles
+- [x] Claude Code plugins auto-installed (superpowers, code-simplifier, context7)
 - [x] distrobox `security` with full pentesting toolkit
 - [x] KVM/QEMU setup script
 - [x] Windows 11 Pro VM installed and running
@@ -367,6 +460,19 @@ These rules apply whenever an AI assists with this project:
 - [ ] Kali Linux VM
 - [ ] virtiofs fully working in Windows 11 (VirtioFsSvc setup)
 - [ ] NordVPN — automate install in bootstrap (currently manual CLI script)
-- [ ] ANTHROPIC_API_KEY setup automation in damian container
 - [ ] `gh auth login` automation
-- [ ] Active Directory lab: Domain Controller, joined workstations, GPO, users
+
+## Manual post-install steps (cannot be automated)
+
+These require human interaction — document them so nothing is forgotten after a fresh install:
+
+| Step | Command / Where |
+|---|---|
+| Set ANTHROPIC_API_KEY | `echo 'export ANTHROPIC_API_KEY="key"' >> ~/.bashrc` inside `damian` container |
+| Claude login (OAuth) | `toolbox enter damian` → `claude login` |
+| GitHub CLI login | `toolbox enter damian` → `gh auth login` |
+| MCP integrations (Gmail, Calendar, Drive, Slack) | `claude.ai` → Settings → Integrations |
+| Bluetooth pairing | `bluetoothctl` → `power on` → `scan on` → `pair <MAC>` |
+| NordVPN install | Official Linux CLI script from nordvpn.com |
+| Bitwarden / Obsidian / Spotify login | In-app after Flatpak install |
+| Vivaldi: sign in, restore bookmarks/extensions | In-app after Flatpak install |

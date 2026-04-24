@@ -266,19 +266,22 @@ pair <MAC_ADDRESS>
 ## Structure
 ```
 dotfiles-sway/
+├── CLAUDE.md                # AI assistant instructions (read this first)
 ├── sway/                    # Sway window manager config
 ├── waybar/                  # Waybar status bar config + style
 ├── foot/                    # Foot terminal config
 ├── mako/                    # Mako notification config
-├── applications/            # PWA desktop shortcuts (Claude, ChatGPT, WhatsApp)
+├── claude/
+│   └── settings.json        # Claude Code settings (plugins, statusline) → symlinked to ~/.claude/settings.json
+├── applications/            # PWA desktop shortcuts (Claude AI, ChatGPT, WhatsApp)
 ├── scripts/
 │   ├── autostart.sh                   # Sway autostart: Vivaldi, Claude PWA, ChatGPT PWA, Obsidian
 │   ├── fix-vivaldi-profiles.sh        # Fix Vivaldi crash/session recovery dialog
 │   ├── setup-kvm.sh                   # KVM/QEMU virtualisation setup (libvirtd, groups, network)
-│   ├── setup-damian-container.sh      # Fedora toolbox: node, npm, gh, Claude Code
+│   ├── setup-damian-container.sh      # Fedora toolbox: node, npm, gh, Claude Code + plugins
 │   ├── setup-security-container.sh    # Ubuntu distrobox: full pentesting toolkit
 │   └── check-hardware.sh             # Hardware verification script
-├── setup.sh                 # Symlinks, Flatpaks, toolbox, fonts
+├── setup.sh                 # Symlinks, Flatpaks, toolbox, fonts, Claude settings
 ├── packages.sh              # rpm-ostree system packages
 └── bootstrap.sh             # Fresh install entry point
 ```

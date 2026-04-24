@@ -29,6 +29,16 @@ toolbox run --container "$CONTAINER" bash -c '
     PATH=$PATH:~/.npm-global/bin npm install -g @anthropic-ai/claude-code
 '
 
+echo "==> Installing Claude Code plugins..."
+toolbox run --container "$CONTAINER" bash -c '
+    source ~/.bashrc
+    PATH=$PATH:~/.npm-global/bin
+    claude plugin install superpowers@claude-plugins-official --yes 2>/dev/null || true
+    claude plugin install code-simplifier@claude-plugins-official --yes 2>/dev/null || true
+    claude plugin install context7@claude-plugins-official --yes 2>/dev/null || true
+    echo "Plugins installed."
+'
+
 echo ""
 echo "=========================================="
 echo " damian container ready!"
@@ -40,3 +50,7 @@ echo "==> ANTHROPIC_API_KEY setup..."
 echo "Add your key to ~/.bashrc inside the container:"
 echo '  echo '"'"'export ANTHROPIC_API_KEY="your-key-here"'"'"' >> ~/.bashrc'
 echo "Get your key at: https://console.anthropic.com/settings/keys"
+echo ""
+echo "==> claude login (OAuth via browser — manual step):"
+echo "  toolbox enter damian"
+echo "  claude login"
