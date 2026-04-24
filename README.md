@@ -89,6 +89,18 @@ bash ~/dotfiles-sway/scripts/setup-damian-container.sh
 bash ~/dotfiles-sway/scripts/setup-security-container.sh
 ```
 
+8. Run full verification:
+```bash
+bash ~/dotfiles-sway/scripts/verify.sh
+```
+
+`verify.sh` checks every component of the installation and shows a summary:
+- ✓ passed / ✗ failed / ⚠ warnings
+- For each failure: exact command to fix it
+- Install state from `~/.dotfiles-install-state` (written by each script)
+
+If anything failed during installation, re-run the relevant script — all scripts are safe to run multiple times and will skip already-completed steps.
+
 ---
 
 ## Sway configuration
@@ -275,12 +287,14 @@ dotfiles-sway/
 │   └── settings.json        # Claude Code settings (plugins, statusline) → symlinked to ~/.claude/settings.json
 ├── applications/            # PWA desktop shortcuts (Claude AI, ChatGPT, WhatsApp)
 ├── scripts/
+│   ├── lib-install.sh                 # Shared helpers: state tracking, run_step()
+│   ├── verify.sh                      # Post-install verification — checks all components
 │   ├── autostart.sh                   # Sway autostart: Vivaldi, Claude PWA, ChatGPT PWA, Obsidian
 │   ├── fix-vivaldi-profiles.sh        # Fix Vivaldi crash/session recovery dialog
-│   ├── setup-kvm.sh                   # KVM/QEMU virtualisation setup (libvirtd, groups, network)
-│   ├── setup-damian-container.sh      # Fedora toolbox: node, npm, gh, Claude Code + plugins
-│   ├── setup-security-container.sh    # Ubuntu distrobox: full pentesting toolkit
-│   └── check-hardware.sh             # Hardware verification script
+│   ├── check-hardware.sh              # Hardware check (GPU, VA-API, audio, ...) — writes state
+│   ├── setup-kvm.sh                   # KVM/QEMU setup (libvirtd, groups, network) — writes state
+│   ├── setup-damian-container.sh      # Toolbox damian: node, npm, gh, Claude Code + plugins — writes state
+│   └── setup-security-container.sh   # Distrobox security: pentesting toolkit — writes state
 ├── setup.sh                 # Symlinks, Flatpaks, toolbox, fonts, Claude settings
 ├── packages.sh              # rpm-ostree system packages
 └── bootstrap.sh             # Fresh install entry point
