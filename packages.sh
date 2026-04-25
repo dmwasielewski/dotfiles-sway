@@ -30,7 +30,22 @@ if lspci | grep -qi "Intel.*Graphics"; then
     PACKAGES="$PACKAGES intel-media-driver"
 fi
 
-rpm-ostree install --allow-inactive $PACKAGES
+# Filter out packages already installed (rpm-ostree errors on already-layered packages)
+MISSING=()
+for pkg in $PACKAGES; do
+    if rpm -q "$pkg" &>/dev/null 2>&1; then
+        echo "==> $pkg already installed — skipping"
+    else
+        MISSING+=("$pkg")
+    fi
+done
+
+if [ ${#MISSING[@]} -eq 0 ]; then
+    echo "==> All packages already installed — nothing to do."
+else
+    echo "==> Installing new packages: ${MISSING[*]}"
+    rpm-ostree install "${MISSING[@]}"
+fi
 
 # AMD GPU check
 if lspci | grep -qi "AMD\|ATI"; then
