@@ -30,7 +30,7 @@ if lspci | grep -qi "Intel.*Graphics"; then
     PACKAGES="$PACKAGES intel-media-driver"
 fi
 
-rpm-ostree install $PACKAGES
+rpm-ostree install --allow-inactive $PACKAGES
 
 # AMD GPU check
 if lspci | grep -qi "AMD\|ATI"; then
