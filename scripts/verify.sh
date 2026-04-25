@@ -209,6 +209,37 @@ else
     fail "Toolbox 'damian'  NOT FOUND" "bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
 fi
 
+# ── 5b. Voice typing ─────────────────────────────────────────────────────
+section "5b. Voice typing"
+
+if host which wtype &>/dev/null 2>&1; then
+    pass "wtype (Wayland text injection)"
+else
+    fail "wtype  MISSING" "bash ~/dotfiles-sway/packages.sh && systemctl reboot"
+fi
+
+if host which arecord &>/dev/null 2>&1; then
+    pass "arecord (audio recording)"
+else
+    fail "arecord  MISSING (alsa-utils)" "bash ~/dotfiles-sway/packages.sh && systemctl reboot"
+fi
+
+if host toolbox list 2>/dev/null | grep -qw "damian"; then
+    if host toolbox run --container damian python3 -c "import faster_whisper" &>/dev/null 2>&1; then
+        pass "faster-whisper AI model (Whisper small) in damian toolbox"
+    else
+        fail "faster-whisper  MISSING in damian toolbox" \
+             "bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
+    fi
+fi
+
+if [[ -f ~/dotfiles-sway/scripts/voice-type-start.sh ]] && \
+   [[ -f ~/dotfiles-sway/scripts/voice-type-stop.sh ]]; then
+    pass "voice-type scripts present"
+else
+    fail "voice-type scripts  MISSING" "cd ~/dotfiles-sway && git pull"
+fi
+
 # ── 6. Distrobox 'security' ───────────────────────────────────────────────
 section "6. Distrobox 'security' (pentesting)"
 

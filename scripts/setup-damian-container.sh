@@ -58,6 +58,15 @@ toolbox run --container "$CONTAINER" bash -c '
        echo -e "  claude plugin install superpowers@claude-plugins-official --yes"
      }
 
+# ── Voice typing — faster-whisper ───────────────────────────────────────
+run_step "VOICE_WHISPER" "Installing faster-whisper (local AI speech recognition)" \
+    toolbox run --container "$CONTAINER" bash -c '
+        pip3 install faster-whisper --user --quiet
+        # Pre-download the small model (~470 MB) to avoid delay on first use
+        python3 -c "from faster_whisper import WhisperModel; WhisperModel(\"small\", device=\"cpu\", compute_type=\"int8\")"
+        grep -q ".local/bin" ~/.bashrc || echo "export PATH=\$PATH:\$HOME/.local/bin" >> ~/.bashrc
+    '
+
 # ── Verify ───────────────────────────────────────────────────────────────
 echo -e "\n${CYAN}==> Verifying toolbox 'damian'...${NC}"
 VERIFY_FAIL=0

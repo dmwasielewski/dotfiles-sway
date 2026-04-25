@@ -126,6 +126,10 @@ input "type:touchpad" {
     # Lock screen
     bindsym $mod+Shift+Escape exec loginctl lock-session
 
+    # Voice typing — push-to-talk: hold Mod+T to record, release to transcribe and type
+    bindsym --no-repeat $mod+t exec ~/dotfiles-sway/scripts/voice-type-start.sh
+    bindsym --release    $mod+t exec ~/dotfiles-sway/scripts/voice-type-stop.sh
+
     # Kill focused window
     bindsym $mod+Shift+q kill
 

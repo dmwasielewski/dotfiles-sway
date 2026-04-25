@@ -62,7 +62,10 @@ dotfiles-sway/
     ├── check-hardware.sh              ← Verifies VA-API, GPU, KVM after reboot — writes state
     ├── setup-kvm.sh                   ← KVM/QEMU setup (libvirtd, user groups, NAT network) — writes state
     ├── setup-damian-container.sh      ← Toolbox damian: node, npm, gh, Claude Code + plugins — writes state
-    └── setup-security-container.sh   ← Distrobox security: pentesting toolkit — writes state
+    ├── setup-security-container.sh   ← Distrobox security: pentesting toolkit — writes state
+    ├── voice-type-start.sh           ← Voice typing: start recording on Mod+T press
+    ├── voice-type-stop.sh            ← Voice typing: stop, transcribe, inject text on Mod+T release
+    └── voice-transcribe.py          ← Whisper AI transcription (runs inside damian toolbox)
 ```
 
 ---
@@ -135,6 +138,8 @@ Managed by `packages.sh`. Install with `rpm-ostree install`, requires reboot.
 | `virt-install` | CLI VM creation |
 | `bridge-utils` | Network bridging for VMs |
 | `intel-media-driver` | Intel GPU only (auto-detected) |
+| `wtype` | Wayland keyboard injection (voice typing) |
+| `alsa-utils` | `arecord` audio recording (voice typing) |
 
 AMD GPU: mesa-va-drivers is already in Fedora Atomic base — no extra package needed.
 
@@ -169,6 +174,7 @@ Managed by `scripts/setup-damian-container.sh`. Use `toolbox enter damian` to en
 | `gh` | GitHub CLI |
 | `claude` (`@anthropic-ai/claude-code`) | Claude Code CLI |
 | `ccstatusline` | Claude Code Waybar status (bundled with claude-code) |
+| `faster-whisper` | Local Whisper AI speech recognition (voice typing) |
 
 npm prefix is set to `~/.npm-global` — global npm packages visible from host too.
 
@@ -261,6 +267,7 @@ Solid black (`#000000`) — no image.
 | `Mod+Shift+C` | Reload Sway config |
 | `Mod+Shift+E` | Exit Sway |
 | `Mod+Shift+Escape` | Lock screen |
+| `Mod+T` (hold) | Voice typing — hold to record, release to transcribe and type |
 | `Print` | Full screenshot → `~/Pictures/` |
 | `Mod+Print` | Region screenshot (slurp) |
 | `Mod+H/J/K/L` | Focus (Vim-style) |
@@ -458,6 +465,7 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code.
 - [x] verify.sh — full post-install verification with checklist, failure summary, and fix commands
 - [x] lib-install.sh — shared state tracking (`~/.dotfiles-install-state`) used by all scripts
 - [x] All install scripts write state — on error, shows exactly what failed and how to resume
+- [x] Voice typing — push-to-talk `Mod+T` with local Whisper AI (faster-whisper, no cloud)
 
 ## What is planned / in progress
 

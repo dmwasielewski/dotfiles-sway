@@ -20,7 +20,9 @@ echo "==> Layering system packages (reboot required after)..."
 # virt-viewer   - VM display viewer
 # virt-install  - CLI VM creation tool
 # bridge-utils  - network bridging for VMs
-PACKAGES="mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer virt-install bridge-utils"
+# wtype       - Wayland keyboard input injection (used by voice typing)
+# alsa-utils  - arecord audio recording (used by voice typing)
+PACKAGES="mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer virt-install bridge-utils wtype alsa-utils"
 
 # Intel GPU check
 if lspci | grep -qi "Intel.*Graphics"; then

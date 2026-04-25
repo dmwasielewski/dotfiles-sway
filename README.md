@@ -38,6 +38,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Screenshot tool (grim + slurp)
 - Hardware acceleration (VA-API via mesa/amdgpu)
 - Firewall baseline (public zone, SSH + mDNS only)
+- Voice typing — push-to-talk (`Mod+T`) with local Whisper AI, no cloud required
 
 ---
 
@@ -156,6 +157,7 @@ Solid black (`#000000`) — no image, no distractions.
 | `Mod+Shift+E` | Exit Sway session |
 | `Mod+C` | Clipboard history picker (clipman + rofi) |
 | `Mod+Shift+Escape` | Lock screen immediately (loginctl) |
+| `Mod+T` (hold) | Voice typing — record speech, release to transcribe and type |
 | `Print` | Full screenshot → `~/Pictures/` |
 | `Mod+Print` | Region screenshot (slurp) → `~/Pictures/` |
 
@@ -294,11 +296,38 @@ dotfiles-sway/
 │   ├── check-hardware.sh              # Hardware check (GPU, VA-API, audio, ...) — writes state
 │   ├── setup-kvm.sh                   # KVM/QEMU setup (libvirtd, groups, network) — writes state
 │   ├── setup-damian-container.sh      # Toolbox damian: node, npm, gh, Claude Code + plugins — writes state
-│   └── setup-security-container.sh   # Distrobox security: pentesting toolkit — writes state
+│   ├── setup-security-container.sh   # Distrobox security: pentesting toolkit — writes state
+│   ├── voice-type-start.sh           # Voice typing: start recording (Mod+T press)
+│   ├── voice-type-stop.sh            # Voice typing: stop recording, transcribe, inject text (Mod+T release)
+│   └── voice-transcribe.py          # Whisper AI transcription (runs inside damian toolbox)
 ├── setup.sh                 # Symlinks, Flatpaks, toolbox, fonts, Claude settings
 ├── packages.sh              # rpm-ostree system packages
 └── bootstrap.sh             # Fresh install entry point
 ```
+
+---
+
+## Voice typing
+
+Push-to-talk voice typing using local Whisper AI — no cloud, no internet required.
+
+**How to use:**
+1. Hold `Mod+T` — recording starts (notification appears)
+2. Speak your text
+3. Release `Mod+T` — transcription runs, text is typed into the active window
+
+**Setup (runs automatically during `setup-damian-container.sh`):**
+- `faster-whisper` (Whisper AI model `small`, ~470 MB) installed inside the `damian` toolbox
+- `wtype` (Wayland text injection) and `alsa-utils` (`arecord`) on the host via `packages.sh`
+
+**Performance (Ryzen 5 5600H, CPU only):**
+- First run after boot: ~15–20 s (model loads from disk)
+- Subsequent runs: ~10–15 s per utterance
+- Language: auto-detected (works for Polish, English, and others)
+
+**To increase accuracy (slower):** edit `scripts/voice-transcribe.py` and change `"small"` to `"medium"`.
+
+**Audio file:** recorded to `~/.cache/voice-type/voice-input.wav`, deleted after transcription.
 
 ---
 
@@ -329,7 +358,8 @@ Host (rpm-ostree immutable)
 │   ├─ git
 │   ├─ gh (GitHub CLI)
 │   ├─ claude (Claude Code)
-│   └─ ccstatusline (Claude Code Waybar integration)
+│   ├─ ccstatusline (Claude Code Waybar integration)
+│   └─ faster-whisper (local Whisper AI for voice typing)
 │
 └─ distrobox: security (Ubuntu 24.04 LTS) — pentesting & security research
     ├─ Network:    nmap, masscan, wireshark, tcpdump, netcat, socat
