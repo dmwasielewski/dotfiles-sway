@@ -58,10 +58,10 @@ toolbox run --container "$CONTAINER" bash -c '
        echo -e "  claude plugin install superpowers@claude-plugins-official --yes"
      }
 
-# ── Voice typing — faster-whisper ───────────────────────────────────────
-run_step "VOICE_WHISPER" "Installing faster-whisper (local AI speech recognition)" \
+# ── Voice typing — faster-whisper + google-genai ────────────────────────
+run_step "VOICE_WHISPER" "Installing faster-whisper + google-genai (voice typing)" \
     toolbox run --container "$CONTAINER" bash -c '
-        pip3 install faster-whisper --user --quiet
+        pip3 install faster-whisper google-genai --user --quiet
         # Pre-download the small model (~470 MB) to avoid delay on first use
         python3 -c "from faster_whisper import WhisperModel; WhisperModel(\"small\", device=\"cpu\", compute_type=\"int8\")"
         grep -q ".local/bin" ~/.bashrc || echo "export PATH=\$PATH:\$HOME/.local/bin" >> ~/.bashrc
@@ -96,7 +96,12 @@ echo -e " Run Claude Code:  ${CYAN}claude${NC}"
 echo ""
 echo -e " ${YELLOW}Manual steps required:${NC}"
 echo ""
-echo -e "  1. Set your API key (inside damian container):"
+echo -e "  1. Gemini API key for English voice correction:
+     ${CYAN}mkdir -p ~/.config/voice-type${NC}
+     ${CYAN}echo \"YOUR_KEY\" > ~/.config/voice-type/gemini-api-key && chmod 600 ~/.config/voice-type/gemini-api-key${NC}
+     Get free key: https://aistudio.google.com
+
+  2. Set your Anthropic API key (inside damian container):"
 echo -e "     ${CYAN}echo 'export ANTHROPIC_API_KEY=\"your-key\"' >> ~/.bashrc${NC}"
 echo -e "     Get key: https://console.anthropic.com/settings/keys"
 echo ""

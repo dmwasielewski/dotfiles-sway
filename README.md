@@ -309,21 +309,33 @@ dotfiles-sway/
 
 ## Voice typing
 
-Push-to-talk voice typing using local Whisper AI — no cloud, no internet required.
+Push-to-talk voice typing with local Whisper AI transcription and Gemini AI English correction.
 
 **How to use:**
 1. Hold `Mod+T` — recording starts (notification appears)
-2. Speak your text
-3. Release `Mod+T` — transcription runs, text is typed into the active window
+2. Speak in Polish or English
+3. Release `Mod+T` — text is transcribed and typed into the active window
+
+**Language behaviour:**
+- **Polish** — transcribed locally by Whisper, typed as-is. No internet required.
+- **English** — transcribed by Whisper, then sent to Gemini (UK English) for grammar and naturalness correction. Corrected text is typed.
 
 **Setup (runs automatically during `setup-damian-container.sh`):**
-- `faster-whisper` (Whisper AI model `small`, ~470 MB) installed inside the `damian` toolbox
-- `wtype` (Wayland text injection) and `alsa-utils` (`arecord`) on the host via `packages.sh`
+- `faster-whisper` (Whisper model `small`, ~470 MB) — local speech recognition
+- `google-genai` — Gemini API client for English correction
+- `wtype` and `alsa-utils` (`arecord`) on the host via `packages.sh`
+
+**Gemini API key (required for English correction):**
+```bash
+mkdir -p ~/.config/voice-type
+echo "YOUR_GEMINI_API_KEY" > ~/.config/voice-type/gemini-api-key
+chmod 600 ~/.config/voice-type/gemini-api-key
+```
+Get a free key at: https://aistudio.google.com
 
 **Performance (Ryzen 5 5600H, CPU only):**
-- First run after boot: ~15–20 s (model loads from disk)
-- Subsequent runs: ~10–15 s per utterance
-- Language: auto-detected (works for Polish, English, and others)
+- First run after boot: ~15–20 s (Whisper model loads from disk)
+- Subsequent runs: ~10–15 s per utterance (+ ~1 s Gemini API for English)
 
 **To increase accuracy (slower):** edit `scripts/voice-transcribe.py` and change `"small"` to `"medium"`.
 

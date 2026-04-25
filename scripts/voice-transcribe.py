@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-# voice-transcribe.py — transcribe audio with faster-whisper, then correct with LanguageTool
+# voice-transcribe.py — transcribe audio with faster-whisper, correct English with Gemini
 
 import sys
 import os
+import json
 
 audio_file = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser(
     "~/.cache/voice-type/voice-input.wav"
 )
 
 from faster_whisper import WhisperModel
-import language_tool_python
 
 model = WhisperModel("small", device="cpu", compute_type="int8")
 segments, info = model.transcribe(
@@ -17,18 +17,47 @@ segments, info = model.transcribe(
     language=None,
     beam_size=1,
     vad_filter=True,
+    initial_prompt="The speaker uses either Polish or British English only. No other languages.",
 )
 
-# Polish and Russian share acoustic features — override false Russian detections
-detected_lang = info.language if info.language in ("pl", "en") else "pl"
+is_polish = (info.language == "pl")
 
 text = " ".join(s.text for s in segments).strip()
 
 if not text:
     sys.exit(0)
 
-tool = language_tool_python.LanguageTool(detected_lang)
-text = language_tool_python.utils.correct(text, tool.check(text))
-tool.close()
+if is_polish:
+    print(text)
+    sys.exit(0)
 
-print(text)
+key_file = os.path.expanduser("~/.config/voice-type/gemini-api-key")
+try:
+    api_key = open(key_file).read().strip()
+except FileNotFoundError:
+    print(text)
+    sys.exit(0)
+
+from google import genai
+from google.genai import types
+
+client = genai.Client(api_key=api_key)
+
+prompt = f"""You are a UK English language tutor. The text below was spoken in English by a non-native speaker and transcribed from speech. Always treat it as spoken UK English regardless of how it looks.
+
+Rewrite it as natural spoken UK English: fix grammar, verb tenses, word choice, prepositions, and sentence structure.
+Keep the natural spoken flow — do NOT make it sound formal or written.
+Return ONLY the corrected text, nothing else.
+
+Text: {text}"""
+
+try:
+    response = client.models.generate_content(
+        model="gemini-3.1-flash-lite-preview",
+        contents=prompt,
+    )
+    corrected = response.text.strip()
+except Exception:
+    corrected = text
+
+print(corrected)
