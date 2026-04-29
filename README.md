@@ -38,7 +38,8 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Screenshot tool (grim + slurp)
 - Hardware acceleration (VA-API via mesa/amdgpu)
 - Firewall baseline (public zone, SSH + mDNS only)
-- Voice typing — push-to-talk (`Mod+T`) with local Whisper AI, no cloud required
+- Voice typing — push-to-talk (`Mod+T`) with local Whisper AI + Gemini UK English correction
+- Neovim — modern text editor, available system-wide
 
 ---
 
@@ -340,6 +341,41 @@ Get a free key at: https://aistudio.google.com
 **To increase accuracy (slower):** edit `scripts/voice-transcribe.py` and change `"small"` to `"medium"`.
 
 **Audio file:** recorded to `~/.cache/voice-type/voice-input.wav`, deleted after transcription.
+
+---
+
+## Neovim
+
+Modern text editor — Vim fork with Lua config, built-in LSP, and a large plugin ecosystem. Installed on the host via rpm-ostree so it's available everywhere (terminal, toolbox, scripts).
+
+**Open a file:**
+```bash
+nvim filename.txt
+```
+
+**Basic usage:**
+| Key | Action |
+|---|---|
+| `i` | Enter insert mode (start typing) |
+| `Esc` | Return to normal mode |
+| `:w` | Save file |
+| `:q` | Quit |
+| `:wq` | Save and quit |
+| `:q!` | Quit without saving |
+| `h/j/k/l` | Move left/down/up/right |
+| `dd` | Delete current line |
+| `u` | Undo |
+| `Ctrl+r` | Redo |
+| `/text` | Search for "text" |
+| `n` | Next search result |
+
+**Modes:**
+- **Normal mode** — default, for navigation and commands (press `Esc` to get here)
+- **Insert mode** — for typing text (press `i`)
+- **Visual mode** — for selecting text (press `v`)
+- **Command mode** — for `:w`, `:q` etc. (press `:`)
+
+**Config file:** `~/.config/nvim/init.lua` (Lua) — create to customise.
 
 ---
 

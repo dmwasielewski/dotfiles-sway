@@ -22,7 +22,8 @@ echo "==> Layering system packages (reboot required after)..."
 # bridge-utils  - network bridging for VMs
 # wtype       - Wayland keyboard input injection (used by voice typing)
 # alsa-utils  - arecord audio recording (used by voice typing)
-PACKAGES="mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer virt-install bridge-utils wtype alsa-utils"
+# neovim      - modern text editor (Vim fork), available system-wide
+PACKAGES="mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer virt-install bridge-utils wtype alsa-utils neovim"
 
 # Intel GPU check
 if lspci | grep -qi "Intel.*Graphics"; then
