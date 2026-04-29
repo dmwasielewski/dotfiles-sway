@@ -22,9 +22,9 @@ WARN=0
 declare -a FAILURES=()
 declare -a FIXES=()
 
-pass()    { echo -e "  ${GREEN}✓${NC}  $1"; ((PASS++)); }
-fail()    { echo -e "  ${RED}✗${NC}  $1"; ((FAIL++)); FAILURES+=("$1"); FIXES+=("${2:-}"); }
-warn()    { echo -e "  ${YELLOW}⚠${NC}  $1"; ((WARN++)); }
+pass()    { echo -e "  ${GREEN}✓${NC}  $1"; ((PASS+=1)); }
+fail()    { echo -e "  ${RED}✗${NC}  $1"; ((FAIL+=1)); FAILURES+=("$1"); FIXES+=("${2:-}"); }
+warn()    { echo -e "  ${YELLOW}⚠${NC}  $1"; ((WARN+=1)); }
 section() { echo -e "\n${BOLD}${BLUE}━━━ $1 ━━━${NC}"; }
 
 # Detect if running inside a toolbox container
@@ -253,11 +253,20 @@ fi
 # ── 6. Distrobox 'security' ───────────────────────────────────────────────
 section "6. Distrobox 'security' (pentesting)"
 
-if host distrobox list 2>/dev/null | grep -q "security"; then
+if host podman container exists security 2>/dev/null; then
     pass "Distrobox 'security' exists"
 
+    SECURITY_VERSION=$(host distrobox enter --name security -- bash -lc \
+        '. /etc/os-release && printf "%s" "$VERSION_ID"' 2>/dev/null || echo "unknown")
+    if [[ "$SECURITY_VERSION" == "26.04" ]]; then
+        pass "Ubuntu 26.04 in security container"
+    else
+        fail "security container is Ubuntu $SECURITY_VERSION, expected 26.04" \
+             "distrobox stop security --yes && distrobox rm security --force && bash ~/dotfiles-sway/scripts/setup-security-container.sh"
+    fi
+
     check_security_tool() {
-        if host distrobox run --name security -- which "$1" &>/dev/null 2>&1; then
+        if host distrobox enter --name security -- which "$1" &>/dev/null 2>&1; then
             pass "$1"
         else
             fail "$1  MISSING in security container" \
@@ -270,8 +279,20 @@ if host distrobox list 2>/dev/null | grep -q "security"; then
     check_security_tool "hydra"
     check_security_tool "msfconsole"
     check_security_tool "sqlmap"
+    check_security_tool "evil-winrm"
+    check_security_tool "enum4linux-ng"
+    check_security_tool "ffuf"
+    check_security_tool "wireshark"
+    check_security_tool "cmake"
 
-    if host distrobox run --name security -- test -d /opt/SecLists &>/dev/null 2>&1; then
+    if host distrobox enter --name security -- python3 -c "import impacket, pwn, unicorn" &>/dev/null 2>&1; then
+        pass "Python security libraries (impacket, pwntools, unicorn)"
+    else
+        fail "Python security libraries  MISSING in security container" \
+             "bash ~/dotfiles-sway/scripts/setup-security-container.sh"
+    fi
+
+    if host distrobox enter --name security -- test -d /opt/SecLists &>/dev/null 2>&1; then
         pass "SecLists (/opt/SecLists)"
     else
         fail "SecLists  MISSING" "bash ~/dotfiles-sway/scripts/setup-security-container.sh"

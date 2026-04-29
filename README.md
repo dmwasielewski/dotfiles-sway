@@ -32,7 +32,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 
 ### System
 - `damian` Fedora 43 toolbox container (Fedora dev environment)
-- `security` Ubuntu 24.04 LTS distrobox container — full security/pentesting toolkit
+- `security` Ubuntu 26.04 distrobox container — full security/pentesting toolkit
 - KVM/QEMU virtualisation — virt-manager, virt-install, Windows 11 / Windows Server capable
 - distrobox — for Ubuntu containers
 - Screenshot tool (grim + slurp)
@@ -438,7 +438,7 @@ Host (rpm-ostree immutable)
 │   ├─ ccstatusline (Claude Code Waybar integration)
 │   └─ faster-whisper (local Whisper AI for voice typing)
 │
-└─ distrobox: security (Ubuntu 24.04 LTS) — pentesting & security research
+└─ distrobox: security (Ubuntu 26.04) — pentesting & security research
     ├─ Network:    nmap, masscan, wireshark, tcpdump, netcat, socat
     ├─ Web:        nikto, sqlmap, gobuster, ffuf, dirb, wfuzz, burpsuite
     ├─ Passwords:  hydra, john, hashcat, medusa
@@ -545,9 +545,9 @@ ls /dev/kvm && kvm-ok 2>/dev/null || echo "check: lscpu | grep Virtualization"
 
 ## Security container
 
-Ubuntu 24.04 LTS distrobox container with a full pentesting toolkit.
+Ubuntu 26.04 distrobox container with a full pentesting toolkit.
 
-> **Upgrade note:** Ubuntu 26.04 LTS (Resolute Raccoon) was released April 2026. Switch to `ubuntu:26.04` once the Canonical apt CDN stabilises (currently returns 400 errors on some packages).
+The local image `localhost/ubuntu-security:26.04` is built from the official Docker Hub `ubuntu:26.04` image and disables apt HTTP pipelining to avoid archive `400 Bad Request` errors seen during fresh Distrobox setup.
 
 ### Setup
 ```bash

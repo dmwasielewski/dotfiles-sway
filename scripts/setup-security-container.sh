@@ -1,7 +1,5 @@
 #!/bin/bash
-# setup-security-container.sh — Ubuntu 24.04 LTS distrobox with full pentesting toolkit
-# NOTE: Ubuntu 26.04 repos have CDN issues (400 errors) as of April 2026.
-#       To upgrade later: remove container, change IMAGE to ubuntu:26.04, re-run.
+# setup-security-container.sh — Ubuntu 26.04 distrobox with full pentesting toolkit
 # Run after first reboot: bash ~/dotfiles-sway/scripts/setup-security-container.sh
 
 set -euo pipefail
@@ -10,11 +8,12 @@ DOTFILES="$HOME/dotfiles-sway"
 source "$DOTFILES/scripts/lib-install.sh"
 setup_logging "scripts/setup-security-container.sh"
 
-BASE_IMAGE="docker.io/library/ubuntu:24.04"
-FIXED_IMAGE="localhost/ubuntu-security:24.04"
+SECURITY_VERSION="26.04"
+BASE_IMAGE="docker.io/library/ubuntu:${SECURITY_VERSION}"
+FIXED_IMAGE="localhost/ubuntu-security:${SECURITY_VERSION}"
 
 # Helper: run command inside the security container
-dbox() { distrobox enter --name security -- bash -c "$*"; }
+dbox() { distrobox enter --name security -- bash -lc "set -euo pipefail; $*"; }
 
 echo ""
 echo -e "${BOLD}${CYAN}╔══════════════════════════════════════════╗${NC}"
@@ -22,20 +21,29 @@ echo -e "${BOLD}${CYAN}║   Distrobox 'security' — setup           ║${NC}"
 echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════╝${NC}"
 echo ""
 
-# ── Build image with working mirror (Canonical CDN has issues) ───────────
+# ── Build image with apt HTTP pipeline disabled ──────────────────────────
 if ! podman image exists "$FIXED_IMAGE" 2>/dev/null; then
-    echo -e "${CYAN}==> Building Ubuntu image with kernel.org mirror (avoids Canonical CDN issues)...${NC}"
-    printf 'FROM %s\nRUN sed -i "s|http://archive.ubuntu.com/ubuntu/|http://mirrors.edge.kernel.org/ubuntu/|g; s|http://security.ubuntu.com/ubuntu/|http://mirrors.edge.kernel.org/ubuntu/|g" /etc/apt/sources.list.d/ubuntu.sources && apt-get update -qq\n' \
+    echo -e "${CYAN}==> Building Ubuntu ${SECURITY_VERSION} image with apt HTTP pipeline disabled...${NC}"
+    printf 'FROM %s\nRUN printf "Acquire::http::Pipeline-Depth \\"0\\";\\nAcquire::Retries \\"5\\";\\n" > /etc/apt/apt.conf.d/99-no-pipeline && apt-get update -qq\n' \
         "$BASE_IMAGE" | podman build -t "$FIXED_IMAGE" - 2>&1 | tail -3
     echo -e "${GREEN}✓ Image built${NC}"
 fi
 
 # ── Create container if missing ──────────────────────────────────────────
-if distrobox list 2>/dev/null | grep -q "security"; then
-    echo -e "${YELLOW}==> Container 'security' already exists — skipping creation.${NC}"
+if podman container exists security 2>/dev/null; then
+    CURRENT_VERSION="$(distrobox enter --name security -- bash -lc '. /etc/os-release && printf "%s" "$VERSION_ID"' 2>/dev/null || true)"
+    if [[ "$CURRENT_VERSION" != "$SECURITY_VERSION" ]]; then
+        echo -e "${RED}✗ Container 'security' exists, but is Ubuntu ${CURRENT_VERSION:-unknown}; expected ${SECURITY_VERSION}.${NC}"
+        echo -e "${YELLOW}  Recreate it manually if you want to upgrade:${NC}"
+        echo -e "${YELLOW}  distrobox stop security --yes && distrobox rm security --force${NC}"
+        echo -e "${YELLOW}  bash ~/dotfiles-sway/scripts/setup-security-container.sh${NC}"
+        step_failed "SECURITY_CREATED"
+        exit 1
+    fi
+    echo -e "${YELLOW}==> Container 'security' already exists on Ubuntu ${SECURITY_VERSION} — skipping creation.${NC}"
     step_done "SECURITY_CREATED"
 else
-    run_step "SECURITY_CREATED" "Creating security container (Ubuntu 24.04 LTS)" \
+    run_step "SECURITY_CREATED" "Creating security container (Ubuntu ${SECURITY_VERSION})" \
         distrobox create --name security --image "$FIXED_IMAGE"
 fi
 
@@ -45,7 +53,8 @@ run_step "SECURITY_BASE_PKGS" "Installing base packages" \
         sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
             nmap wireshark netcat-openbsd tcpdump curl wget git \
             htop btop python3 python3-pip python3-venv \
-            ruby rubygems build-essential libssl-dev libffi-dev cargo"
+            ruby rubygems build-essential cmake pkg-config \
+            libssl-dev libffi-dev cargo"
 
 # ── Security tools ───────────────────────────────────────────────────────
 run_step "SECURITY_TOOLS" "Installing security tools (hydra, sqlmap, gobuster, hashcat, ...)" \
@@ -56,8 +65,11 @@ run_step "SECURITY_TOOLS" "Installing security tools (hydra, sqlmap, gobuster, h
 
 # ── Python security libraries ────────────────────────────────────────────
 run_step "SECURITY_PYTHON_LIBS" "Installing Python security libraries (impacket, pwntools)" \
-    dbox "pip3 install impacket pwntools --break-system-packages &&
-        grep -q '.local/bin' ~/.bashrc || echo 'export PATH=\$PATH:\$HOME/.local/bin' >> ~/.bashrc"
+    dbox "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            python3-pwntools python3-unicorn libunicorn-dev &&
+        pip3 install impacket --break-system-packages &&
+        if ! grep -q '.local/bin' ~/.bashrc; then echo 'export PATH=\$PATH:\$HOME/.local/bin' >> ~/.bashrc; fi &&
+        python3 -c 'import impacket, pwn, unicorn'"
 
 # ── Metasploit Framework ─────────────────────────────────────────────────
 run_step "SECURITY_METASPLOIT" "Installing Metasploit Framework" \
