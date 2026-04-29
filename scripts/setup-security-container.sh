@@ -8,6 +8,7 @@ set -euo pipefail
 
 DOTFILES="$HOME/dotfiles-sway"
 source "$DOTFILES/scripts/lib-install.sh"
+setup_logging "scripts/setup-security-container.sh"
 
 BASE_IMAGE="docker.io/library/ubuntu:24.04"
 FIXED_IMAGE="localhost/ubuntu-security:24.04"

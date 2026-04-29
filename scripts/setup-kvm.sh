@@ -7,6 +7,7 @@ set -euo pipefail
 
 DOTFILES="$HOME/dotfiles-sway"
 source "$DOTFILES/scripts/lib-install.sh"
+setup_logging "scripts/setup-kvm.sh"
 
 echo ""
 echo -e "${BOLD}${CYAN}╔══════════════════════════════════════════╗${NC}"

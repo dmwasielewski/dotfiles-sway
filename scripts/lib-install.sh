@@ -2,6 +2,7 @@
 # lib-install.sh — shared helpers for all install scripts
 
 STATE_FILE="$HOME/.dotfiles-install-state"
+LOG_FILE="${DOTFILES_LOG_FILE:-$HOME/.dotfiles-install.log}"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -9,6 +10,26 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
+
+setup_logging() {
+    local script_name="${1:-unknown}"
+    export DOTFILES_LOG_FILE="$LOG_FILE"
+
+    if [[ "${DOTFILES_LOG_ACTIVE:-}" == "1" ]]; then
+        echo "==> Logging to $LOG_FILE"
+        echo "==> Script: $script_name"
+        return
+    fi
+
+    export DOTFILES_LOG_ACTIVE=1
+    touch "$LOG_FILE"
+    exec > >(awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' | tee -a "$LOG_FILE") 2>&1
+    DOTFILES_LOG_PID=$!
+    trap 'exec >&- 2>&-; wait "$DOTFILES_LOG_PID" 2>/dev/null || true' EXIT
+
+    echo "==> Logging to $LOG_FILE"
+    echo "==> Script: $script_name"
+}
 
 step_save() {
     local key="$1" status="$2"

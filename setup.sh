@@ -2,6 +2,10 @@
 set -e
 
 DOTFILES="$HOME/dotfiles-sway"
+if [[ -f "$DOTFILES/scripts/lib-install.sh" ]]; then
+    source "$DOTFILES/scripts/lib-install.sh"
+    setup_logging "setup.sh"
+fi
 
 # Check dependencies
 if ! command -v unzip &>/dev/null; then

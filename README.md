@@ -100,8 +100,37 @@ bash ~/dotfiles-sway/scripts/verify.sh
 - ✓ passed / ✗ failed / ⚠ warnings
 - For each failure: exact command to fix it
 - Install state from `~/.dotfiles-install-state` (written by each script)
+- Install log from `~/.dotfiles-install.log` with date/time on every line
 
 If anything failed during installation, re-run the relevant script — all scripts are safe to run multiple times and will skip already-completed steps.
+
+### Troubleshooting install failures
+
+Every install script writes progress to:
+
+```bash
+~/.dotfiles-install-state
+```
+
+Every install script also appends full terminal output to:
+
+```bash
+~/.dotfiles-install.log
+```
+
+Each log line starts with a timestamp, for example:
+
+```text
+[2026-04-29 20:45:12] ==> Installing Flatpaks...
+```
+
+If a fresh install fails, check the state file first to find the failed phase, then inspect the log around the same time:
+
+```bash
+cat ~/.dotfiles-install-state
+tail -200 ~/.dotfiles-install.log
+bash ~/dotfiles-sway/scripts/verify.sh
+```
 
 ---
 

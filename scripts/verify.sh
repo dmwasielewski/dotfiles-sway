@@ -6,6 +6,7 @@
 set -euo pipefail
 
 STATE_FILE="$HOME/.dotfiles-install-state"
+LOG_FILE="${DOTFILES_LOG_FILE:-$HOME/.dotfiles-install.log}"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -64,6 +65,15 @@ else
     section "Install state"
     echo -e "  ${YELLOW}⚠${NC}  No state file found ($STATE_FILE)"
     echo -e "      Run bootstrap.sh to start installation."
+fi
+
+section "Install log"
+if [[ -f "$LOG_FILE" ]]; then
+    LOG_SIZE=$(du -h "$LOG_FILE" 2>/dev/null | awk '{print $1}')
+    LOG_MTIME=$(date -r "$LOG_FILE" '+%Y-%m-%d %H:%M:%S' 2>/dev/null || echo "unknown")
+    pass "Install log exists ($LOG_FILE, $LOG_SIZE, updated $LOG_MTIME)"
+else
+    warn "Install log not found ($LOG_FILE) — it will be created by bootstrap.sh or setup scripts"
 fi
 
 # ── 1. Config symlinks ───────────────────────────────────────────────────

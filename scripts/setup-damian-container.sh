@@ -6,6 +6,7 @@ set -euo pipefail
 
 DOTFILES="$HOME/dotfiles-sway"
 source "$DOTFILES/scripts/lib-install.sh"
+setup_logging "scripts/setup-damian-container.sh"
 
 CONTAINER="damian"
 

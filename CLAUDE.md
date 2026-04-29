@@ -28,6 +28,17 @@ The system belongs to **Damian** (dmwasielewski). Communicate in **Polish** unle
 - To run a command **on the host** from inside the toolbox: `flatpak-spawn --host <command>`
 - The home directory (`~`) is **shared** between host and toolbox — files written to `~` are visible on both sides.
 
+### Install diagnostics
+
+- Every install script writes step state to `~/.dotfiles-install-state`.
+- Every install script appends full terminal output to `~/.dotfiles-install.log`.
+- Each log line is timestamped as `[YYYY-MM-DD HH:MM:SS] ...`.
+- When debugging a failed fresh install, check in this order:
+  1. `cat ~/.dotfiles-install-state`
+  2. `tail -200 ~/.dotfiles-install.log`
+  3. `bash ~/dotfiles-sway/scripts/verify.sh`
+- If adding a new automated install step, update the state tracking, logging-aware script flow, `verify.sh`, and user-facing documentation.
+
 ### KVM / libvirt
 
 - `virsh` and `virt-install` must always use: `--connect qemu:///system`
@@ -66,6 +77,13 @@ dotfiles-sway/
     ├── voice-type-start.sh           ← Voice typing: start recording on Mod+T press
     ├── voice-type-stop.sh            ← Voice typing: stop, transcribe, inject text on Mod+T release
     └── voice-transcribe.py          ← Whisper AI transcription (runs inside damian toolbox)
+```
+
+Runtime diagnostic files:
+
+```
+~/.dotfiles-install-state              ← latest status for each install phase
+~/.dotfiles-install.log                ← timestamped output from bootstrap/setup scripts
 ```
 
 ---

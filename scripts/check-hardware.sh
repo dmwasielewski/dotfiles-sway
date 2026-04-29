@@ -4,6 +4,7 @@
 
 DOTFILES="$HOME/dotfiles-sway"
 source "$DOTFILES/scripts/lib-install.sh"
+setup_logging "scripts/check-hardware.sh"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'

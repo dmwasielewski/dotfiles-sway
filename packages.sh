@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+DOTFILES="$HOME/dotfiles-sway"
+if [[ -f "$DOTFILES/scripts/lib-install.sh" ]]; then
+    source "$DOTFILES/scripts/lib-install.sh"
+    setup_logging "packages.sh"
+fi
+
 # Ask for sudo password upfront and extend timeout to 30 minutes (for installation)
 sudo -v
 echo "Defaults timestamp_timeout=30" | sudo tee /etc/sudoers.d/timeout > /dev/null
