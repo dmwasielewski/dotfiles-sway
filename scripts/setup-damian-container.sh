@@ -1,5 +1,5 @@
 #!/bin/bash
-# setup-damian-container.sh — Fedora 43 toolbox: node, npm, gh, Claude Code + plugins
+# setup-damian-container.sh — Fedora 43 toolbox: node, npm, gh, Claude Code, Codex CLI + plugins
 # Run after first reboot: bash ~/dotfiles-sway/scripts/setup-damian-container.sh
 
 set -euo pipefail
@@ -37,12 +37,14 @@ run_step "TOOLBOX_NPM_PREFIX" "Configuring npm prefix (~/.npm-global)" \
         grep -q "npm-global" ~/.bashrc || echo "export PATH=\$PATH:~/.npm-global/bin" >> ~/.bashrc
     '
 
-# ── Install Claude Code ──────────────────────────────────────────────────
-run_step "CLAUDE_CODE_INSTALLED" "Installing Claude Code" \
+# ── Install AI coding CLIs ───────────────────────────────────────────────
+run_step "AI_CLI_TOOLS_INSTALLED" "Installing Claude Code and OpenAI Codex CLI" \
     toolbox run --container "$CONTAINER" bash -c '
         source ~/.bashrc
-        PATH=$PATH:~/.npm-global/bin npm install -g @anthropic-ai/claude-code
+        PATH=$PATH:~/.npm-global/bin npm install -g @anthropic-ai/claude-code @openai/codex
     '
+step_done "CLAUDE_CODE_INSTALLED"
+step_done "CODEX_CLI_INSTALLED"
 
 # ── Install Claude Code plugins ──────────────────────────────────────────
 echo -e "\n${CYAN}==> Installing Claude Code plugins...${NC}"
@@ -71,7 +73,7 @@ run_step "VOICE_WHISPER" "Installing faster-whisper + google-genai (voice typing
 # ── Verify ───────────────────────────────────────────────────────────────
 echo -e "\n${CYAN}==> Verifying toolbox 'damian'...${NC}"
 VERIFY_FAIL=0
-for tool in node npm gh claude git; do
+for tool in node npm gh claude codex git; do
     if toolbox run --container "$CONTAINER" which "$tool" &>/dev/null 2>&1; then
         echo -e "  ${GREEN}✓${NC} $tool"
     else
@@ -94,6 +96,7 @@ echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━
 echo ""
 echo -e " Enter container:  ${CYAN}toolbox enter damian${NC}"
 echo -e " Run Claude Code:  ${CYAN}claude${NC}"
+echo -e " Run Codex CLI:    ${CYAN}codex${NC}"
 echo ""
 echo -e " ${YELLOW}Manual steps required:${NC}"
 echo ""
@@ -106,9 +109,12 @@ echo -e "  1. Gemini API key for English voice correction:
 echo -e "     ${CYAN}echo 'export ANTHROPIC_API_KEY=\"your-key\"' >> ~/.bashrc${NC}"
 echo -e "     Get key: https://console.anthropic.com/settings/keys"
 echo ""
-echo -e "  2. Log in to Claude Code:"
+echo -e "  3. Log in to Claude Code:"
 echo -e "     ${CYAN}toolbox enter damian${NC}  →  ${CYAN}claude login${NC}"
 echo ""
-echo -e "  3. Log in to GitHub CLI:"
+echo -e "  4. Log in to GitHub CLI:"
 echo -e "     ${CYAN}toolbox enter damian${NC}  →  ${CYAN}gh auth login${NC}"
+echo ""
+echo -e "  5. Log in to Codex CLI:"
+echo -e "     ${CYAN}toolbox enter damian${NC}  →  ${CYAN}codex login${NC}"
 echo ""

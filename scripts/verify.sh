@@ -194,6 +194,7 @@ if host toolbox list 2>/dev/null | grep -qw "damian"; then
     check_toolbox_tool "npm"    "npm"
     check_toolbox_tool "gh"     "gh (GitHub CLI)"
     check_toolbox_tool "claude" "claude (Claude Code)"
+    check_toolbox_tool "codex"  "codex (OpenAI Codex CLI)"
     check_toolbox_tool "git"    "git"
 
     # Plugins — check settings.json
@@ -375,6 +376,7 @@ section "9. Manual steps (require human interaction)"
 echo -e "  ${YELLOW}⚠${NC}  Cannot be automated — verify manually:"
 echo    "     • ANTHROPIC_API_KEY set in ~/.bashrc (inside damian container)"
 echo    "     • claude login  (OAuth via browser)"
+echo    "     • codex login  (OpenAI/ChatGPT account)"
 echo    "     • gh auth login  (GitHub CLI)"
 echo    "     • MCP: Gmail, Calendar, Drive, Slack — log in at claude.ai → Integrations"
 echo    "     • Bluetooth — pair via bluetoothctl"

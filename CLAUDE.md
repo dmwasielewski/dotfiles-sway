@@ -21,10 +21,10 @@ The system belongs to **Damian** (dmwasielewski). Communicate in **Polish** unle
 - Host is immutable — config files go in `~/.config/`, not `/etc/` unless absolutely necessary.
 - Flatpak is the primary app delivery mechanism for GUI apps.
 
-### Claude Code runs inside a Toolbox container
+### AI coding CLIs run inside a Toolbox container
 
-- Claude Code is installed **inside the `damian` toolbox container** (Fedora 43), not on the host.
-- Bash commands from Claude Code run **inside the toolbox**, not on the host.
+- Claude Code and OpenAI Codex CLI are installed **inside the `damian` toolbox container** (Fedora 43), not as host rpm-ostree packages.
+- Bash commands from these CLIs run **inside the toolbox**, not on the host.
 - To run a command **on the host** from inside the toolbox: `flatpak-spawn --host <command>`
 - The home directory (`~`) is **shared** between host and toolbox — files written to `~` are visible on both sides.
 
@@ -72,7 +72,7 @@ dotfiles-sway/
     ├── fix-vivaldi-profiles.sh        ← Fixes Vivaldi crash/session recovery dialog on start
     ├── check-hardware.sh              ← Verifies VA-API, GPU, KVM after reboot — writes state
     ├── setup-kvm.sh                   ← KVM/QEMU setup (libvirtd, user groups, NAT network) — writes state
-    ├── setup-damian-container.sh      ← Toolbox damian: node, npm, gh, Claude Code + plugins — writes state
+    ├── setup-damian-container.sh      ← Toolbox damian: node, npm, gh, Claude Code, Codex CLI + plugins — writes state
     ├── setup-security-container.sh   ← Distrobox security: pentesting toolkit — writes state
     ├── voice-type-start.sh           ← Voice typing: start recording on Mod+T press
     ├── voice-type-stop.sh            ← Voice typing: stop, transcribe, inject text on Mod+T release
@@ -191,6 +191,7 @@ Managed by `scripts/setup-damian-container.sh`. Use `toolbox enter damian` to en
 | `npm` | Package manager |
 | `gh` | GitHub CLI |
 | `claude` (`@anthropic-ai/claude-code`) | Claude Code CLI |
+| `codex` (`@openai/codex`) | OpenAI Codex CLI |
 | `ccstatusline` | Claude Code Waybar status (bundled with claude-code) |
 | `faster-whisper` | Local Whisper AI speech recognition (voice typing) |
 
@@ -428,7 +429,22 @@ These connect via the Claude.ai account and **cannot be automated** — they req
 
 To connect MCPs: open `claude.ai` → Settings → Integrations → connect each service.
 
-### Post-install manual steps for Claude Code
+### OpenAI Codex CLI
+
+Codex CLI is installed automatically by `scripts/setup-damian-container.sh` via npm as `@openai/codex`.
+
+Run it inside the `damian` toolbox:
+```bash
+toolbox enter damian
+codex
+```
+
+First use requires interactive login:
+```bash
+codex login
+```
+
+### Post-install manual steps for AI coding CLIs
 
 These cannot be automated and must be done manually after first boot:
 
@@ -444,13 +460,19 @@ These cannot be automated and must be done manually after first boot:
    claude login
    ```
 
-3. **MCP integrations** — log in to each at `claude.ai` → Settings → Integrations
+3. **Codex login**:
+   ```bash
+   toolbox enter damian
+   codex login
+   ```
+
+4. **MCP integrations** — log in to each at `claude.ai` → Settings → Integrations
 
 ---
 
 ## ChatGPT
 
-ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code.
+ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Terminal access to OpenAI Codex is provided by the `codex` CLI in the `damian` toolbox.
 
 - **Shortcut:** `applications/chatgpt.desktop` — symlinked to `~/.local/share/applications/`
 - **Autostart:** opens on workspace 4 alongside Claude AI PWA
@@ -470,7 +492,7 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code.
 - [x] All Flatpak apps installed via setup.sh
 - [x] All system packages via packages.sh (rpm-ostree)
 - [x] PWA shortcuts (Claude AI, ChatGPT, WhatsApp)
-- [x] toolbox `damian` with node, npm, gh, Claude Code
+- [x] toolbox `damian` with node, npm, gh, Claude Code, OpenAI Codex CLI
 - [x] Claude Code settings.json symlinked from dotfiles
 - [x] Claude Code plugins auto-installed (superpowers, code-simplifier, context7)
 - [x] distrobox `security` with full pentesting toolkit
@@ -501,6 +523,7 @@ These require human interaction — document them so nothing is forgotten after 
 |---|---|
 | Set ANTHROPIC_API_KEY | `echo 'export ANTHROPIC_API_KEY="key"' >> ~/.bashrc` inside `damian` container |
 | Claude login (OAuth) | `toolbox enter damian` → `claude login` |
+| Codex login | `toolbox enter damian` → `codex login` |
 | GitHub CLI login | `toolbox enter damian` → `gh auth login` |
 | MCP integrations (Gmail, Calendar, Drive, Slack) | `claude.ai` → Settings → Integrations |
 | Bluetooth pairing | `bluetoothctl` → `power on` → `scan on` → `pair <MAC>` |

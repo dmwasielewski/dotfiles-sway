@@ -81,7 +81,7 @@ bash ~/dotfiles-sway/scripts/setup-kvm.sh
 ```
 > Then log out and back in for group changes to take effect.
 
-6. Set up the damian dev container (node, npm, gh, Claude Code):
+6. Set up the damian dev container (node, npm, gh, Claude Code, Codex CLI):
 ```bash
 bash ~/dotfiles-sway/scripts/setup-damian-container.sh
 ```
@@ -325,7 +325,7 @@ dotfiles-sway/
 │   ├── fix-vivaldi-profiles.sh        # Fix Vivaldi crash/session recovery dialog
 │   ├── check-hardware.sh              # Hardware check (GPU, VA-API, audio, ...) — writes state
 │   ├── setup-kvm.sh                   # KVM/QEMU setup (libvirtd, groups, network) — writes state
-│   ├── setup-damian-container.sh      # Toolbox damian: node, npm, gh, Claude Code + plugins — writes state
+│   ├── setup-damian-container.sh      # Toolbox damian: node, npm, gh, Claude Code, Codex CLI + plugins — writes state
 │   ├── setup-security-container.sh   # Distrobox security: pentesting toolkit — writes state
 │   ├── voice-type-start.sh           # Voice typing: start recording (Mod+T press)
 │   ├── voice-type-stop.sh            # Voice typing: stop recording, transcribe, inject text (Mod+T release)
@@ -435,6 +435,7 @@ Host (rpm-ostree immutable)
 │   ├─ git
 │   ├─ gh (GitHub CLI)
 │   ├─ claude (Claude Code)
+│   ├─ codex (OpenAI Codex CLI)
 │   ├─ ccstatusline (Claude Code Waybar integration)
 │   └─ faster-whisper (local Whisper AI for voice typing)
 │
@@ -463,6 +464,12 @@ toolbox enter damian
 ```bash
 # Inside damian container
 claude
+```
+
+### Run OpenAI Codex CLI
+```bash
+# Inside damian container
+codex
 ```
 
 ### ccstatusline — Claude Code status in Waybar
