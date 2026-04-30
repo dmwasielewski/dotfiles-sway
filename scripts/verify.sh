@@ -114,6 +114,7 @@ HOST_PKGS=(
     "virt-install:VM CLI creation"
     "bridge-utils:VM networking"
     "libva-utils:VA-API hardware acceleration"
+    "gitleaks:secret scanner"
 )
 
 for entry in "${HOST_PKGS[@]}"; do
@@ -236,14 +237,21 @@ if host toolbox list 2>/dev/null | grep -qw "damian"; then
     fi
 
     if host toolbox run --container damian bash -c \
-        'grep -q "^DEFAULT_MODEL=gemini/gemini-3.1-flash-lite-preview$" ~/.config/shell_gpt/.sgptrc 2>/dev/null && grep -q "SHELLGPT_GEMINI_FALLBACK_MODEL.*gemini/gemini-2.5-flash-lite" ~/.bashrc.d/shellgpt-gemini.bash 2>/dev/null' 2>/dev/null; then
-        pass "ShellGPT Gemini fallback configured"
+        'grep -q "^DEFAULT_MODEL=gemini/gemini-3.1-flash-lite-preview$" ~/.config/shell_gpt/.sgptrc 2>/dev/null && grep -q "SGPT_FALLBACK_MODEL" ~/.local/bin/sgpt 2>/dev/null && grep -q "gemini/gemini-2.5-flash" ~/.local/bin/sgpt 2>/dev/null' 2>/dev/null; then
+        pass "ShellGPT executable fallback configured"
     else
-        warn "ShellGPT Gemini fallback not configured — rerun bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
+        warn "ShellGPT executable fallback not configured — rerun bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
     fi
 
 else
     fail "Toolbox 'damian'  NOT FOUND" "bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
+fi
+
+if host git -C "$DOTFILES" config --get core.hooksPath 2>/dev/null | grep -qx ".githooks" &&
+   host test -x "$DOTFILES/.githooks/pre-push"; then
+    pass "Git pre-push secret scan hook configured"
+else
+    warn "Git pre-push secret scan hook not configured — run: git -C ~/dotfiles-sway config core.hooksPath .githooks"
 fi
 
 # ── 5b. Voice typing ─────────────────────────────────────────────────────

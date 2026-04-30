@@ -8,6 +8,9 @@ CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/shell_gpt"
 CONFIG_FILE="$CONFIG_DIR/.sgptrc"
 BASHRC_D="$HOME/.bashrc.d"
 ENV_LOADER="$BASHRC_D/shellgpt-gemini.bash"
+LOCAL_BIN="$HOME/.local/bin"
+SGPT_WRAPPER="$LOCAL_BIN/sgpt"
+SGPT_REAL_BIN="$LOCAL_BIN/sgpt-cli"
 VOICE_GEMINI_KEY_FILE="$HOME/.config/voice-type/gemini-api-key"
 
 load_env_file() {
@@ -34,7 +37,7 @@ PLACEHOLDER_KEY="missing-shellgpt-api-key"
 DEFAULT_MODEL_FALLBACK="gpt-4o"
 USE_LITELLM_FALLBACK="false"
 GEMINI_PRIMARY_MODEL="${SHELLGPT_GEMINI_PRIMARY_MODEL:-gemini/gemini-3.1-flash-lite-preview}"
-GEMINI_FALLBACK_MODEL="${SHELLGPT_GEMINI_FALLBACK_MODEL:-gemini/gemini-2.5-flash-lite}"
+GEMINI_FALLBACK_MODEL="${SHELLGPT_GEMINI_FALLBACK_MODEL:-gemini/gemini-2.5-flash}"
 API_KEY="$OPENAI_STYLE_API_KEY"
 SHELLGPT_PLACEHOLDER_CONFIG=false
 
@@ -108,68 +111,118 @@ EOF
 
 chmod 600 "$CONFIG_FILE"
 
+install_sgpt_wrapper() {
+    mkdir -p "$LOCAL_BIN"
+
+    if [[ -x "$SGPT_WRAPPER" ]] && ! grep -q 'SGPT_REAL_BIN' "$SGPT_WRAPPER" 2>/dev/null; then
+        cp "$SGPT_WRAPPER" "$SGPT_REAL_BIN"
+        chmod +x "$SGPT_REAL_BIN"
+    fi
+
+    if [[ ! -x "$SGPT_REAL_BIN" && -x "$SGPT_WRAPPER" ]]; then
+        cp "$SGPT_WRAPPER" "$SGPT_REAL_BIN"
+        chmod +x "$SGPT_REAL_BIN"
+    fi
+
+    if [[ ! -x "$SGPT_REAL_BIN" ]]; then
+        echo "WARNING: ShellGPT launcher not found at $SGPT_WRAPPER; skipping sgpt fallback wrapper."
+        return 0
+    fi
+
+    cat > "$SGPT_WRAPPER" <<'EOF'
+#!/usr/bin/env bash
+set -uo pipefail
+
+real_sgpt="${SGPT_REAL_BIN:-$HOME/.local/bin/sgpt-cli}"
+primary_model="${SGPT_PRIMARY_MODEL:-${SHELLGPT_GEMINI_PRIMARY_MODEL:-gemini/gemini-3.1-flash-lite-preview}}"
+fallback_model="${SGPT_FALLBACK_MODEL:-${SHELLGPT_GEMINI_FALLBACK_MODEL:-gemini/gemini-2.5-flash}}"
+
+load_env_file() {
+    local file="$1"
+    [ -r "$file" ] || return 0
+    set -a
+    # shellcheck source=/dev/null
+    source "$file"
+    set +a
+}
+
+load_env_file "$HOME/.config/ai/api.env"
+load_env_file "$HOME/.config/shell_gpt/credentials.env"
+load_env_file "$HOME/.bashrc.d/ai-keys.bash"
+
+if [ -z "${GEMINI_API_KEY:-}" ] && [ -z "${GOOGLE_API_KEY:-}" ] && [ -r "$HOME/.config/voice-type/gemini-api-key" ]; then
+    export GEMINI_API_KEY="$(tr -d '\r\n' < "$HOME/.config/voice-type/gemini-api-key")"
+fi
+
+has_model_arg=false
+for arg in "$@"; do
+    case "$arg" in
+        --model|-m|--model=*)
+            has_model_arg=true
+            break
+            ;;
+    esac
+done
+
+if "$has_model_arg"; then
+    exec "$real_sgpt" "$@"
+fi
+
+tmp_err="$(mktemp -t sgpt-fallback.XXXXXX)"
+trap 'rm -f "$tmp_err"' EXIT
+
+"$real_sgpt" --model "$primary_model" "$@" 2> >(tee "$tmp_err" >&2)
+status=$?
+
+if [ "$status" -eq 0 ]; then
+    exit 0
+fi
+
+if grep -Eiq '503|UNAVAILABLE|ServiceUnavailableError|APIConnectionError|ConnectError|name resolution|high demand|rate.?limit|overload|temporar(y|ily unavailable)' "$tmp_err"; then
+    printf '\nsgpt: primary model failed, retrying with fallback: %s\n' "$fallback_model" >&2
+    "$real_sgpt" --model "$fallback_model" "$@"
+    fallback_status=$?
+
+    if [ "$fallback_status" -ne 0 ]; then
+        cat >&2 <<MSG
+
+sgpt: nie udalo sie polaczyc z AI.
+Sprawdz internet, klucz/API i dostepnosc modeli.
+Model glowny: $primary_model
+Fallback: $fallback_model
+MSG
+    fi
+
+    exit "$fallback_status"
+fi
+
+cat >&2 <<'MSG'
+
+sgpt: zapytanie do AI nie powiodlo sie.
+To nie wyglada na chwilowe przeciazenie modelu, wiec fallback nie zostal uruchomiony.
+Sprawdz komunikat bledu powyzej.
+MSG
+
+exit "$status"
+EOF
+    chmod +x "$SGPT_WRAPPER"
+    echo "ShellGPT fallback wrapper installed to $SGPT_WRAPPER"
+}
+
+install_sgpt_wrapper
+
 mkdir -p "$BASHRC_D"
 chmod 700 "$BASHRC_D"
 cat > "$ENV_LOADER" <<'EOF'
 # ShellGPT Gemini provider env.
-# Reads the same private Gemini key used by voice typing and retries a stable
-# fallback model if the preview model is overloaded.
+# Reads the same private Gemini key used by voice typing. The sgpt executable
+# wrapper handles fallback when the preview model is overloaded.
 if [ -z "${GEMINI_API_KEY:-}" ] && [ -r "$HOME/.config/voice-type/gemini-api-key" ]; then
     export GEMINI_API_KEY="$(tr -d '\r\n' < "$HOME/.config/voice-type/gemini-api-key")"
 fi
 
 export SHELLGPT_GEMINI_PRIMARY_MODEL="${SHELLGPT_GEMINI_PRIMARY_MODEL:-gemini/gemini-3.1-flash-lite-preview}"
-export SHELLGPT_GEMINI_FALLBACK_MODEL="${SHELLGPT_GEMINI_FALLBACK_MODEL:-gemini/gemini-2.5-flash-lite}"
-
-sgpt() {
-    local arg
-    local interactive=false
-    for arg in "$@"; do
-        case "$arg" in
-            --model|--model=*)
-                command sgpt "$@"
-                return
-                ;;
-            --shell|-s|--repl|--repl=*)
-                interactive=true
-                ;;
-        esac
-    done
-
-    if ! grep -q '^USE_LITELLM=true$' "$HOME/.config/shell_gpt/.sgptrc" 2>/dev/null ||
-       ! grep -q '^DEFAULT_MODEL=gemini/' "$HOME/.config/shell_gpt/.sgptrc" 2>/dev/null; then
-        command sgpt "$@"
-        return
-    fi
-
-    if [ "$interactive" = true ]; then
-        command sgpt --model "$SHELLGPT_GEMINI_PRIMARY_MODEL" "$@"
-        local rc=$?
-        if [ "$rc" -eq 0 ] || [ "$SHELLGPT_GEMINI_PRIMARY_MODEL" = "$SHELLGPT_GEMINI_FALLBACK_MODEL" ]; then
-            return "$rc"
-        fi
-        printf 'sgpt: primary Gemini model failed, retrying with fallback: %s\n' "$SHELLGPT_GEMINI_FALLBACK_MODEL" >&2
-        command sgpt --model "$SHELLGPT_GEMINI_FALLBACK_MODEL" "$@"
-        return
-    fi
-
-    local output rc
-    output="$(command sgpt --model "$SHELLGPT_GEMINI_PRIMARY_MODEL" "$@" 2>&1)"
-    rc=$?
-    if [ "$rc" -eq 0 ]; then
-        printf '%s\n' "$output"
-        return 0
-    fi
-
-    if [ "$SHELLGPT_GEMINI_PRIMARY_MODEL" != "$SHELLGPT_GEMINI_FALLBACK_MODEL" ]; then
-        printf 'sgpt: primary Gemini model failed, retrying with fallback: %s\n' "$SHELLGPT_GEMINI_FALLBACK_MODEL" >&2
-        command sgpt --model "$SHELLGPT_GEMINI_FALLBACK_MODEL" "$@"
-        return
-    fi
-
-    printf '%s\n' "$output" >&2
-    return "$rc"
-}
+export SHELLGPT_GEMINI_FALLBACK_MODEL="${SHELLGPT_GEMINI_FALLBACK_MODEL:-gemini/gemini-2.5-flash}"
 EOF
 chmod 600 "$ENV_LOADER"
 

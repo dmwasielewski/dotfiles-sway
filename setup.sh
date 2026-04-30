@@ -45,6 +45,12 @@ update-desktop-database ~/.local/share/applications/
 
 # Make scripts executable
 chmod +x "$DOTFILES/scripts/"*.sh
+chmod +x "$DOTFILES/.githooks/"* 2>/dev/null || true
+
+# Use versioned git hooks from this repo, including the gitleaks pre-push check.
+if git -C "$DOTFILES" rev-parse --is-inside-work-tree &>/dev/null; then
+    git -C "$DOTFILES" config core.hooksPath .githooks
+fi
 
 # Toolbox — skip if already exists
 echo "==> Creating toolbox container..."

@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+run_gitleaks() {
+    if command -v gitleaks >/dev/null 2>&1; then
+        gitleaks detect --source . --redact --verbose
+        return
+    fi
+
+    if command -v toolbox >/dev/null 2>&1 &&
+       toolbox run --container damian bash -lc 'command -v gitleaks >/dev/null'; then
+        toolbox run --container damian bash -lc 'gitleaks detect --source "$1" --redact --verbose' _ "$PWD"
+        return
+    fi
+
+    cat >&2 <<'EOF'
+ERROR: gitleaks is required before pushing this repo.
+
+Install it with:
+  bash ~/dotfiles-sway/packages.sh
+  systemctl reboot
+
+Temporary fallback:
+  toolbox run --container damian sudo dnf install -y gitleaks
+
+Or, on a non-Atomic Fedora system:
+  sudo dnf install gitleaks
+EOF
+    exit 1
+}
+
+echo "==> Running gitleaks before push..."
+run_gitleaks

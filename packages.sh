@@ -29,7 +29,8 @@ echo "==> Layering system packages (reboot required after)..."
 # wtype       - Wayland keyboard input injection (used by voice typing)
 # alsa-utils  - arecord audio recording (used by voice typing)
 # neovim      - modern text editor (Vim fork), available system-wide
-PACKAGES="mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer virt-install bridge-utils wtype alsa-utils neovim"
+# gitleaks    - secret scanner, enforced by the repo pre-push hook
+PACKAGES="mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer virt-install bridge-utils wtype alsa-utils neovim gitleaks"
 
 # Intel GPU check
 if lspci | grep -qi "Intel.*Graphics"; then

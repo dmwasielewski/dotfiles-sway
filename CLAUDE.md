@@ -100,7 +100,7 @@ cat ~/.ssh/id_ed25519.pub
 
 An SSH key is only needed if you want to use SSH remotes or private forks. `bootstrap.sh` clones this repo over HTTPS by default.
 
-If ShellGPT should be ready immediately after the `damian` toolbox setup, restore `~/.config/voice-type/gemini-api-key` before `setup-damian-container.sh` runs. ShellGPT reuses that same Gemini key through LiteLLM by default. Voice typing and ShellGPT both prefer `gemini-3.1-flash-lite-preview` and fall back to `gemini-2.5-flash-lite` when the preview model is overloaded. Other supported private sources are `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SHELLGPT_API_KEY`, `ANTHROPIC_API_KEY`, `~/.config/ai/api.env`, `~/.config/shell_gpt/credentials.env`, and `~/.bashrc.d/ai-keys.bash`. These files are private and must not be committed to this repo.
+If ShellGPT should be ready immediately after the `damian` toolbox setup, restore `~/.config/voice-type/gemini-api-key` before `setup-damian-container.sh` runs. ShellGPT reuses that same Gemini key through LiteLLM by default. ShellGPT prefers `gemini-3.1-flash-lite-preview` and the installed `sgpt` wrapper retries `gemini-2.5-flash` when the preview model is overloaded. Other supported private sources are `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SHELLGPT_API_KEY`, `ANTHROPIC_API_KEY`, `~/.config/ai/api.env`, `~/.config/shell_gpt/credentials.env`, and `~/.bashrc.d/ai-keys.bash`. These files are private and must not be committed to this repo.
 
 ### Step 1 — Bootstrap
 
@@ -178,6 +178,7 @@ Managed by `packages.sh`. Install with `rpm-ostree install`, requires reboot.
 | `intel-media-driver` | Intel GPU only (auto-detected) |
 | `wtype` | Wayland keyboard injection (voice typing) |
 | `alsa-utils` | `arecord` audio recording (voice typing) |
+| `gitleaks` | Secret scanner, enforced by repo `pre-push` hook |
 
 AMD GPU: mesa-va-drivers is already in Fedora Atomic base — no extra package needed.
 
@@ -218,7 +219,7 @@ Managed by `scripts/setup-damian-container.sh`. Use `toolbox enter damian` to en
 
 npm prefix is set to `~/.npm-global` — global npm packages visible from host too.
 
-ShellGPT config is generated non-interactively by `scripts/configure-shellgpt.sh` into `~/.config/shell_gpt/.sgptrc`. The preferred provider is Gemini via LiteLLM, using the same private key file as voice typing: `~/.config/voice-type/gemini-api-key`. It sets `gemini/gemini-3.1-flash-lite-preview` as the primary ShellGPT model and installs a shell wrapper that retries `gemini/gemini-2.5-flash-lite` if the primary model fails. If no private API key source exists, the config uses the placeholder `OPENAI_API_KEY=missing-shellgpt-api-key` so `sgpt` never blocks setup with an interactive prompt. Do not commit API keys to this repo.
+ShellGPT config is generated non-interactively by `scripts/configure-shellgpt.sh` into `~/.config/shell_gpt/.sgptrc`. The preferred provider is Gemini via LiteLLM, using the same private key file as voice typing: `~/.config/voice-type/gemini-api-key`. It sets `gemini/gemini-3.1-flash-lite-preview` as the primary ShellGPT model and installs `~/.local/bin/sgpt` as an executable wrapper around `~/.local/bin/sgpt-cli`; the wrapper retries `gemini/gemini-2.5-flash` on temporary availability errors and prints a clear diagnostic if both models fail. If no private API key source exists, the config uses the placeholder `OPENAI_API_KEY=missing-shellgpt-api-key` so `sgpt` never blocks setup with an interactive prompt. Do not commit API keys to this repo.
 
 ### Layer 4: distrobox `security` (Ubuntu 26.04 pentesting)
 
@@ -386,9 +387,10 @@ These rules apply whenever an AI assists with this project:
    - New script → add to `scripts/`, make executable, document in README
    - Any change → commit + push to GitHub
 5. **Config files are symlinked, not copied** — the repo is the source of truth. Edit files in `~/dotfiles-sway/`, not in `~/.config/` directly.
-6. **Goal is zero manual steps** after `bootstrap.sh` + reboot + 4 post-reboot scripts. If something requires a manual step, automate it or document it clearly in README under "Manual post-install steps".
-7. **Keep README.md and CLAUDE.md in sync** when adding new apps, packages, VMs, or scripts.
-8. **Communicate in Polish** with the user.
+6. **Before pushing**, run or rely on the configured `.githooks/pre-push` hook. It executes `gitleaks detect --source . --redact --verbose` and must block pushes that contain secrets.
+7. **Goal is zero manual steps** after `bootstrap.sh` + reboot + 4 post-reboot scripts. If something requires a manual step, automate it or document it clearly in README under "Manual post-install steps".
+8. **Keep README.md and CLAUDE.md in sync** when adding new apps, packages, VMs, or scripts.
+9. **Communicate in Polish** with the user.
 
 ---
 
@@ -486,7 +488,7 @@ Preferred source, shared with voice typing:
 - `GEMINI_API_KEY`
 - `GOOGLE_API_KEY`
 
-With that key, the generated config uses `USE_LITELLM=true` and `DEFAULT_MODEL=gemini/gemini-3.1-flash-lite-preview`, and writes `~/.bashrc.d/shellgpt-gemini.bash` to export `GEMINI_API_KEY` in toolbox shells and retry `sgpt` with `gemini/gemini-2.5-flash-lite` if the preview model fails.
+With that key, the generated config uses `USE_LITELLM=true` and `DEFAULT_MODEL=gemini/gemini-3.1-flash-lite-preview`, writes `~/.bashrc.d/shellgpt-gemini.bash` to export `GEMINI_API_KEY` in toolbox shells, and installs `~/.local/bin/sgpt` as a fallback wrapper. The original ShellGPT launcher is preserved as `~/.local/bin/sgpt-cli`. The wrapper retries `gemini/gemini-2.5-flash` if the preview model fails with temporary availability errors such as `503`, `UNAVAILABLE`, high demand, overload, or rate limits. If both models fail, it prints a short "nie udalo sie polaczyc z AI" diagnostic.
 
 Other supported private sources:
 
@@ -503,7 +505,7 @@ Optional ShellGPT settings:
 - `SHELLGPT_API_BASE_URL` or `API_BASE_URL` — defaults to `default`
 - `SHELLGPT_DEFAULT_MODEL` or `DEFAULT_MODEL` — defaults to Gemini 3.1 Flash Lite Preview when the voice key exists, otherwise `gpt-4o`
 - `SHELLGPT_USE_LITELLM` or `USE_LITELLM` — defaults to `true` for Gemini/Anthropic, otherwise `false`
-- `SHELLGPT_GEMINI_PRIMARY_MODEL` and `SHELLGPT_GEMINI_FALLBACK_MODEL` — default to `gemini/gemini-3.1-flash-lite-preview` and `gemini/gemini-2.5-flash-lite`
+- `SHELLGPT_GEMINI_PRIMARY_MODEL` and `SHELLGPT_GEMINI_FALLBACK_MODEL` — default to `gemini/gemini-3.1-flash-lite-preview` and `gemini/gemini-2.5-flash`
 
 If no private key exists, the config contains `OPENAI_API_KEY=missing-shellgpt-api-key` and `verify.sh` reports a warning. Do not store ShellGPT API keys in this repo. The home directory is shared with the toolbox, so private files under `~/.config/` are visible where `sgpt` runs.
 
@@ -567,6 +569,7 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 - [x] Hardware check script (VA-API, GPU, KVM)
 - [x] Vivaldi profile crash fix (auto on Sway start)
 - [x] Firewall baseline (public zone, SSH + mDNS only)
+- [x] Gitleaks installed as a required host package with repo pre-push secret scanning
 - [x] bootstrap.sh — single entry point for fresh install, with step-by-step error tracking
 - [x] verify.sh — full post-install verification with checklist, failure summary, and fix commands
 - [x] lib-install.sh — shared state tracking (`~/.dotfiles-install-state`) used by all scripts

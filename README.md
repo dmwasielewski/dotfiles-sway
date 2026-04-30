@@ -38,6 +38,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Screenshot tool (grim + slurp)
 - Hardware acceleration (VA-API via mesa/amdgpu)
 - Firewall baseline (public zone, SSH + mDNS only)
+- Gitleaks secret scanner with a repo `pre-push` hook
 - Voice typing — push-to-talk (`Mod+T`) with local Whisper AI + Gemini UK English correction
 - Neovim — modern text editor, available system-wide
 - AI terminal tools in toolbox: Claude Code, OpenAI Codex CLI, ShellGPT (`sgpt`)
@@ -64,7 +65,7 @@ printf '%s\n' 'your-gemini-api-key-here' > ~/.config/voice-type/gemini-api-key
 chmod 600 ~/.config/voice-type/gemini-api-key
 ```
 
-This file is private, outside git, and is shared with the `damian` toolbox through the home directory. Voice typing uses it directly, and `scripts/configure-shellgpt.sh` uses the same key by default through LiteLLM. Both voice typing and ShellGPT prefer `gemini-3.1-flash-lite-preview` and fall back to `gemini-2.5-flash-lite` if the preview model is overloaded. On a fresh machine it should be restored from your private backup or secret manager before `setup-damian-container.sh` runs.
+This file is private, outside git, and is shared with the `damian` toolbox through the home directory. Voice typing uses it directly, and `scripts/configure-shellgpt.sh` uses the same key by default through LiteLLM. ShellGPT prefers `gemini-3.1-flash-lite-preview` and its installed `sgpt` wrapper retries `gemini-2.5-flash` if the preview model is overloaded. On a fresh machine the key should be restored from your private backup or secret manager before `setup-damian-container.sh` runs.
 
 ShellGPT also accepts `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SHELLGPT_API_KEY`, `ANTHROPIC_API_KEY`, `~/.config/ai/api.env`, `~/.config/shell_gpt/credentials.env`, and `~/.bashrc.d/ai-keys.bash`. Use `SHELLGPT_PROVIDER=openai`, `gemini`, or `anthropic` only when you need to override the automatic choice.
 
@@ -341,6 +342,8 @@ dotfiles-sway/
 ├── claude/
 │   └── settings.json        # Claude Code settings (plugins, statusline) → symlinked to ~/.claude/settings.json
 ├── applications/            # PWA desktop shortcuts (Claude AI, ChatGPT, WhatsApp)
+├── .githooks/
+│   └── pre-push             # Runs gitleaks before git push
 ├── scripts/
 │   ├── lib-install.sh                 # Shared helpers: state tracking, run_step()
 │   ├── verify.sh                      # Post-install verification — checks all components
@@ -357,6 +360,26 @@ dotfiles-sway/
 ├── setup.sh                 # Symlinks, Flatpaks, toolbox, fonts, Claude settings
 ├── packages.sh              # rpm-ostree system packages
 └── bootstrap.sh             # Fresh install entry point
+```
+
+### Git Secret Scanning
+
+`gitleaks` is installed as a required host package by `packages.sh`. `setup.sh` configures this repo to use `.githooks`:
+
+```bash
+git -C ~/dotfiles-sway config core.hooksPath .githooks
+```
+
+Before every `git push`, `.githooks/pre-push` runs:
+
+```bash
+gitleaks detect --source . --redact --verbose
+```
+
+If `gitleaks` is missing or detects a secret, the push is blocked. You can run the same check manually before committing:
+
+```bash
+gitleaks detect --source ~/dotfiles-sway --redact --verbose
 ```
 
 ---
@@ -525,7 +548,15 @@ When that key exists, the script configures:
 
 - `USE_LITELLM=true`
 - `DEFAULT_MODEL=gemini/gemini-3.1-flash-lite-preview`
-- `~/.bashrc.d/shellgpt-gemini.bash` to export `GEMINI_API_KEY` inside the toolbox shell and retry `sgpt` with `gemini/gemini-2.5-flash-lite` if the preview model fails
+- `~/.bashrc.d/shellgpt-gemini.bash` to export `GEMINI_API_KEY` inside the toolbox shell
+- `~/.local/bin/sgpt` wrapper around `~/.local/bin/sgpt-cli`; it retries `gemini/gemini-2.5-flash` when the preview model fails with temporary availability errors such as `503`, `UNAVAILABLE`, high demand, overload, or rate limits
+
+If both the primary model and fallback fail, `sgpt` prints a short diagnostic:
+
+```text
+sgpt: nie udalo sie polaczyc z AI.
+Sprawdz internet, klucz/API i dostepnosc modeli.
+```
 
 Other supported private sources:
 
@@ -536,7 +567,7 @@ Other supported private sources:
 - `~/.config/shell_gpt/credentials.env`
 - `~/.bashrc.d/ai-keys.bash`
 
-If no private key exists, the config contains `OPENAI_API_KEY=missing-shellgpt-api-key` and `verify.sh` reports a warning. Optional settings are `SHELLGPT_PROVIDER`, `SHELLGPT_API_BASE_URL`, `SHELLGPT_DEFAULT_MODEL`, `SHELLGPT_USE_LITELLM`, `SHELLGPT_GEMINI_PRIMARY_MODEL`, and `SHELLGPT_GEMINI_FALLBACK_MODEL`.
+If no private key exists, the config contains `OPENAI_API_KEY=missing-shellgpt-api-key` and `verify.sh` reports a warning. Optional settings are `SHELLGPT_PROVIDER`, `SHELLGPT_API_BASE_URL`, `SHELLGPT_DEFAULT_MODEL`, `SHELLGPT_USE_LITELLM`, `SHELLGPT_GEMINI_PRIMARY_MODEL` defaulting to `gemini/gemini-3.1-flash-lite-preview`, and `SHELLGPT_GEMINI_FALLBACK_MODEL` defaulting to `gemini/gemini-2.5-flash`.
 
 ### ccstatusline — Claude Code status in Waybar
 
