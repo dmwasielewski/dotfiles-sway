@@ -3,7 +3,6 @@
 
 import sys
 import os
-import json
 
 audio_file = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser(
     "~/.cache/voice-type/voice-input.wav"
@@ -39,9 +38,16 @@ except FileNotFoundError:
     sys.exit(0)
 
 from google import genai
-from google.genai import types
 
 client = genai.Client(api_key=api_key)
+gemini_models = [
+    model.strip()
+    for model in os.getenv(
+        "VOICE_TYPE_GEMINI_MODELS",
+        "gemini-3.1-flash-lite-preview,gemini-2.5-flash-lite",
+    ).split(",")
+    if model.strip()
+]
 
 prompt = f"""You are a UK English language tutor. The text below was spoken in English by a non-native speaker and transcribed from speech. Always treat it as spoken UK English regardless of how it looks.
 
@@ -51,13 +57,18 @@ Return ONLY the corrected text, nothing else.
 
 Text: {text}"""
 
-try:
-    response = client.models.generate_content(
-        model="gemini-3.1-flash-lite-preview",
-        contents=prompt,
-    )
-    corrected = response.text.strip()
-except Exception:
-    corrected = text
+corrected = text
+for gemini_model in gemini_models:
+    try:
+        response = client.models.generate_content(
+            model=gemini_model,
+            contents=prompt,
+        )
+        candidate = response.text.strip()
+        if candidate:
+            corrected = candidate
+            break
+    except Exception:
+        continue
 
 print(corrected)

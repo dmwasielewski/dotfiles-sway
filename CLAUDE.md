@@ -100,7 +100,7 @@ cat ~/.ssh/id_ed25519.pub
 
 An SSH key is only needed if you want to use SSH remotes or private forks. `bootstrap.sh` clones this repo over HTTPS by default.
 
-If ShellGPT should be ready immediately after the `damian` toolbox setup, restore `~/.config/voice-type/gemini-api-key` before `setup-damian-container.sh` runs. ShellGPT reuses that same Gemini key through LiteLLM by default. Other supported private sources are `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SHELLGPT_API_KEY`, `ANTHROPIC_API_KEY`, `~/.config/ai/api.env`, `~/.config/shell_gpt/credentials.env`, and `~/.bashrc.d/ai-keys.bash`. These files are private and must not be committed to this repo.
+If ShellGPT should be ready immediately after the `damian` toolbox setup, restore `~/.config/voice-type/gemini-api-key` before `setup-damian-container.sh` runs. ShellGPT reuses that same Gemini key through LiteLLM by default. Voice typing and ShellGPT both prefer `gemini-3.1-flash-lite-preview` and fall back to `gemini-2.5-flash-lite` when the preview model is overloaded. Other supported private sources are `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SHELLGPT_API_KEY`, `ANTHROPIC_API_KEY`, `~/.config/ai/api.env`, `~/.config/shell_gpt/credentials.env`, and `~/.bashrc.d/ai-keys.bash`. These files are private and must not be committed to this repo.
 
 ### Step 1 — Bootstrap
 
@@ -218,7 +218,7 @@ Managed by `scripts/setup-damian-container.sh`. Use `toolbox enter damian` to en
 
 npm prefix is set to `~/.npm-global` — global npm packages visible from host too.
 
-ShellGPT config is generated non-interactively by `scripts/configure-shellgpt.sh` into `~/.config/shell_gpt/.sgptrc`. The preferred provider is Gemini via LiteLLM, using the same private key file as voice typing: `~/.config/voice-type/gemini-api-key`. If no private API key source exists, the config uses the placeholder `OPENAI_API_KEY=missing-shellgpt-api-key` so `sgpt` never blocks setup with an interactive prompt. Do not commit API keys to this repo.
+ShellGPT config is generated non-interactively by `scripts/configure-shellgpt.sh` into `~/.config/shell_gpt/.sgptrc`. The preferred provider is Gemini via LiteLLM, using the same private key file as voice typing: `~/.config/voice-type/gemini-api-key`. It sets `gemini/gemini-3.1-flash-lite-preview` as the primary ShellGPT model and installs a shell wrapper that retries `gemini/gemini-2.5-flash-lite` if the primary model fails. If no private API key source exists, the config uses the placeholder `OPENAI_API_KEY=missing-shellgpt-api-key` so `sgpt` never blocks setup with an interactive prompt. Do not commit API keys to this repo.
 
 ### Layer 4: distrobox `security` (Ubuntu 26.04 pentesting)
 
@@ -486,7 +486,7 @@ Preferred source, shared with voice typing:
 - `GEMINI_API_KEY`
 - `GOOGLE_API_KEY`
 
-With that key, the generated config uses `USE_LITELLM=true` and `DEFAULT_MODEL=gemini/gemini-2.5-flash-lite`, and writes `~/.bashrc.d/shellgpt-gemini.bash` to export `GEMINI_API_KEY` in toolbox shells.
+With that key, the generated config uses `USE_LITELLM=true` and `DEFAULT_MODEL=gemini/gemini-3.1-flash-lite-preview`, and writes `~/.bashrc.d/shellgpt-gemini.bash` to export `GEMINI_API_KEY` in toolbox shells and retry `sgpt` with `gemini/gemini-2.5-flash-lite` if the preview model fails.
 
 Other supported private sources:
 
@@ -501,8 +501,9 @@ Optional ShellGPT settings:
 
 - `SHELLGPT_PROVIDER` — `auto`, `gemini`, `openai`, or `anthropic`
 - `SHELLGPT_API_BASE_URL` or `API_BASE_URL` — defaults to `default`
-- `SHELLGPT_DEFAULT_MODEL` or `DEFAULT_MODEL` — defaults to Gemini when the voice key exists, otherwise `gpt-4o`
+- `SHELLGPT_DEFAULT_MODEL` or `DEFAULT_MODEL` — defaults to Gemini 3.1 Flash Lite Preview when the voice key exists, otherwise `gpt-4o`
 - `SHELLGPT_USE_LITELLM` or `USE_LITELLM` — defaults to `true` for Gemini/Anthropic, otherwise `false`
+- `SHELLGPT_GEMINI_PRIMARY_MODEL` and `SHELLGPT_GEMINI_FALLBACK_MODEL` — default to `gemini/gemini-3.1-flash-lite-preview` and `gemini/gemini-2.5-flash-lite`
 
 If no private key exists, the config contains `OPENAI_API_KEY=missing-shellgpt-api-key` and `verify.sh` reports a warning. Do not store ShellGPT API keys in this repo. The home directory is shared with the toolbox, so private files under `~/.config/` are visible where `sgpt` runs.
 

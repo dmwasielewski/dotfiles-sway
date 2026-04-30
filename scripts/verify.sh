@@ -235,6 +235,13 @@ if host toolbox list 2>/dev/null | grep -qw "damian"; then
         pass "ShellGPT Gemini config shares voice typing key source"
     fi
 
+    if host toolbox run --container damian bash -c \
+        'grep -q "^DEFAULT_MODEL=gemini/gemini-3.1-flash-lite-preview$" ~/.config/shell_gpt/.sgptrc 2>/dev/null && grep -q "SHELLGPT_GEMINI_FALLBACK_MODEL.*gemini/gemini-2.5-flash-lite" ~/.bashrc.d/shellgpt-gemini.bash 2>/dev/null' 2>/dev/null; then
+        pass "ShellGPT Gemini fallback configured"
+    else
+        warn "ShellGPT Gemini fallback not configured — rerun bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
+    fi
+
 else
     fail "Toolbox 'damian'  NOT FOUND" "bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
 fi
