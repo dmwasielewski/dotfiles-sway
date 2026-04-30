@@ -138,6 +138,12 @@ fi
 # ── 3. Flatpak apps ───────────────────────────────────────────────────────
 section "3. Flatpak apps"
 
+if host flatpak remotes 2>/dev/null | grep -q '^flathub'; then
+    pass "Flathub remote"
+else
+    fail "Flathub remote missing" "flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo"
+fi
+
 declare -A FLATPAKS=(
     ["com.vivaldi.Vivaldi"]="Vivaldi (default browser)"
     ["com.visualstudio.code"]="VSCode"
@@ -155,7 +161,7 @@ for id in "${!FLATPAKS[@]}"; do
     if flatpak_installed "$id"; then
         pass "$label  ($id)"
     else
-        fail "$label  MISSING" "flatpak install -y flathub $id"
+        fail "$label  MISSING" "flatpak install -y --user flathub $id"
     fi
 done
 

@@ -436,7 +436,7 @@ bash ~/dotfiles-sway/scripts/fix-vivaldi-profiles.sh
 Host (rpm-ostree immutable)
 │
 ├─ Flatpak apps
-│   └─ Obsidian, Vivaldi, VSCode, Bitwarden, Spotify, OBS, mpv, JDownloader
+│   └─ User Flatpaks from Flathub: Obsidian, Vivaldi, VSCode, Bitwarden, Spotify, OBS, mpv, JDownloader
 │
 ├─ toolbox: damian (Fedora 43) — dev/DevOps
 │   ├─ node 22

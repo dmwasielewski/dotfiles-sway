@@ -56,15 +56,16 @@ fi
 
 # Flatpaks
 echo "==> Installing Flatpaks..."
-flatpak install -y flathub com.vivaldi.Vivaldi
-flatpak install -y flathub io.mpv.Mpv
-flatpak install -y flathub com.visualstudio.code
-flatpak install -y flathub com.bitwarden.desktop
-flatpak install -y flathub md.obsidian.Obsidian
-flatpak install -y flathub com.spotify.Client
-flatpak install -y flathub com.obsproject.Studio
-flatpak install -y flathub org.jdownloader.JDownloader
-flatpak install -y flathub com.vixalien.sticky
+flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
+flatpak install -y --user flathub com.vivaldi.Vivaldi
+flatpak install -y --user flathub io.mpv.Mpv
+flatpak install -y --user flathub com.visualstudio.code
+flatpak install -y --user flathub com.bitwarden.desktop
+flatpak install -y --user flathub md.obsidian.Obsidian
+flatpak install -y --user flathub com.spotify.Client
+flatpak install -y --user flathub com.obsproject.Studio
+flatpak install -y --user flathub org.jdownloader.JDownloader
+flatpak install -y --user flathub com.vixalien.sticky
 
 # Fonts
 echo "==> Installing JetBrainsMono Nerd Font..."
