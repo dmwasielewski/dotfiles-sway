@@ -7,8 +7,8 @@ if [[ -f "$DOTFILES/scripts/lib-install.sh" ]]; then
     setup_logging "packages.sh"
 fi
 
-# Ask for sudo password upfront and extend timeout to 30 minutes (for installation)
-sudo -v
+# Verify sudo works non-interactively and extend timeout for this install phase.
+sudo -n true
 echo "Defaults timestamp_timeout=30" | sudo tee /etc/sudoers.d/timeout > /dev/null
 
 # Run this once after fresh install, then reboot
@@ -51,7 +51,7 @@ if [ ${#MISSING[@]} -eq 0 ]; then
     echo "==> All packages already installed — nothing to do."
 else
     echo "==> Installing new packages: ${MISSING[*]}"
-    rpm-ostree install "${MISSING[@]}"
+    sudo rpm-ostree install "${MISSING[@]}"
 fi
 
 # AMD GPU check
@@ -63,7 +63,7 @@ fi
 # Check for nomodeset (breaks AMD GPU)
 if rpm-ostree kargs | grep -q "nomodeset"; then
     echo "==> WARNING: nomodeset detected - removing it (breaks AMD GPU acceleration)"
-    rpm-ostree kargs --delete=nomodeset
+    sudo rpm-ostree kargs --delete=nomodeset
 fi
 
 # Verify hardware acceleration
