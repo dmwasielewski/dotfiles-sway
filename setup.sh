@@ -76,7 +76,7 @@ rm -f JetBrainsMono.zip
 fc-cache -fv
 
 echo "==> Installing Font Awesome..."
-FA_URL=$(curl -s https://api.github.com/repos/FortAwesome/Font-Awesome/releases/latest | grep "browser_download_url" | grep "desktop.zip" | cut -d'"' -f4)
+FA_URL=$(curl -fsSL https://api.github.com/repos/FortAwesome/Font-Awesome/releases/latest | grep -o 'https://[^"]*desktop\.zip' | head -n1)
 if [ -z "$FA_URL" ]; then
     echo "WARNING: Could not resolve Font Awesome download URL — skipping. Install manually from https://fontawesome.com"
 else
