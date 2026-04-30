@@ -34,7 +34,9 @@ run_step "TOOLBOX_NPM_PREFIX" "Configuring npm prefix (~/.npm-global)" \
     toolbox run --container "$CONTAINER" bash -c '
         set -eo pipefail
         mkdir -p ~/.npm-global
-        npm config --location=user set prefix "$HOME/.npm-global"
+        touch ~/.npmrc
+        sed -i "/^prefix=/d" ~/.npmrc
+        printf "prefix=%s\n" "$HOME/.npm-global" >> ~/.npmrc
         grep -q "npm-global" ~/.bashrc || echo "export PATH=\$PATH:~/.npm-global/bin" >> ~/.bashrc
     '
 
