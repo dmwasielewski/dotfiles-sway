@@ -51,7 +51,7 @@ echo "==> Creating toolbox container..."
 if toolbox list | grep -q "damian"; then
     echo "==> Toolbox 'damian' already exists — skipping."
 else
-    toolbox create --image registry.fedoraproject.org/fedora-toolbox:43 damian
+    toolbox create --assumeyes --image registry.fedoraproject.org/fedora-toolbox:43 damian
 fi
 
 # Flatpaks

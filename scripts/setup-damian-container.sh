@@ -22,7 +22,7 @@ if toolbox list 2>/dev/null | grep -qw "$CONTAINER"; then
     step_done "TOOLBOX_CREATED"
 else
     run_step "TOOLBOX_CREATED" "Creating toolbox '$CONTAINER'" \
-        toolbox create --image registry.fedoraproject.org/fedora-toolbox:43 "$CONTAINER"
+        toolbox create --assumeyes --image registry.fedoraproject.org/fedora-toolbox:43 "$CONTAINER"
 fi
 
 # ── Install packages ─────────────────────────────────────────────────────

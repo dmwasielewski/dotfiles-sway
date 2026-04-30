@@ -81,7 +81,9 @@ run_step() {
 
 # ── Step 1: Clone repository ─────────────────────────────────────────────
 if [[ -d "$DOTFILES/.git" ]]; then
-    echo -e "${YELLOW}==> $DOTFILES already exists — skipping clone.${NC}"
+    echo -e "${YELLOW}==> $DOTFILES already exists — updating repository.${NC}"
+    run_step "CLONE_REPO" "Updating repository" \
+        git -C "$DOTFILES" pull --ff-only
     step_save "CLONE_REPO" "done"
 else
     run_step "CLONE_REPO" "Cloning repository" \
