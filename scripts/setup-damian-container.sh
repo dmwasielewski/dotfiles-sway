@@ -26,12 +26,13 @@ else
 fi
 
 # ── Install packages ─────────────────────────────────────────────────────
-run_step "TOOLBOX_PACKAGES" "Installing node, npm, gh, git inside toolbox" \
-    toolbox run --container "$CONTAINER" sudo dnf install -y nodejs npm gh git
+run_step "TOOLBOX_PACKAGES" "Installing node, npm, gh, git, pip inside toolbox" \
+    toolbox run --container "$CONTAINER" sudo dnf install -y nodejs npm gh git python3-pip
 
 # ── Configure npm prefix ─────────────────────────────────────────────────
 run_step "TOOLBOX_NPM_PREFIX" "Configuring npm prefix (~/.npm-global)" \
     toolbox run --container "$CONTAINER" bash -c '
+        set -euo pipefail
         mkdir -p ~/.npm-global
         npm config set prefix ~/.npm-global
         grep -q "npm-global" ~/.bashrc || echo "export PATH=\$PATH:~/.npm-global/bin" >> ~/.bashrc
@@ -40,6 +41,7 @@ run_step "TOOLBOX_NPM_PREFIX" "Configuring npm prefix (~/.npm-global)" \
 # ── Install AI coding CLIs ───────────────────────────────────────────────
 run_step "AI_CLI_TOOLS_INSTALLED" "Installing Claude Code and OpenAI Codex CLI" \
     toolbox run --container "$CONTAINER" bash -c '
+        set -euo pipefail
         source ~/.bashrc
         PATH=$PATH:~/.npm-global/bin npm install -g @anthropic-ai/claude-code @openai/codex
     '
@@ -49,6 +51,7 @@ step_done "CODEX_CLI_INSTALLED"
 # ── Install Claude Code plugins ──────────────────────────────────────────
 echo -e "\n${CYAN}==> Installing Claude Code plugins...${NC}"
 toolbox run --container "$CONTAINER" bash -c '
+    set -euo pipefail
     source ~/.bashrc
     PATH=$PATH:~/.npm-global/bin
     claude plugin install superpowers@claude-plugins-official --yes 2>/dev/null || true
@@ -64,6 +67,7 @@ toolbox run --container "$CONTAINER" bash -c '
 # ── Voice typing — faster-whisper + google-genai ────────────────────────
 run_step "VOICE_WHISPER" "Installing faster-whisper + google-genai (voice typing)" \
     toolbox run --container "$CONTAINER" bash -c '
+        set -euo pipefail
         pip3 install faster-whisper google-genai --user --quiet
         # Pre-download the small model (~470 MB) to avoid delay on first use
         python3 -c "from faster_whisper import WhisperModel; WhisperModel(\"small\", device=\"cpu\", compute_type=\"int8\")"
