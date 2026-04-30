@@ -1,7 +1,7 @@
 #!/bin/bash
 # bootstrap.sh — fresh install entry point
 # Usage: bash <(curl -s https://raw.githubusercontent.com/dmwasielewski/dotfiles-sway/main/bootstrap.sh)
-# Prerequisites: SSH key generated and added to GitHub
+# Prerequisites: GitHub access to this repo. SSH is optional; HTTPS is the default clone path.
 
 set -euo pipefail
 
@@ -10,6 +10,7 @@ REPO="dotfiles-sway"
 DOTFILES="$HOME/dotfiles-sway"
 STATE_FILE="$HOME/.dotfiles-install-state"
 LOG_FILE="${DOTFILES_LOG_FILE:-$HOME/.dotfiles-install.log}"
+REPO_URL="${DOTFILES_REPO_URL:-https://github.com/$GITHUB_USER/$REPO.git}"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -84,7 +85,7 @@ if [[ -d "$DOTFILES/.git" ]]; then
     step_save "CLONE_REPO" "done"
 else
     run_step "CLONE_REPO" "Cloning repository" \
-        git clone "git@github.com:$GITHUB_USER/$REPO.git" "$DOTFILES"
+        git clone "$REPO_URL" "$DOTFILES"
 fi
 
 # ── Step 2: Symlinks, Flatpaks, toolbox, fonts ───────────────────────────

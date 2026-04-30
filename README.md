@@ -47,13 +47,13 @@ Personal dotfiles for Fedora Atomic Sway setup.
 
 ### Prerequisites
 
-1. Generate SSH key and add to GitHub:
+1. Optional: generate an SSH key if you want to use SSH remotes or clone private forks:
 ```bash
 ssh-keygen -t ed25519 -C "your@email.com"
 cat ~/.ssh/id_ed25519.pub
 ```
 
-Then add the key at: https://github.com/settings/ssh/new
+`bootstrap.sh` now clones this repo over HTTPS by default, so the fresh install path does not require GitHub SSH auth.
 
 2. Run bootstrap:
 ```bash
@@ -95,6 +95,15 @@ bash ~/dotfiles-sway/scripts/setup-security-container.sh
 ```bash
 bash ~/dotfiles-sway/scripts/verify.sh
 ```
+
+9. Optional: validate the fresh-install flow in a disposable Fedora Sway Atomic VM:
+```bash
+bash ~/dotfiles-sway/scripts/create-fedora-sway-vm.sh
+```
+This downloads the official Fedora Everything installer ISO, installs Fedora Sway Atomic with kickstart, injects your host SSH key for access, and runs the bootstrap phase inside the VM.
+Live images are not used for this test because Fedora Kickstart does not support live media as an installation source.
+The script verifies the installer ISO checksum, injects kickstart into the installer initrd, resolves the Fedora ostree content URL from the official mirrorlist, and starts the VM again if Anaconda shuts it off after installation.
+For this disposable validation VM, the kickstart uses `ostreesetup --nogpg` because the Fedora 44 netinst Anaconda environment can miss the current ostree signing key even when the ISO checksum is valid.
 
 `verify.sh` checks every component of the installation and shows a summary:
 - ✓ passed / ✗ failed / ⚠ warnings

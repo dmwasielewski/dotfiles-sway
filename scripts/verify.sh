@@ -342,11 +342,13 @@ else
 fi
 
 section "7a. Virtual machines"
-for vmname in win11 winserver kali; do
+for vmname in win11 winserver kali fedora-sway-test; do
     VMSTATE=$(host virsh --connect qemu:///system domstate "$vmname" 2>/dev/null || echo "not found")
     if [[ "$VMSTATE" == "not found" ]]; then
         if [[ "$vmname" == "win11" ]]; then
             fail "VM '$vmname'  NOT FOUND" "Create manually — see CLAUDE.md KVM section"
+        elif [[ "$vmname" == "fedora-sway-test" ]]; then
+            warn "VM '$vmname'  not created yet (validation VM)"
         else
             warn "VM '$vmname'  not created yet (planned)"
         fi

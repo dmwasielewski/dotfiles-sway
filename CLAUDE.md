@@ -6,7 +6,7 @@ This file is for AI assistants (Claude, Gemini, Copilot, etc.). Read it fully be
 
 ## Project goal
 
-Fully automated, reproducible setup of **Fedora Atomic Sway** — from a fresh OS install to a complete working system with all applications, containers, virtual machines, and configuration. Running `bootstrap.sh` should reproduce the exact state of the system without any manual steps beyond SSH key setup.
+Fully automated, reproducible setup of **Fedora Atomic Sway** — from a fresh OS install to a complete working system with all applications, containers, virtual machines, and configuration. Running `bootstrap.sh` should reproduce the exact state of the system without any manual steps beyond network access to GitHub and the separate login steps listed below.
 
 The system belongs to **Damian** (dmwasielewski). Communicate in **Polish** unless asked otherwise.
 
@@ -52,7 +52,7 @@ The system belongs to **Damian** (dmwasielewski). Communicate in **Polish** unle
 ```
 dotfiles-sway/
 ├── CLAUDE.md                          ← this file
-├── bootstrap.sh                       ← fresh install entry point (SSH key required first)
+├── bootstrap.sh                       ← fresh install entry point (HTTPS clone by default)
 ├── packages.sh                        ← rpm-ostree system packages (host)
 ├── setup.sh                           ← symlinks, Flatpaks, toolbox creation, fonts
 ├── user-dirs.dirs                     ← XDG user directories config
@@ -95,8 +95,9 @@ Runtime diagnostic files:
 ```bash
 ssh-keygen -t ed25519 -C "your@email.com"
 cat ~/.ssh/id_ed25519.pub
-# Add to https://github.com/settings/ssh/new
 ```
+
+An SSH key is only needed if you want to use SSH remotes or private forks. `bootstrap.sh` clones this repo over HTTPS by default.
 
 ### Step 1 — Bootstrap
 
@@ -108,6 +109,21 @@ Bootstrap does:
 1. Clones this repo to `~/dotfiles-sway`
 2. Runs `setup.sh` — symlinks, Flatpaks, toolbox creation, fonts
 3. Runs `packages.sh` — installs system packages via rpm-ostree
+
+For a disposable end-to-end validation VM:
+
+```bash
+bash ~/dotfiles-sway/scripts/create-fedora-sway-vm.sh
+```
+
+That script provisions Fedora Sway Atomic in KVM using the official Fedora Everything installer ISO, injects the host SSH public key into the guest, and runs the Phase 1 bootstrap inside the VM. Fedora live media are not used for this path because Kickstart does not support live images as an installation source.
+
+VM validation details:
+- The installer ISO checksum is verified before use.
+- Kickstart is injected into the installer initrd with `virt-install --initrd-inject`.
+- The Fedora ostree content URL is resolved from `https://ostree.fedoraproject.org/mirrorlist`.
+- The disposable VM kickstart uses `ostreesetup --nogpg` because the Fedora 44 netinst Anaconda environment can miss the current ostree signing key even when the installer ISO checksum is valid.
+- Anaconda may shut off the VM after installation; the script starts it again from disk and then waits for SSH.
 
 ### Step 2 — Reboot (mandatory after rpm-ostree)
 
