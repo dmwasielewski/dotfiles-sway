@@ -70,9 +70,9 @@ flatpak install -y --user flathub com.vixalien.sticky
 # Fonts
 echo "==> Installing JetBrainsMono Nerd Font..."
 mkdir -p ~/.local/share/fonts
-curl -OL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
-unzip JetBrainsMono.zip -d ~/.local/share/fonts/JetBrainsMono
-rm JetBrainsMono.zip
+curl -fL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip -o JetBrainsMono.zip
+unzip -oq JetBrainsMono.zip -d ~/.local/share/fonts/JetBrainsMono
+rm -f JetBrainsMono.zip
 fc-cache -fv
 
 echo "==> Installing Font Awesome..."
@@ -80,9 +80,9 @@ FA_URL=$(curl -s https://api.github.com/repos/FortAwesome/Font-Awesome/releases/
 if [ -z "$FA_URL" ]; then
     echo "WARNING: Could not resolve Font Awesome download URL — skipping. Install manually from https://fontawesome.com"
 else
-    curl -OL "$FA_URL"
-    unzip fontawesome-free-*.zip -d ~/.local/share/fonts/FontAwesome
-    rm fontawesome-free-*.zip
+    curl -fL "$FA_URL" -o FontAwesome.zip
+    unzip -oq FontAwesome.zip -d ~/.local/share/fonts/FontAwesome
+    rm -f FontAwesome.zip
     fc-cache -fv
 fi
 
