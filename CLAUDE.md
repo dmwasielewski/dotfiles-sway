@@ -124,6 +124,7 @@ VM validation details:
 - The Fedora ostree content URL is resolved from `https://ostree.fedoraproject.org/mirrorlist`.
 - The disposable VM kickstart uses `ostreesetup --nogpg` because the Fedora 44 netinst Anaconda environment can miss the current ostree signing key even when the installer ISO checksum is valid.
 - Anaconda may shut off the VM after installation; the script starts it again from disk and then waits for SSH.
+- `setup-kvm.sh` detects an existing upstream `192.168.122.0/24` route and moves the guest libvirt `default` NAT network to `192.168.125.0/24`; this prevents nested VM validation from breaking SSH back to the outer host.
 
 ### Step 2 — Reboot (mandatory after rpm-ostree)
 

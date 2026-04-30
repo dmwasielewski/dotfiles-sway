@@ -80,6 +80,7 @@ bash ~/dotfiles-sway/scripts/check-hardware.sh
 bash ~/dotfiles-sway/scripts/setup-kvm.sh
 ```
 > Then log out and back in for group changes to take effect.
+> If the current machine already uses `192.168.122.0/24` for its upstream network, the script moves libvirt's `default` NAT network to `192.168.125.0/24` to avoid breaking connectivity.
 
 6. Set up the damian dev container (node, npm, gh, Claude Code, Codex CLI):
 ```bash
@@ -528,6 +529,7 @@ virt-manager
 
 ### Default network
 NAT network (`default`) is enabled and set to autostart. VMs get IPs in `192.168.122.0/24`.
+If `192.168.122.0/24` is already present before libvirt starts, `setup-kvm.sh` redefines the `default` network as `192.168.125.0/24`. This matters for nested validation VMs, where the outer host libvirt network commonly already owns `192.168.122.0/24`.
 
 ### Windows 11 — TPM & Secure Boot
 Windows 11 requires TPM 2.0 and Secure Boot. In virt-manager:

@@ -15,6 +15,36 @@ echo -e "${BOLD}${CYAN}║   KVM / QEMU — setup                     ║${NC}"
 echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════╝${NC}"
 echo ""
 
+configure_default_network() {
+    local network_xml
+    network_xml="$(mktemp)"
+    trap 'rm -f "$network_xml"' RETURN
+
+    if ip -4 route show 192.168.122.0/24 2>/dev/null | grep -qv 'dev virbr0'; then
+        echo -e "${YELLOW}⚠ Existing 192.168.122.0/24 route detected — using 192.168.125.0/24 for libvirt default network${NC}"
+        sudo virsh --connect qemu:///system net-destroy default 2>/dev/null || true
+        sudo virsh --connect qemu:///system net-undefine default 2>/dev/null || true
+        cat > "$network_xml" <<'XML'
+<network>
+  <name>default</name>
+  <forward mode='nat'/>
+  <bridge name='virbr0' stp='on' delay='0'/>
+  <ip address='192.168.125.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='192.168.125.2' end='192.168.125.254'/>
+    </dhcp>
+  </ip>
+</network>
+XML
+        sudo virsh --connect qemu:///system net-define "$network_xml"
+    fi
+
+    sudo virsh --connect qemu:///system net-autostart default 2>/dev/null || true
+    sudo virsh --connect qemu:///system net-start default 2>/dev/null \
+        && echo -e "${GREEN}✓ Network 'default' started${NC}" \
+        || echo -e "${YELLOW}⚠ Network 'default' already active or unavailable${NC}"
+}
+
 # ── Enable and start libvirtd ────────────────────────────────────────────
 run_step "KVM_LIBVIRTD_ENABLED" "Enabling and starting libvirtd" \
     sudo systemctl enable --now libvirtd
@@ -25,10 +55,7 @@ run_step "KVM_USER_GROUP" "Adding user to libvirt group" \
 
 # ── Start default NAT network ─────────────────────────────────────────────
 echo -e "\n${CYAN}==> Configuring default NAT network...${NC}"
-sudo virsh --connect qemu:///system net-autostart default 2>/dev/null || true
-sudo virsh --connect qemu:///system net-start default 2>/dev/null \
-    && echo -e "${GREEN}✓ Network 'default' started${NC}" \
-    || echo -e "${YELLOW}⚠ Network 'default' already active or unavailable${NC}"
+configure_default_network
 step_done "KVM_NETWORK_DEFAULT"
 
 # ── Verify KVM ───────────────────────────────────────────────────────────
