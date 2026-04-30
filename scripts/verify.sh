@@ -201,6 +201,7 @@ if host toolbox list 2>/dev/null | grep -qw "damian"; then
     check_toolbox_tool "gh"     "gh (GitHub CLI)"
     check_toolbox_tool "claude" "claude (Claude Code)"
     check_toolbox_tool "codex"  "codex (OpenAI Codex CLI)"
+    check_toolbox_tool "sgpt"   "sgpt (ShellGPT)"
     check_toolbox_tool "git"    "git"
 
     # Plugins — check settings.json
@@ -216,10 +217,22 @@ if host toolbox list 2>/dev/null | grep -qw "damian"; then
 
     # API key
     if host toolbox run --container damian bash -c \
-        'grep -q ANTHROPIC_API_KEY ~/.bashrc 2>/dev/null' 2>/dev/null; then
-        pass "ANTHROPIC_API_KEY set in ~/.bashrc"
+        '[[ -n "${ANTHROPIC_API_KEY:-}" ]] || grep -q ANTHROPIC_API_KEY ~/.bashrc.d/ai-keys.bash 2>/dev/null || grep -q ANTHROPIC_API_KEY ~/.bashrc 2>/dev/null' 2>/dev/null; then
+        pass "ANTHROPIC_API_KEY available"
     else
-        warn "ANTHROPIC_API_KEY not found in ~/.bashrc — required to use Claude Code"
+        warn "ANTHROPIC_API_KEY not found — put it in ~/.bashrc.d/ai-keys.bash for Claude Code"
+    fi
+
+    if host toolbox run --container damian bash -c \
+        'test -s ~/.config/shell_gpt/.sgptrc && ! grep -q "^OPENAI_API_KEY=missing-shellgpt-api-key$" ~/.config/shell_gpt/.sgptrc || [[ -n "${OPENAI_API_KEY:-}" ]] || [[ -n "${SHELLGPT_API_KEY:-}" ]] || [[ -n "${GEMINI_API_KEY:-}" ]] || test -s ~/.config/voice-type/gemini-api-key' 2>/dev/null; then
+        pass "ShellGPT API config present"
+    else
+        warn "ShellGPT API config placeholder — provide ~/.config/voice-type/gemini-api-key, GEMINI_API_KEY, OPENAI_API_KEY/SHELLGPT_API_KEY, or a private env file before running setup-damian-container.sh"
+    fi
+
+    if host toolbox run --container damian bash -c \
+        'grep -q "^DEFAULT_MODEL=gemini/" ~/.config/shell_gpt/.sgptrc 2>/dev/null && { [[ -n "${GEMINI_API_KEY:-}" ]] || test -s ~/.config/voice-type/gemini-api-key || grep -q GEMINI_API_KEY ~/.bashrc.d/shellgpt-gemini.bash 2>/dev/null; }' 2>/dev/null; then
+        pass "ShellGPT Gemini config shares voice typing key source"
     fi
 
 else
@@ -382,7 +395,7 @@ fi
 section "9. Manual steps (require human interaction)"
 
 echo -e "  ${YELLOW}⚠${NC}  Cannot be automated — verify manually:"
-echo    "     • ANTHROPIC_API_KEY set in ~/.bashrc (inside damian container)"
+echo    "     • ANTHROPIC_API_KEY set in ~/.bashrc.d/ai-keys.bash"
 echo    "     • claude login  (OAuth via browser)"
 echo    "     • codex login  (OpenAI/ChatGPT account)"
 echo    "     • gh auth login  (GitHub CLI)"

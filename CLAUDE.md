@@ -23,7 +23,7 @@ The system belongs to **Damian** (dmwasielewski). Communicate in **Polish** unle
 
 ### AI coding CLIs run inside a Toolbox container
 
-- Claude Code and OpenAI Codex CLI are installed **inside the `damian` toolbox container** (Fedora 43), not as host rpm-ostree packages.
+- Claude Code, OpenAI Codex CLI, and ShellGPT are installed **inside the `damian` toolbox container** (Fedora 43), not as host rpm-ostree packages.
 - Bash commands from these CLIs run **inside the toolbox**, not on the host.
 - To run a command **on the host** from inside the toolbox: `flatpak-spawn --host <command>`
 - The home directory (`~`) is **shared** between host and toolbox — files written to `~` are visible on both sides.
@@ -72,7 +72,8 @@ dotfiles-sway/
     ├── fix-vivaldi-profiles.sh        ← Fixes Vivaldi crash/session recovery dialog on start
     ├── check-hardware.sh              ← Verifies VA-API, GPU, KVM after reboot — writes state
     ├── setup-kvm.sh                   ← KVM/QEMU setup (libvirtd, user groups, NAT network) — writes state
-    ├── setup-damian-container.sh      ← Toolbox damian: node, npm, gh, Claude Code, Codex CLI + plugins — writes state
+    ├── setup-damian-container.sh      ← Toolbox damian: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
+    ├── configure-shellgpt.sh          ← Non-interactive ShellGPT config from private env/API files
     ├── setup-security-container.sh   ← Distrobox security: pentesting toolkit — writes state
     ├── voice-type-start.sh           ← Voice typing: start recording on Mod+T press
     ├── voice-type-stop.sh            ← Voice typing: stop, transcribe, inject text on Mod+T release
@@ -98,6 +99,8 @@ cat ~/.ssh/id_ed25519.pub
 ```
 
 An SSH key is only needed if you want to use SSH remotes or private forks. `bootstrap.sh` clones this repo over HTTPS by default.
+
+If ShellGPT should be ready immediately after the `damian` toolbox setup, restore `~/.config/voice-type/gemini-api-key` before `setup-damian-container.sh` runs. ShellGPT reuses that same Gemini key through LiteLLM by default. Other supported private sources are `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SHELLGPT_API_KEY`, `ANTHROPIC_API_KEY`, `~/.config/ai/api.env`, `~/.config/shell_gpt/credentials.env`, and `~/.bashrc.d/ai-keys.bash`. These files are private and must not be committed to this repo.
 
 ### Step 1 — Bootstrap
 
@@ -144,7 +147,7 @@ bash ~/dotfiles-sway/scripts/setup-security-container.sh # security distrobox
 
 ### Step 4 — Manual post-install steps (not automated yet)
 
-- Set `ANTHROPIC_API_KEY` in `~/.bashrc` inside the `damian` container
+- Set `ANTHROPIC_API_KEY` in private `~/.bashrc.d/ai-keys.bash`
 - Pair Bluetooth devices manually via `bluetoothctl`
 - Install NordVPN via official Linux CLI script (no Flatpak available)
 - Set up virtual machines — see KVM section below
@@ -180,7 +183,7 @@ AMD GPU: mesa-va-drivers is already in Fedora Atomic base — no extra package n
 
 ### Layer 2: Flatpak (GUI apps)
 
-Managed by `setup.sh`. Installed from Flathub.
+Managed by `setup.sh`. Installed from Flathub as user Flatpaks (`--user`) to avoid host polkit prompts during unattended setup.
 
 | App | Flatpak ID | Purpose |
 |---|---|---|
@@ -209,10 +212,13 @@ Managed by `scripts/setup-damian-container.sh`. Use `toolbox enter damian` to en
 | `gh` | GitHub CLI |
 | `claude` (`@anthropic-ai/claude-code`) | Claude Code CLI |
 | `codex` (`@openai/codex`) | OpenAI Codex CLI |
+| `sgpt` (`shell-gpt`) | ShellGPT terminal assistant |
 | `ccstatusline` | Claude Code Waybar status (bundled with claude-code) |
 | `faster-whisper` | Local Whisper AI speech recognition (voice typing) |
 
 npm prefix is set to `~/.npm-global` — global npm packages visible from host too.
+
+ShellGPT config is generated non-interactively by `scripts/configure-shellgpt.sh` into `~/.config/shell_gpt/.sgptrc`. The preferred provider is Gemini via LiteLLM, using the same private key file as voice typing: `~/.config/voice-type/gemini-api-key`. If no private API key source exists, the config uses the placeholder `OPENAI_API_KEY=missing-shellgpt-api-key` so `sgpt` never blocks setup with an interactive prompt. Do not commit API keys to this repo.
 
 ### Layer 4: distrobox `security` (Ubuntu 26.04 pentesting)
 
@@ -461,13 +467,55 @@ First use requires interactive login:
 codex login
 ```
 
-### Post-install manual steps for AI coding CLIs
+### ShellGPT
 
-These cannot be automated and must be done manually after first boot:
+ShellGPT is installed automatically by `scripts/setup-damian-container.sh` via `pip3 install --user "shell-gpt[litellm]"`.
 
-1. **API key** — add to `~/.bashrc` inside the `damian` container:
+Run it inside the `damian` toolbox:
+```bash
+toolbox enter damian
+sgpt "summarise rpm-ostree status"
+sgpt --shell "find large files in the current directory"
+```
+
+ShellGPT is configured non-interactively by `scripts/configure-shellgpt.sh`. The script always writes `~/.config/shell_gpt/.sgptrc` so `sgpt` never blocks setup with an API-key prompt.
+
+Preferred source, shared with voice typing:
+
+- `~/.config/voice-type/gemini-api-key`
+- `GEMINI_API_KEY`
+- `GOOGLE_API_KEY`
+
+With that key, the generated config uses `USE_LITELLM=true` and `DEFAULT_MODEL=gemini/gemini-2.5-flash-lite`, and writes `~/.bashrc.d/shellgpt-gemini.bash` to export `GEMINI_API_KEY` in toolbox shells.
+
+Other supported private sources:
+
+- `OPENAI_API_KEY`
+- `SHELLGPT_API_KEY`
+- `ANTHROPIC_API_KEY`
+- `~/.config/ai/api.env`
+- `~/.config/shell_gpt/credentials.env`
+- `~/.bashrc.d/ai-keys.bash`
+
+Optional ShellGPT settings:
+
+- `SHELLGPT_PROVIDER` — `auto`, `gemini`, `openai`, or `anthropic`
+- `SHELLGPT_API_BASE_URL` or `API_BASE_URL` — defaults to `default`
+- `SHELLGPT_DEFAULT_MODEL` or `DEFAULT_MODEL` — defaults to Gemini when the voice key exists, otherwise `gpt-4o`
+- `SHELLGPT_USE_LITELLM` or `USE_LITELLM` — defaults to `true` for Gemini/Anthropic, otherwise `false`
+
+If no private key exists, the config contains `OPENAI_API_KEY=missing-shellgpt-api-key` and `verify.sh` reports a warning. Do not store ShellGPT API keys in this repo. The home directory is shared with the toolbox, so private files under `~/.config/` are visible where `sgpt` runs.
+
+### Post-install login steps for AI coding CLIs
+
+ShellGPT API configuration is automated by `scripts/configure-shellgpt.sh` from private secret sources. The following login steps still require browser or service interaction after first boot:
+
+1. **Claude API key** — add to private `~/.bashrc.d/ai-keys.bash`:
    ```bash
-   echo 'export ANTHROPIC_API_KEY="your-key-here"' >> ~/.bashrc
+   mkdir -p ~/.bashrc.d
+   chmod 700 ~/.bashrc.d
+   echo 'export ANTHROPIC_API_KEY="your-key-here"' > ~/.bashrc.d/ai-keys.bash
+   chmod 600 ~/.bashrc.d/ai-keys.bash
    ```
    Get key at: `https://console.anthropic.com/settings/keys`
 
@@ -509,7 +557,7 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 - [x] All Flatpak apps installed via setup.sh
 - [x] All system packages via packages.sh (rpm-ostree)
 - [x] PWA shortcuts (Claude AI, ChatGPT, WhatsApp)
-- [x] toolbox `damian` with node, npm, gh, Claude Code, OpenAI Codex CLI
+- [x] toolbox `damian` with node, npm, gh, Claude Code, OpenAI Codex CLI, ShellGPT
 - [x] Claude Code settings.json symlinked from dotfiles
 - [x] Claude Code plugins auto-installed (superpowers, code-simplifier, context7)
 - [x] distrobox `security` with full pentesting toolkit
@@ -538,7 +586,7 @@ These require human interaction — document them so nothing is forgotten after 
 
 | Step | Command / Where |
 |---|---|
-| Set ANTHROPIC_API_KEY | `echo 'export ANTHROPIC_API_KEY="key"' >> ~/.bashrc` inside `damian` container |
+| Set ANTHROPIC_API_KEY | `~/.bashrc.d/ai-keys.bash` with `export ANTHROPIC_API_KEY="key"` |
 | Claude login (OAuth) | `toolbox enter damian` → `claude login` |
 | Codex login | `toolbox enter damian` → `codex login` |
 | GitHub CLI login | `toolbox enter damian` → `gh auth login` |

@@ -40,6 +40,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Firewall baseline (public zone, SSH + mDNS only)
 - Voice typing — push-to-talk (`Mod+T`) with local Whisper AI + Gemini UK English correction
 - Neovim — modern text editor, available system-wide
+- AI terminal tools in toolbox: Claude Code, OpenAI Codex CLI, ShellGPT (`sgpt`)
 
 ---
 
@@ -55,7 +56,19 @@ cat ~/.ssh/id_ed25519.pub
 
 `bootstrap.sh` now clones this repo over HTTPS by default, so the fresh install path does not require GitHub SSH auth.
 
-2. Run bootstrap:
+2. Private AI API key for voice typing and ShellGPT:
+```bash
+mkdir -p ~/.config/voice-type
+chmod 700 ~/.config/voice-type
+printf '%s\n' 'your-gemini-api-key-here' > ~/.config/voice-type/gemini-api-key
+chmod 600 ~/.config/voice-type/gemini-api-key
+```
+
+This file is private, outside git, and is shared with the `damian` toolbox through the home directory. Voice typing uses it directly, and `scripts/configure-shellgpt.sh` uses the same key by default through LiteLLM with `DEFAULT_MODEL=gemini/gemini-2.5-flash-lite`. On a fresh machine it should be restored from your private backup or secret manager before `setup-damian-container.sh` runs.
+
+ShellGPT also accepts `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SHELLGPT_API_KEY`, `ANTHROPIC_API_KEY`, `~/.config/ai/api.env`, `~/.config/shell_gpt/credentials.env`, and `~/.bashrc.d/ai-keys.bash`. Use `SHELLGPT_PROVIDER=openai`, `gemini`, or `anthropic` only when you need to override the automatic choice.
+
+3. Run bootstrap:
 ```bash
 bash <(curl -s https://raw.githubusercontent.com/dmwasielewski/dotfiles-sway/main/bootstrap.sh)
 ```
@@ -65,39 +78,39 @@ Bootstrap will:
 - Run setup.sh (symlinks, Flatpaks, toolbox, fonts)
 - Run packages.sh (system packages via rpm-ostree)
 
-3. Reboot after bootstrap completes:
+4. Reboot after bootstrap completes:
 ```bash
 systemctl reboot
 ```
 
-4. After reboot verify hardware:
+5. After reboot verify hardware:
 ```bash
 bash ~/dotfiles-sway/scripts/check-hardware.sh
 ```
 
-5. Set up KVM virtualisation:
+6. Set up KVM virtualisation:
 ```bash
 bash ~/dotfiles-sway/scripts/setup-kvm.sh
 ```
 > Then log out and back in for group changes to take effect.
 > If the current machine already uses `192.168.122.0/24` for its upstream network, the script moves libvirt's `default` NAT network to `192.168.125.0/24` to avoid breaking connectivity.
 
-6. Set up the damian dev container (node, npm, gh, Claude Code, Codex CLI):
+7. Set up the damian dev container (node, npm, gh, Claude Code, Codex CLI, ShellGPT):
 ```bash
 bash ~/dotfiles-sway/scripts/setup-damian-container.sh
 ```
 
-7. Create the security container:
+8. Create the security container:
 ```bash
 bash ~/dotfiles-sway/scripts/setup-security-container.sh
 ```
 
-8. Run full verification:
+9. Run full verification:
 ```bash
 bash ~/dotfiles-sway/scripts/verify.sh
 ```
 
-9. Optional: validate the fresh-install flow in a disposable Fedora Sway Atomic VM:
+10. Optional: validate the fresh-install flow in a disposable Fedora Sway Atomic VM:
 ```bash
 bash ~/dotfiles-sway/scripts/create-fedora-sway-vm.sh
 ```
@@ -335,7 +348,8 @@ dotfiles-sway/
 │   ├── fix-vivaldi-profiles.sh        # Fix Vivaldi crash/session recovery dialog
 │   ├── check-hardware.sh              # Hardware check (GPU, VA-API, audio, ...) — writes state
 │   ├── setup-kvm.sh                   # KVM/QEMU setup (libvirtd, groups, network) — writes state
-│   ├── setup-damian-container.sh      # Toolbox damian: node, npm, gh, Claude Code, Codex CLI + plugins — writes state
+│   ├── setup-damian-container.sh      # Toolbox damian: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
+│   ├── configure-shellgpt.sh          # Non-interactive ShellGPT config from private env/API files
 │   ├── setup-security-container.sh   # Distrobox security: pentesting toolkit — writes state
 │   ├── voice-type-start.sh           # Voice typing: start recording (Mod+T press)
 │   ├── voice-type-stop.sh            # Voice typing: stop recording, transcribe, inject text (Mod+T release)
@@ -446,6 +460,7 @@ Host (rpm-ostree immutable)
 │   ├─ gh (GitHub CLI)
 │   ├─ claude (Claude Code)
 │   ├─ codex (OpenAI Codex CLI)
+│   ├─ sgpt (ShellGPT terminal assistant)
 │   ├─ ccstatusline (Claude Code Waybar integration)
 │   └─ faster-whisper (local Whisper AI for voice typing)
 │
@@ -481,6 +496,40 @@ claude
 # Inside damian container
 codex
 ```
+
+### Run ShellGPT
+```bash
+# Inside damian container
+sgpt "explain rpm-ostree status"
+sgpt --shell "show listening ports"
+```
+
+ShellGPT is installed automatically by `scripts/setup-damian-container.sh` via `pip3 install --user "shell-gpt[litellm]"`.
+
+ShellGPT is configured non-interactively by `scripts/configure-shellgpt.sh`. The script always writes `~/.config/shell_gpt/.sgptrc` so `sgpt` never blocks setup with an API-key prompt.
+
+By default ShellGPT reuses the same private Gemini API key as voice typing:
+
+- `~/.config/voice-type/gemini-api-key`
+- `GEMINI_API_KEY`
+- `GOOGLE_API_KEY`
+
+When that key exists, the script configures:
+
+- `USE_LITELLM=true`
+- `DEFAULT_MODEL=gemini/gemini-2.5-flash-lite`
+- `~/.bashrc.d/shellgpt-gemini.bash` to export `GEMINI_API_KEY` inside the toolbox shell
+
+Other supported private sources:
+
+- `OPENAI_API_KEY`
+- `SHELLGPT_API_KEY`
+- `ANTHROPIC_API_KEY`
+- `~/.config/ai/api.env`
+- `~/.config/shell_gpt/credentials.env`
+- `~/.bashrc.d/ai-keys.bash`
+
+If no private key exists, the config contains `OPENAI_API_KEY=missing-shellgpt-api-key` and `verify.sh` reports a warning. Optional settings are `SHELLGPT_PROVIDER`, `SHELLGPT_API_BASE_URL`, `SHELLGPT_DEFAULT_MODEL`, and `SHELLGPT_USE_LITELLM`.
 
 ### ccstatusline — Claude Code status in Waybar
 
