@@ -32,18 +32,17 @@ run_step "TOOLBOX_PACKAGES" "Installing node, npm, gh, git, pip inside toolbox" 
 # ── Configure npm prefix ─────────────────────────────────────────────────
 run_step "TOOLBOX_NPM_PREFIX" "Configuring npm prefix (~/.npm-global)" \
     toolbox run --container "$CONTAINER" bash -c '
-        set -euo pipefail
+        set -eo pipefail
         mkdir -p ~/.npm-global
-        npm config set prefix ~/.npm-global
+        npm config --location=user set prefix "$HOME/.npm-global"
         grep -q "npm-global" ~/.bashrc || echo "export PATH=\$PATH:~/.npm-global/bin" >> ~/.bashrc
     '
 
 # ── Install AI coding CLIs ───────────────────────────────────────────────
 run_step "AI_CLI_TOOLS_INSTALLED" "Installing Claude Code and OpenAI Codex CLI" \
     toolbox run --container "$CONTAINER" bash -c '
-        set -euo pipefail
-        source ~/.bashrc
-        PATH=$PATH:~/.npm-global/bin npm install -g @anthropic-ai/claude-code @openai/codex
+        set -eo pipefail
+        PATH="$HOME/.npm-global/bin:$PATH" npm install -g @anthropic-ai/claude-code @openai/codex
     '
 step_done "CLAUDE_CODE_INSTALLED"
 step_done "CODEX_CLI_INSTALLED"
@@ -51,9 +50,8 @@ step_done "CODEX_CLI_INSTALLED"
 # ── Install Claude Code plugins ──────────────────────────────────────────
 echo -e "\n${CYAN}==> Installing Claude Code plugins...${NC}"
 toolbox run --container "$CONTAINER" bash -c '
-    set -euo pipefail
-    source ~/.bashrc
-    PATH=$PATH:~/.npm-global/bin
+    set -eo pipefail
+    PATH="$HOME/.npm-global/bin:$PATH"
     claude plugin install superpowers@claude-plugins-official --yes 2>/dev/null || true
     claude plugin install code-simplifier@claude-plugins-official --yes 2>/dev/null || true
     claude plugin install context7@claude-plugins-official --yes 2>/dev/null || true
@@ -67,7 +65,7 @@ toolbox run --container "$CONTAINER" bash -c '
 # ── Voice typing — faster-whisper + google-genai ────────────────────────
 run_step "VOICE_WHISPER" "Installing faster-whisper + google-genai (voice typing)" \
     toolbox run --container "$CONTAINER" bash -c '
-        set -euo pipefail
+        set -eo pipefail
         pip3 install faster-whisper google-genai --user --quiet
         # Pre-download the small model (~470 MB) to avoid delay on first use
         python3 -c "from faster_whisper import WhisperModel; WhisperModel(\"small\", device=\"cpu\", compute_type=\"int8\")"
