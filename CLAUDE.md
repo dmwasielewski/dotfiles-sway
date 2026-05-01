@@ -285,9 +285,11 @@ Solid black (`#000000`) — no image.
 | Timeout | Action |
 |---|---|
 | 600s | Display off |
-| 900s | Screen lock (swaylock, black) |
-| 1200s | System suspend |
+| 1200s | Screen lock (swaylock, black) |
+| 1800s | System suspend |
 | Before sleep | Auto-lock |
+
+Config is in `sway/config.d/90-swayidle.conf` (overrides Fedora's system default `/usr/share/sway/config.d/90-swayidle.conf` added in F44).
 
 ### Workspace autostart layout
 | Workspace | Content |

@@ -88,7 +88,8 @@ check_symlink() {
     fi
 }
 
-check_symlink "sway/config"          "$HOME/.config/sway/config"
+check_symlink "sway/config"                    "$HOME/.config/sway/config"
+check_symlink "sway/config.d/90-swayidle.conf" "$HOME/.config/sway/config.d/90-swayidle.conf"
 check_symlink "waybar/config"        "$HOME/.config/waybar/config"
 check_symlink "waybar/style.css"     "$HOME/.config/waybar/style.css"
 check_symlink "foot/foot.ini"        "$HOME/.config/foot/foot.ini"
