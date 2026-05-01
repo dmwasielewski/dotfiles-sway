@@ -31,6 +31,7 @@ echo -n > ~/.config/sway/config.d/60-bindings-screenshot.conf
 # Symlinks
 echo "==> Creating symlinks..."
 ln -sf "$DOTFILES/sway/config"                                ~/.config/sway/config
+ln -sf "$DOTFILES/sway/config.d/90-swayidle.conf"            ~/.config/sway/config.d/90-swayidle.conf
 ln -sf "$DOTFILES/waybar/config"                              ~/.config/waybar/config
 ln -sf "$DOTFILES/waybar/style.css"                           ~/.config/waybar/style.css
 ln -sf "$DOTFILES/foot/foot.ini"                              ~/.config/foot/foot.ini
