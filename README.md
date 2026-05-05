@@ -40,7 +40,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Firewall baseline (public zone, SSH + mDNS only)
 - Gitleaks secret scanner with a repo `pre-push` hook
 - Voice typing — push-to-talk (`Mod+T`) with local Whisper AI + Gemini UK English correction
-- Neovim — modern text editor, available system-wide
+- Neovim 0.12.1 — user-local latest pinned binary with Chris Titus Tech `titus-kickstart` config
 - AI terminal tools in toolbox: Claude Code, OpenAI Codex CLI, ShellGPT (`sgpt`)
 
 ---
@@ -76,6 +76,7 @@ bash <(curl -s https://raw.githubusercontent.com/dmwasielewski/dotfiles-sway/mai
 
 Bootstrap will:
 - Clone this repository
+- Initialise git submodules, including `ChrisTitusTech/neovim`
 - Run setup.sh (symlinks, Flatpaks, toolbox, fonts)
 - Run packages.sh (system packages via rpm-ostree)
 
@@ -342,6 +343,8 @@ dotfiles-sway/
 ├── claude/
 │   └── settings.json        # Claude Code settings (plugins, statusline) → symlinked to ~/.claude/settings.json
 ├── applications/            # PWA desktop shortcuts (Claude AI, ChatGPT, WhatsApp)
+├── nvim/
+│   └── christitustech       # Git submodule: ChrisTitusTech/neovim, config lives in titus-kickstart/
 ├── .githooks/
 │   └── pre-push             # Runs gitleaks before git push
 ├── scripts/
@@ -351,6 +354,7 @@ dotfiles-sway/
 │   ├── fix-vivaldi-profiles.sh        # Fix Vivaldi crash/session recovery dialog
 │   ├── check-hardware.sh              # Hardware check (GPU, VA-API, audio, ...) — writes state
 │   ├── setup-kvm.sh                   # KVM/QEMU setup (libvirtd, groups, network) — writes state
+│   ├── setup-neovim-config.sh         # Neovim 0.12.1 + Chris Titus Tech config symlink
 │   ├── setup-damian-container.sh      # Toolbox damian: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
 │   ├── configure-shellgpt.sh          # Non-interactive ShellGPT config from private env/API files
 │   ├── setup-security-container.sh   # Distrobox security: pentesting toolkit — writes state
@@ -429,7 +433,22 @@ Get a free key at: https://aistudio.google.com
 
 ## Neovim
 
-Modern text editor — Vim fork with Lua config, built-in LSP, and a large plugin ecosystem. Installed on the host via rpm-ostree so it's available everywhere (terminal, toolbox, scripts).
+Modern text editor — Vim fork with Lua config, built-in LSP, and a large plugin ecosystem.
+
+This setup uses:
+- Official upstream Neovim `v0.12.1` installed to `~/.local/opt/nvim-linux-x86_64`
+- `~/.local/bin/nvim` symlink, which wins over `/usr/bin/nvim` because `.bashrc` puts `~/.local/bin` first
+- Chris Titus Tech's Neovim config as a git submodule: `nvim/christitustech`
+- `~/.config/nvim` symlinked to `~/dotfiles-sway/nvim/christitustech/titus-kickstart`
+
+The Fedora `neovim` rpm remains installed as a fallback, but the active editor should be the user-local upstream binary. This is intentional because the Chris Titus Tech config uses newer Neovim features.
+
+**Install or repair:**
+```bash
+bash ~/dotfiles-sway/scripts/setup-neovim-config.sh
+```
+
+On first launch, Neovim downloads plugins declared by Chris Titus Tech's config. The required CLI dependencies are layered by `packages.sh`: `ripgrep`, `fd-find`, `fzf`, `wl-clipboard`, `python3-virtualenv`, `ShellCheck`, `libwebp-tools`, `nodejs`, `npm`, and `make`. `markdownlint-cli2` is installed into the shared `~/.npm-global` prefix by `setup-damian-container.sh`.
 
 **Open a file:**
 ```bash
@@ -458,7 +477,9 @@ nvim filename.txt
 - **Visual mode** — for selecting text (press `v`)
 - **Command mode** — for `:w`, `:q` etc. (press `:`)
 
-**Config file:** `~/.config/nvim/init.lua` (Lua) — create to customise.
+**Config file:** `~/.config/nvim/init.lua` from Chris Titus Tech's `titus-kickstart`.
+
+**Important:** Chris's config includes WakaTime and an image-paste plugin with Chris's own default website image path. If you do not use WakaTime, ignore its prompt or disable that plugin later in the submodule/fork workflow.
 
 ---
 

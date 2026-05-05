@@ -56,6 +56,8 @@ dotfiles-sway/
 ├── packages.sh                        ← rpm-ostree system packages (host)
 ├── setup.sh                           ← symlinks, Flatpaks, toolbox creation, fonts
 ├── user-dirs.dirs                     ← XDG user directories config
+├── nvim/
+│   └── christitustech                 ← git submodule: ChrisTitusTech/neovim (`titus-kickstart` config)
 ├── sway/config                        ← Sway window manager config
 ├── waybar/config                      ← Waybar status bar config (JSON)
 ├── waybar/style.css                   ← Waybar CSS theme
@@ -72,6 +74,7 @@ dotfiles-sway/
     ├── fix-vivaldi-profiles.sh        ← Fixes Vivaldi crash/session recovery dialog on start
     ├── check-hardware.sh              ← Verifies VA-API, GPU, KVM after reboot — writes state
     ├── setup-kvm.sh                   ← KVM/QEMU setup (libvirtd, user groups, NAT network) — writes state
+    ├── setup-neovim-config.sh         ← Neovim 0.12.1 user-local binary + Chris Titus Tech config symlink
     ├── setup-damian-container.sh      ← Toolbox damian: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
     ├── configure-shellgpt.sh          ← Non-interactive ShellGPT config from private env/API files
     ├── setup-security-container.sh   ← Distrobox security: pentesting toolkit — writes state
@@ -110,8 +113,9 @@ bash <(curl -s https://raw.githubusercontent.com/dmwasielewski/dotfiles-sway/mai
 
 Bootstrap does:
 1. Clones this repo to `~/dotfiles-sway`
-2. Runs `setup.sh` — symlinks, Flatpaks, toolbox creation, fonts
-3. Runs `packages.sh` — installs system packages via rpm-ostree
+2. Initialises git submodules, including `ChrisTitusTech/neovim`
+3. Runs `setup.sh` — symlinks, Flatpaks, toolbox creation, fonts, Neovim user-local binary/config
+4. Runs `packages.sh` — installs system packages via rpm-ostree
 
 For a disposable end-to-end validation VM:
 
@@ -179,6 +183,16 @@ Managed by `packages.sh`. Install with `rpm-ostree install`, requires reboot.
 | `wtype` | Wayland keyboard injection (voice typing) |
 | `alsa-utils` | `arecord` audio recording (voice typing) |
 | `gitleaks` | Secret scanner, enforced by repo `pre-push` hook |
+| `ripgrep` | Neovim search dependency |
+| `fd-find` | Neovim file finder dependency |
+| `fzf` | Neovim fuzzy finder dependency |
+| `wl-clipboard` | Neovim Wayland clipboard integration |
+| `python3-virtualenv` | Neovim Python tooling dependency |
+| `ShellCheck` | Neovim shell linting dependency |
+| `libwebp-tools` | Neovim Markdown image paste conversion (`cwebp`) |
+| `nodejs` | Neovim Node-based tooling |
+| `npm` | Neovim Node package tooling |
+| `make` | Neovim build/tooling dependency |
 
 AMD GPU: mesa-va-drivers is already in Fedora Atomic base — no extra package needed.
 
@@ -216,6 +230,7 @@ Managed by `scripts/setup-damian-container.sh`. Use `toolbox enter damian` to en
 | `sgpt` (`shell-gpt`) | ShellGPT terminal assistant |
 | `ccstatusline` | Claude Code Waybar status (bundled with claude-code) |
 | `faster-whisper` | Local Whisper AI speech recognition (voice typing) |
+| `markdownlint-cli2` | Markdown linting used by Chris Titus Tech's Neovim config |
 
 npm prefix is set to `~/.npm-global` — global npm packages visible from host too.
 
@@ -349,6 +364,32 @@ Config is in `sway/config.d/90-swayidle.conf` (overrides Fedora's system default
 - **Font Awesome 6 Free + Brands** — additional Waybar icons
 
 Both installed to `~/.local/share/fonts/` by `setup.sh`.
+
+---
+
+## Neovim
+
+Neovim is installed in two layers:
+
+- Fedora `neovim` rpm remains layered as a fallback.
+- `scripts/setup-neovim-config.sh` installs the official upstream Neovim `v0.12.1` binary to `~/.local/opt/nvim-linux-x86_64` and symlinks `~/.local/bin/nvim`.
+
+The active config is Chris Titus Tech's `titus-kickstart`, pinned as a git submodule at `nvim/christitustech`:
+
+```bash
+~/.config/nvim -> ~/dotfiles-sway/nvim/christitustech/titus-kickstart
+```
+
+Do not run Chris's `lin-depend.sh` on the Fedora Atomic host because it uses mutable-distro package managers such as `dnf` directly. Instead, keep its dependency list represented in this repo:
+
+- host dependencies in `packages.sh`
+- symlink and upstream Neovim binary in `scripts/setup-neovim-config.sh`
+- `markdownlint-cli2` in `scripts/setup-damian-container.sh` via the shared `~/.npm-global` prefix
+- checks in `scripts/verify.sh`
+
+Known caveat: Chris's config includes WakaTime and an `img-clip.nvim` default path under `/home/titus/...`. Keep this documented; patch only if Damian asks to customise the upstream config.
+
+Do not add `golang` or `luarocks` to the host layer just because Chris's `lin-depend.sh` lists them. On 2026-05-05 they caused `rpm-ostree` depsolve failures by pulling `gcc/glibc-devel` versions that did not match the active Fedora Atomic deployment. Add language-specific tooling later in toolbox or after a deployment update if Damian actually needs it.
 
 ---
 
@@ -561,6 +602,7 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 - [x] Fonts (JetBrainsMono Nerd Font, Font Awesome)
 - [x] All Flatpak apps installed via setup.sh
 - [x] All system packages via packages.sh (rpm-ostree)
+- [x] Neovim 0.12.1 user-local binary with Chris Titus Tech `titus-kickstart` config
 - [x] PWA shortcuts (Claude AI, ChatGPT, WhatsApp)
 - [x] toolbox `damian` with node, npm, gh, Claude Code, OpenAI Codex CLI, ShellGPT
 - [x] Claude Code settings.json symlinked from dotfiles

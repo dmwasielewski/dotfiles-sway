@@ -1,0 +1,3 @@
+[submodule "nvim/christitustech"]
+	path = nvim/christitustech
+	url = https://github.com/ChrisTitusTech/neovim.git

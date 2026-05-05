@@ -90,6 +90,9 @@ else
         git clone "$REPO_URL" "$DOTFILES"
 fi
 
+run_step "SUBMODULES_READY" "Initialising git submodules" \
+    git -C "$DOTFILES" submodule update --init --recursive
+
 # ── Step 2: Symlinks, Flatpaks, toolbox, fonts ───────────────────────────
 run_step "SETUP_SYMLINKS" "Running setup (symlinks, Flatpaks, toolbox, fonts)" \
     bash "$DOTFILES/setup.sh"

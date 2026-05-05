@@ -30,7 +30,9 @@ echo "==> Layering system packages (reboot required after)..."
 # alsa-utils  - arecord audio recording (used by voice typing)
 # neovim      - modern text editor (Vim fork), available system-wide
 # gitleaks    - secret scanner, enforced by the repo pre-push hook
-PACKAGES="mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer virt-install bridge-utils wtype alsa-utils neovim gitleaks"
+# ripgrep/fd-find/fzf/wl-clipboard/python3-virtualenv/ShellCheck/libwebp-tools/nodejs/npm/make
+#             - CLI dependencies used by Chris Titus Tech's Neovim config
+PACKAGES="mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer virt-install bridge-utils wtype alsa-utils neovim gitleaks ripgrep fd-find fzf wl-clipboard python3-virtualenv ShellCheck libwebp-tools nodejs npm make"
 
 # Intel GPU check
 if lspci | grep -qi "Intel.*Graphics"; then

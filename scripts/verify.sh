@@ -99,6 +99,7 @@ check_symlink "claude/settings.json" "$HOME/.claude/settings.json"
 check_symlink "claude-ai.desktop"    "$HOME/.local/share/applications/claude-ai.desktop"
 check_symlink "chatgpt.desktop"      "$HOME/.local/share/applications/chatgpt.desktop"
 check_symlink "whatsapp.desktop"     "$HOME/.local/share/applications/whatsapp.desktop"
+check_symlink "nvim Chris Titus Tech config" "$HOME/.config/nvim"
 
 # ── 2. System packages (rpm-ostree) ──────────────────────────────────────
 section "2. System packages (rpm-ostree)"
@@ -116,6 +117,16 @@ HOST_PKGS=(
     "bridge-utils:VM networking"
     "libva-utils:VA-API hardware acceleration"
     "gitleaks:secret scanner"
+    "ripgrep:Neovim search dependency"
+    "fd-find:Neovim file finder dependency"
+    "fzf:Neovim fuzzy finder dependency"
+    "wl-clipboard:Neovim Wayland clipboard integration"
+    "python3-virtualenv:Neovim Python tooling dependency"
+    "ShellCheck:Neovim shell linting dependency"
+    "libwebp-tools:Neovim Markdown image paste conversion"
+    "nodejs:Neovim Node-based tooling"
+    "npm:Neovim Node package tooling"
+    "make:Neovim build/tooling dependency"
 )
 
 for entry in "${HOST_PKGS[@]}"; do
@@ -206,6 +217,14 @@ if host toolbox list 2>/dev/null | grep -qw "damian"; then
     check_toolbox_tool "sgpt"   "sgpt (ShellGPT)"
     check_toolbox_tool "git"    "git"
 
+    if host toolbox run --container damian bash -c \
+        'PATH="$HOME/.npm-global/bin:$PATH" command -v markdownlint-cli2' &>/dev/null 2>&1; then
+        pass "markdownlint-cli2 (Neovim Markdown linting)"
+    else
+        fail "markdownlint-cli2  MISSING in toolbox/global npm prefix" \
+             "bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
+    fi
+
     # Plugins — check settings.json
     for plugin in superpowers code-simplifier context7; do
         if host toolbox run --container damian bash -c \
@@ -247,6 +266,45 @@ if host toolbox list 2>/dev/null | grep -qw "damian"; then
 else
     fail "Toolbox 'damian'  NOT FOUND" "bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
 fi
+
+# ── 5a. Neovim ───────────────────────────────────────────────────────────
+section "5a. Neovim"
+
+if [[ -x "$HOME/.local/bin/nvim" ]]; then
+    NVIM_LINE=$("$HOME/.local/bin/nvim" --version | head -n1)
+    if echo "$NVIM_LINE" | grep -q "v0.12.1"; then
+        pass "Neovim user-local latest pinned binary ($NVIM_LINE)"
+    else
+        warn "Neovim user-local binary found, but expected v0.12.1: $NVIM_LINE"
+    fi
+else
+    fail "Neovim user-local binary missing (~/.local/bin/nvim)" \
+         "bash ~/dotfiles-sway/scripts/setup-neovim-config.sh"
+fi
+
+if [[ -f "$HOME/dotfiles-sway/nvim/christitustech/titus-kickstart/init.lua" ]]; then
+    pass "Chris Titus Tech Neovim submodule present"
+else
+    fail "Chris Titus Tech Neovim submodule missing" \
+         "git -C ~/dotfiles-sway submodule update --init --recursive"
+fi
+
+if [[ -L "$HOME/.config/nvim" ]] && \
+   [[ "$(readlink "$HOME/.config/nvim")" == "$HOME/dotfiles-sway/nvim/christitustech/titus-kickstart" ]]; then
+    pass "~/.config/nvim points to Chris Titus Tech titus-kickstart"
+else
+    fail "~/.config/nvim does not point to Chris Titus Tech config" \
+         "bash ~/dotfiles-sway/scripts/setup-neovim-config.sh"
+fi
+
+for tool in rg fd fzf wl-copy python3 shellcheck cwebp node npm make; do
+    if host which "$tool" &>/dev/null 2>&1; then
+        pass "Neovim dependency: $tool"
+    else
+        fail "Neovim dependency missing: $tool" \
+             "bash ~/dotfiles-sway/packages.sh && systemctl reboot"
+    fi
+done
 
 if host git -C "$DOTFILES" config --get core.hooksPath 2>/dev/null | grep -qx ".githooks" &&
    host test -x "$DOTFILES/.githooks/pre-push"; then

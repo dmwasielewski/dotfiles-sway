@@ -48,6 +48,9 @@ update-desktop-database ~/.local/share/applications/
 chmod +x "$DOTFILES/scripts/"*.sh
 chmod +x "$DOTFILES/.githooks/"* 2>/dev/null || true
 
+echo "==> Setting up Neovim..."
+bash "$DOTFILES/scripts/setup-neovim-config.sh"
+
 # Use versioned git hooks from this repo, including the gitleaks pre-push check.
 if git -C "$DOTFILES" rev-parse --is-inside-work-tree &>/dev/null; then
     git -C "$DOTFILES" config core.hooksPath .githooks

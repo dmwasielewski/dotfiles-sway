@@ -41,10 +41,10 @@ run_step "TOOLBOX_NPM_PREFIX" "Configuring npm prefix (~/.npm-global)" \
     '
 
 # ── Install AI coding CLIs ───────────────────────────────────────────────
-run_step "AI_CLI_TOOLS_INSTALLED" "Installing Claude Code and OpenAI Codex CLI" \
+run_step "AI_CLI_TOOLS_INSTALLED" "Installing Claude Code, OpenAI Codex CLI, and markdownlint-cli2" \
     toolbox run --container "$CONTAINER" bash -c '
         set -eo pipefail
-        PATH="$HOME/.npm-global/bin:$PATH" npm install -g @anthropic-ai/claude-code @openai/codex
+        PATH="$HOME/.npm-global/bin:$PATH" npm install -g @anthropic-ai/claude-code @openai/codex markdownlint-cli2
     '
 step_done "CLAUDE_CODE_INSTALLED"
 step_done "CODEX_CLI_INSTALLED"
