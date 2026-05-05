@@ -7,6 +7,7 @@ set -euo pipefail
 
 STATE_FILE="$HOME/.dotfiles-install-state"
 LOG_FILE="${DOTFILES_LOG_FILE:-$HOME/.dotfiles-install.log}"
+DOTFILES="${DOTFILES:-$HOME/dotfiles-sway}"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -132,7 +133,11 @@ HOST_PKGS=(
 for entry in "${HOST_PKGS[@]}"; do
     pkg="${entry%%:*}"
     desc="${entry##*:}"
-    if rpm_installed "$pkg"; then
+    if [[ "$pkg" == "nodejs" ]] && host which node &>/dev/null 2>&1; then
+        pass "$pkg  ($desc)"
+    elif [[ "$pkg" == "npm" ]] && host which npm &>/dev/null 2>&1; then
+        pass "$pkg  ($desc)"
+    elif rpm_installed "$pkg"; then
         pass "$pkg  ($desc)"
     else
         fail "$pkg  MISSING ($desc)" "bash ~/dotfiles-sway/packages.sh && systemctl reboot"
