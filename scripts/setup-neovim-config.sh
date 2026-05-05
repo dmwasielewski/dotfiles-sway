@@ -35,7 +35,7 @@ mkdir -p "$HOME/.local/bin" "$NVIM_OPT_DIR" "$HOME/.config" "$HOME/.vim/undodir"
 
 installed_version=""
 if [[ -x "$NVIM_INSTALL_DIR/bin/nvim" ]]; then
-    installed_version="$("$NVIM_INSTALL_DIR/bin/nvim" --version | head -n1 | awk '{print $2}')"
+    installed_version="$("$NVIM_INSTALL_DIR/bin/nvim" --version | head -n1 | awk '{print $2}' | sed 's/^v//')"
 fi
 
 if [[ "$installed_version" == "${NVIM_VERSION#v}" ]]; then
@@ -72,4 +72,6 @@ fi
 
 echo "==> Neovim binary: $("$NVIM_BIN" --version | head -n1)"
 echo "==> Neovim config: $NVIM_CONFIG -> $(readlink "$NVIM_CONFIG")"
-echo "==> First nvim launch will download plugins declared by Chris Titus Tech's config."
+echo "==> Syncing Neovim plugins to Chris Titus Tech's lockfile..."
+"$NVIM_BIN" --headless '+lua vim.pack.update(nil, { target = "lockfile", force = true })' '+qa'
+echo "==> Neovim plugins synced to $CTT_CONFIG_DIR/nvim-pack-lock.json"

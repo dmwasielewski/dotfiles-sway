@@ -372,7 +372,7 @@ Both installed to `~/.local/share/fonts/` by `setup.sh`.
 Neovim is installed in two layers:
 
 - Fedora `neovim` rpm remains layered as a fallback.
-- `scripts/setup-neovim-config.sh` installs the official upstream Neovim `v0.12.1` binary to `~/.local/opt/nvim-linux-x86_64` and symlinks `~/.local/bin/nvim`.
+- `scripts/setup-neovim-config.sh` installs the official upstream Neovim `v0.12.1` binary to `~/.local/opt/nvim-linux-x86_64`, symlinks `~/.local/bin/nvim`, and syncs plugins to Chris Titus Tech's `nvim-pack-lock.json`.
 
 The active config is Chris Titus Tech's `titus-kickstart`, pinned as a git submodule at `nvim/christitustech`:
 
@@ -383,7 +383,7 @@ The active config is Chris Titus Tech's `titus-kickstart`, pinned as a git submo
 Do not run Chris's `lin-depend.sh` on the Fedora Atomic host because it uses mutable-distro package managers such as `dnf` directly. Instead, keep its dependency list represented in this repo:
 
 - host dependencies in `packages.sh`
-- symlink and upstream Neovim binary in `scripts/setup-neovim-config.sh`
+- symlink, upstream Neovim binary, and plugin lockfile sync in `scripts/setup-neovim-config.sh`
 - `markdownlint-cli2` in `scripts/setup-damian-container.sh` via the shared `~/.npm-global` prefix
 - checks in `scripts/verify.sh`
 

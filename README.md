@@ -440,6 +440,7 @@ This setup uses:
 - `~/.local/bin/nvim` symlink, which wins over `/usr/bin/nvim` because `.bashrc` puts `~/.local/bin` first
 - Chris Titus Tech's Neovim config as a git submodule: `nvim/christitustech`
 - `~/.config/nvim` symlinked to `~/dotfiles-sway/nvim/christitustech/titus-kickstart`
+- Plugins synced headlessly to Chris's `nvim-pack-lock.json` during `scripts/setup-neovim-config.sh`
 
 The Fedora `neovim` rpm remains installed as a fallback, but the active editor should be the user-local upstream binary. This is intentional because the Chris Titus Tech config uses newer Neovim features.
 
@@ -448,7 +449,7 @@ The Fedora `neovim` rpm remains installed as a fallback, but the active editor s
 bash ~/dotfiles-sway/scripts/setup-neovim-config.sh
 ```
 
-On first launch, Neovim downloads plugins declared by Chris Titus Tech's config. The required CLI dependencies are layered by `packages.sh`: `ripgrep`, `fd-find`, `fzf`, `wl-clipboard`, `python3-virtualenv`, `ShellCheck`, `libwebp-tools`, `nodejs`, `npm`, and `make`. `markdownlint-cli2` is installed into the shared `~/.npm-global` prefix by `setup-damian-container.sh`.
+During setup, Neovim downloads plugins declared by Chris Titus Tech's config and synchronizes them to the config's `nvim-pack-lock.json`. The required CLI dependencies are layered by `packages.sh`: `ripgrep`, `fd-find`, `fzf`, `wl-clipboard`, `python3-virtualenv`, `ShellCheck`, `libwebp-tools`, `nodejs`, `npm`, and `make`. `markdownlint-cli2` is installed into the shared `~/.npm-global` prefix by `setup-damian-container.sh`.
 
 **Open a file:**
 ```bash
