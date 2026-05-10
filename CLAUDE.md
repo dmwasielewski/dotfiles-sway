@@ -517,6 +517,8 @@ codex login
 
 DeepSeek TUI is launched through wrapper entries in `~/.local/bin` and `~/.npm-global/bin`. The wrapper calls the npm package entry point directly, sets `NO_ANIMATIONS=1`, and passes `--no-mouse-capture` to reduce foot/Sway repaint flicker.
 
+`foot/foot.ini` also sets `damage-whole-window=yes` to reduce rare full-window DeepSeek TUI repaint flicker when the terminal is maximized.
+
 ### ShellGPT
 
 ShellGPT is installed automatically by `scripts/setup-damian-container.sh` via `pip3 install --user "shell-gpt[litellm]"`.

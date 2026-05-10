@@ -558,6 +558,8 @@ deepseek
 
 `~/.local/bin/deepseek`, `~/.local/bin/deepseek-tui`, and the matching `~/.npm-global/bin/*` entries wrap the npm-installed binaries with `NO_ANIMATIONS=1` and `--no-mouse-capture` to avoid foot/Sway repaint flicker.
 
+`foot/foot.ini` also enables `damage-whole-window=yes`, which reduces rare full-window DeepSeek TUI repaint flicker when the terminal is maximized.
+
 ### Run ShellGPT
 ```bash
 # Inside damian container
