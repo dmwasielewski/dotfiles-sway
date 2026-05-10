@@ -166,6 +166,7 @@ declare -A FLATPAKS=(
     ["com.vivaldi.Vivaldi"]="Vivaldi (default browser)"
     ["com.visualstudio.code"]="VSCode"
     ["md.obsidian.Obsidian"]="Obsidian"
+    ["org.mozilla.Thunderbird"]="Thunderbird"
     ["com.bitwarden.desktop"]="Bitwarden"
     ["com.spotify.Client"]="Spotify"
     ["com.obsproject.Studio"]="OBS Studio"

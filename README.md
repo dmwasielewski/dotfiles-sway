@@ -44,6 +44,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - AI terminal tools in toolbox: Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT (`sgpt`)
 - NordVPN CLI with Waybar status/toggle helper
 - AdGuard for Linux CLI
+- Thunderbird email client (Flatpak)
 
 ---
 
@@ -388,6 +389,7 @@ pair <MAC_ADDRESS>
 ## Notes
 
 - `pavucontrol` is already included in Fedora Atomic base — no separate install needed
+- Thunderbird is installed as the verified Flathub Flatpak `org.mozilla.Thunderbird`
 - NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start
 - AdGuard for Linux: official CLI install via `bash ~/dotfiles-sway/scripts/setup-adguard.sh`; first-time `activate/configure/start` stays manual
 - Security container must be created after first reboot (distrobox installed via packages.sh)
@@ -572,7 +574,7 @@ bash ~/dotfiles-sway/scripts/fix-vivaldi-profiles.sh
 Host (rpm-ostree immutable)
 │
 ├─ Flatpak apps
-│   └─ User Flatpaks from Flathub: Obsidian, Vivaldi, VSCode, Bitwarden, Spotify, OBS, mpv, JDownloader
+│   └─ User Flatpaks from Flathub: Obsidian, Vivaldi, Thunderbird, VSCode, Bitwarden, Spotify, OBS, mpv, JDownloader
 │
 ├─ toolbox: damian (Fedora 43) — dev/DevOps
 │   ├─ node 22

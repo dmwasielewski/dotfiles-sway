@@ -217,6 +217,7 @@ Managed by `setup.sh`. Installed from Flathub as user Flatpaks (`--user`) to avo
 
 Notes:
 - `pavucontrol` is in Fedora Atomic base — no separate install needed.
+- Thunderbird is installed as the verified Flathub Flatpak `org.mozilla.Thunderbird`.
 - NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start.
 - AdGuard for Linux: official CLI install via `bash ~/dotfiles-sway/scripts/setup-adguard.sh`; first-time activation/configuration remains manual.
 
@@ -640,6 +641,7 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 - [ ] virtiofs fully working in Windows 11 (VirtioFsSvc setup)
 - [x] NordVPN — CLI install, `nordvpnd` enable/start, and Waybar status helper
 - [ ] `gh auth login` automation
+- [ ] Full idempotency audit across setup.sh, packages.sh, and post-reboot scripts — each step should detect pre-existing resources and continue cleanly
 
 ## Manual post-install steps (cannot be automated)
 
@@ -655,6 +657,7 @@ These require human interaction — document them so nothing is forgotten after 
 | Bluetooth pairing | `bluetoothctl` → `power on` → `scan on` → `pair <MAC>` |
 | NordVPN login | `nordvpn login` or, if browser callback fails, `nordvpn login --token <token>` |
 | AdGuard first-time setup | `adguard-cli activate` → `adguard-cli configure` → `adguard-cli start` |
+| Thunderbird account setup | In-app after Flatpak install |
 | Bitwarden / Obsidian / Spotify login | In-app after Flatpak install |
 | Vivaldi: sign in, restore bookmarks/extensions | In-app after Flatpak install |
 

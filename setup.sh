@@ -75,15 +75,27 @@ fi
 # Flatpaks
 echo "==> Installing Flatpaks..."
 flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
-flatpak install -y --user flathub com.vivaldi.Vivaldi
-flatpak install -y --user flathub io.mpv.Mpv
-flatpak install -y --user flathub com.visualstudio.code
-flatpak install -y --user flathub com.bitwarden.desktop
-flatpak install -y --user flathub md.obsidian.Obsidian
-flatpak install -y --user flathub com.spotify.Client
-flatpak install -y --user flathub com.obsproject.Studio
-flatpak install -y --user flathub org.jdownloader.JDownloader
-flatpak install -y --user flathub com.vixalien.sticky
+
+install_flatpak_app() {
+    local app_id="$1"
+
+    if flatpak list --app --columns=application 2>/dev/null | grep -Fxq "$app_id"; then
+        echo "==> Flatpak $app_id already installed — skipping"
+    else
+        flatpak install -y --user flathub "$app_id"
+    fi
+}
+
+install_flatpak_app com.vivaldi.Vivaldi
+install_flatpak_app io.mpv.Mpv
+install_flatpak_app com.visualstudio.code
+install_flatpak_app com.bitwarden.desktop
+install_flatpak_app md.obsidian.Obsidian
+install_flatpak_app org.mozilla.Thunderbird
+install_flatpak_app com.spotify.Client
+install_flatpak_app com.obsproject.Studio
+install_flatpak_app org.jdownloader.JDownloader
+install_flatpak_app com.vixalien.sticky
 
 # Fonts
 echo "==> Installing JetBrainsMono Nerd Font..."
