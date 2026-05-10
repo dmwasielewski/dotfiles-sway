@@ -84,13 +84,23 @@ run_step "SECURITY_EVIL_WINRM" "Installing evil-winrm" \
 
 # ── enum4linux-ng ────────────────────────────────────────────────────────
 run_step "SECURITY_ENUM4LINUX" "Installing enum4linux-ng" \
-    dbox "sudo git clone --depth 1 https://github.com/cddmp/enum4linux-ng /opt/enum4linux-ng 2>/dev/null || (cd /opt/enum4linux-ng && sudo git pull) &&
+    dbox "if [ -d /opt/enum4linux-ng/.git ]; then
+            sudo git -C /opt/enum4linux-ng pull --ff-only
+          else
+            sudo rm -rf /opt/enum4linux-ng &&
+            sudo git clone --depth 1 https://github.com/cddmp/enum4linux-ng /opt/enum4linux-ng
+          fi &&
         pip3 install -r /opt/enum4linux-ng/requirements.txt --break-system-packages &&
         sudo ln -sf /opt/enum4linux-ng/enum4linux-ng.py /usr/local/bin/enum4linux-ng"
 
 # ── SecLists wordlists ───────────────────────────────────────────────────
 run_step "SECURITY_SECLISTS" "Downloading SecLists wordlists (~1 GB — may take a while)" \
-    dbox "sudo git clone --depth 1 https://github.com/danielmiessler/SecLists /opt/SecLists 2>/dev/null || echo 'SecLists already exists — skipping.'"
+    dbox "if [ -d /opt/SecLists/.git ]; then
+            sudo git -C /opt/SecLists pull --ff-only
+          else
+            sudo rm -rf /opt/SecLists &&
+            sudo git clone --depth 1 https://github.com/danielmiessler/SecLists /opt/SecLists
+          fi"
 
 step_done "SECURITY_CONTAINER_READY"
 

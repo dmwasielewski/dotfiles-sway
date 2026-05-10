@@ -107,8 +107,12 @@ run_step "VOICE_WHISPER" "Installing faster-whisper + google-genai (voice typing
     toolbox run --container "$CONTAINER" bash -c '
         set -eo pipefail
         pip3 install faster-whisper google-genai --user --quiet
-        # Pre-download the small model (~470 MB) to avoid delay on first use
-        python3 -c "from faster_whisper import WhisperModel; WhisperModel(\"small\", device=\"cpu\", compute_type=\"int8\")"
+        # Pre-download the small model once to avoid delay on first use.
+        if [ ! -d "$HOME/.cache/huggingface/hub" ] || ! find "$HOME/.cache/huggingface/hub" -maxdepth 1 -type d -name "*Systran*faster-whisper-small*" | grep -q .; then
+            python3 -c "from faster_whisper import WhisperModel; WhisperModel(\"small\", device=\"cpu\", compute_type=\"int8\")"
+        else
+            echo "faster-whisper small model already cached — skipping download"
+        fi
         grep -q ".local/bin" ~/.bashrc || echo "export PATH=\$PATH:\$HOME/.local/bin" >> ~/.bashrc
     '
 

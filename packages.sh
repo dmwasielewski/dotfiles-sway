@@ -79,7 +79,11 @@ fi
 
 # Firewall
 echo "==> Configuring firewall..."
-sudo firewall-cmd --remove-service=dhcpv6-client --permanent
+if sudo firewall-cmd --permanent --query-service=dhcpv6-client >/dev/null 2>&1; then
+    sudo firewall-cmd --remove-service=dhcpv6-client --permanent
+else
+    echo "==> dhcpv6-client already absent from the permanent firewall config — skipping"
+fi
 sudo firewall-cmd --reload
 
 # NordVPN CLI

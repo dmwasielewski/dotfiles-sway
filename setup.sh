@@ -100,20 +100,28 @@ install_flatpak_app com.vixalien.sticky
 # Fonts
 echo "==> Installing JetBrainsMono Nerd Font..."
 mkdir -p ~/.local/share/fonts
-curl -fL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip -o JetBrainsMono.zip
-unzip -oq JetBrainsMono.zip -d ~/.local/share/fonts/JetBrainsMono
-rm -f JetBrainsMono.zip
-fc-cache -fv
+if ls ~/.local/share/fonts/JetBrainsMono/*.ttf >/dev/null 2>&1; then
+    echo "==> JetBrainsMono Nerd Font already installed — skipping download"
+else
+    curl -fL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip -o JetBrainsMono.zip
+    unzip -oq JetBrainsMono.zip -d ~/.local/share/fonts/JetBrainsMono
+    rm -f JetBrainsMono.zip
+    fc-cache -fv
+fi
 
 echo "==> Installing Font Awesome..."
-FA_URL=$(curl -fsSL https://api.github.com/repos/FortAwesome/Font-Awesome/releases/latest | grep -o 'https://[^"]*desktop\.zip' | head -n1)
-if [ -z "$FA_URL" ]; then
-    echo "WARNING: Could not resolve Font Awesome download URL — skipping. Install manually from https://fontawesome.com"
+if ls ~/.local/share/fonts/FontAwesome/*.otf >/dev/null 2>&1 || ls ~/.local/share/fonts/FontAwesome/*.ttf >/dev/null 2>&1; then
+    echo "==> Font Awesome already installed — skipping download"
 else
-    curl -fL "$FA_URL" -o FontAwesome.zip
-    unzip -oq FontAwesome.zip -d ~/.local/share/fonts/FontAwesome
-    rm -f FontAwesome.zip
-    fc-cache -fv
+    FA_URL=$(curl -fsSL https://api.github.com/repos/FortAwesome/Font-Awesome/releases/latest | grep -o 'https://[^"]*desktop\.zip' | head -n1)
+    if [ -z "$FA_URL" ]; then
+        echo "WARNING: Could not resolve Font Awesome download URL — skipping. Install manually from https://fontawesome.com"
+    else
+        curl -fL "$FA_URL" -o FontAwesome.zip
+        unzip -oq FontAwesome.zip -d ~/.local/share/fonts/FontAwesome
+        rm -f FontAwesome.zip
+        fc-cache -fv
+    fi
 fi
 
 # Set Vivaldi as default browser
