@@ -649,6 +649,12 @@ These require human interaction — document them so nothing is forgotten after 
 | GitHub CLI login | `toolbox enter damian` → `gh auth login` |
 | MCP integrations (Gmail, Calendar, Drive, Slack) | `claude.ai` → Settings → Integrations |
 | Bluetooth pairing | `bluetoothctl` → `power on` → `scan on` → `pair <MAC>` |
-| NordVPN login | `nordvpn login` |
+| NordVPN login | `nordvpn login` or, if browser callback fails, `nordvpn login --token <token>` |
 | Bitwarden / Obsidian / Spotify login | In-app after Flatpak install |
 | Vivaldi: sign in, restore bookmarks/extensions | In-app after Flatpak install |
+
+NordVPN notes:
+- `scripts/setup-nordvpn.sh` installs the CLI, enables `nordvpnd`, and prepares Waybar status.
+- Login cannot be automated. On this setup, browser callback can fail with Flatpak browsers, so token login is the most reliable fallback.
+- Generate the token in Nord Account → NordVPN → Advanced settings → Get access token.
+- Preferred baseline after login: `Technology: NORDLYNX`, `Firewall: enabled`, `Routing: enabled`, `Notify: enabled`, `Auto-connect: disabled`, `Kill Switch: disabled`.

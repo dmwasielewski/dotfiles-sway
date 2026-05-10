@@ -19,7 +19,6 @@
         "idle_inhibitor",
         "pulseaudio",
         "network",
-        "custom/nordvpn",
         "power-profiles-daemon",
         "cpu",
         "memory",
@@ -28,6 +27,7 @@
         "sway/language",
         "battery",
         "clock",
+        "custom/nordvpn",
         "tray"
     ],
     // Modules configuration

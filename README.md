@@ -108,7 +108,29 @@ bash ~/dotfiles-sway/scripts/setup-damian-container.sh
 bash ~/dotfiles-sway/scripts/setup-nordvpn.sh
 ```
 This also enables and starts `nordvpnd` automatically when the service unit is available.
-After that, log out or reboot so the `nordvpn` group membership takes effect, then run `nordvpn login`.
+After that, log out or reboot so the `nordvpn` group membership takes effect, then log in manually:
+```bash
+nordvpn login
+```
+If browser callback flow fails on Linux/Flatpak browsers, use a Nord Account access token instead:
+```bash
+nordvpn login --token <token>
+```
+Generate the token in Nord Account → NordVPN → Advanced settings → Get access token.
+
+Preferred post-login settings for this setup:
+```bash
+nordvpn settings
+```
+Expected baseline:
+- `Technology: NORDLYNX`
+- `Firewall: enabled`
+- `Routing: enabled`
+- `Notify: enabled`
+- `Auto-connect: disabled`
+- `Kill Switch: disabled`
+
+No extra post-login changes are required for the current setup.
 
 9. Create the security container:
 ```bash

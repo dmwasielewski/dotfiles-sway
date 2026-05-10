@@ -520,7 +520,7 @@ echo    "     • codex login  (OpenAI/ChatGPT account)"
 echo    "     • gh auth login  (GitHub CLI)"
 echo    "     • MCP: Gmail, Calendar, Drive, Slack — log in at claude.ai → Integrations"
 echo    "     • Bluetooth — pair via bluetoothctl"
-echo    "     • NordVPN — run nordvpn login"
+echo    "     • NordVPN — run nordvpn login, or use nordvpn login --token <token> if browser callback fails"
 echo    "     • Vivaldi — log in, restore bookmarks/extensions"
 
 # ── Summary ───────────────────────────────────────────────────────────────
