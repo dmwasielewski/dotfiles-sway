@@ -74,7 +74,7 @@ if getent group nordvpn >/dev/null 2>&1; then
         echo "==> Re-log in or reboot so the nordvpn group membership takes effect."
     fi
 else
-    warn "nordvpn group not present yet — finish login/reboot after the CLI install"
+    echo -e "${YELLOW}⚠ nordvpn group not present yet — finish login/reboot after the CLI install${NC}"
 fi
 
 step_done "NORDVPN_READY"
