@@ -19,6 +19,49 @@ echo -e "${BOLD}${CYAN}║   NordVPN — CLI setup                    ║${NC}"
 echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════╝${NC}"
 echo ""
 
+deployment_has_nordvpn() {
+    python3 - <<'PY'
+import json
+import subprocess
+import sys
+
+try:
+    data = json.loads(subprocess.check_output(["rpm-ostree", "status", "--json"], text=True))
+except Exception:
+    sys.exit(1)
+
+for deployment in data.get("deployments", []):
+    requested = deployment.get("requested-packages", []) or []
+    packages = deployment.get("packages", []) or []
+    if "nordvpn" in requested or "nordvpn" in packages:
+        sys.exit(0)
+
+sys.exit(1)
+PY
+}
+
+staged_nordvpn_pending_reboot() {
+    python3 - <<'PY'
+import json
+import subprocess
+import sys
+
+try:
+    data = json.loads(subprocess.check_output(["rpm-ostree", "status", "--json"], text=True))
+except Exception:
+    sys.exit(1)
+
+for deployment in data.get("deployments", []):
+    if deployment.get("staged") and not deployment.get("booted"):
+        requested = deployment.get("requested-packages", []) or []
+        packages = deployment.get("packages", []) or []
+        if "nordvpn" in requested or "nordvpn" in packages:
+            sys.exit(0)
+
+sys.exit(1)
+PY
+}
+
 ensure_repo() {
     local tmpdir
     tmpdir="$(mktemp -d)"
@@ -60,6 +103,12 @@ run_step "NORDVPN_REPO" "Configuring NordVPN repository" ensure_repo
 
 if command -v nordvpn >/dev/null 2>&1; then
     echo "==> NordVPN CLI already installed — skipping install."
+    step_done "NORDVPN_CLI"
+elif staged_nordvpn_pending_reboot; then
+    echo "==> NordVPN CLI is already queued in a staged rpm-ostree deployment — reboot required."
+    step_done "NORDVPN_CLI"
+elif deployment_has_nordvpn; then
+    echo "==> NordVPN CLI is already requested in rpm-ostree — skipping install."
     step_done "NORDVPN_CLI"
 else
     run_step "NORDVPN_CLI" "Installing NordVPN CLI" sudo -n rpm-ostree install nordvpn
