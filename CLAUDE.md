@@ -23,7 +23,7 @@ The system belongs to **Damian** (dmwasielewski). Communicate in **Polish** unle
 
 ### AI coding CLIs run inside a Toolbox container
 
-- Claude Code, OpenAI Codex CLI, and ShellGPT are installed **inside the `damian` toolbox container** (Fedora 43), not as host rpm-ostree packages.
+- Claude Code, OpenAI Codex CLI, DeepSeek TUI, and ShellGPT are installed **inside the `damian` toolbox container** (Fedora 43), not as host rpm-ostree packages.
 - Bash commands from these CLIs run **inside the toolbox**, not on the host.
 - To run a command **on the host** from inside the toolbox: `flatpak-spawn --host <command>`
 - The home directory (`~`) is **shared** between host and toolbox — files written to `~` are visible on both sides.
@@ -227,6 +227,7 @@ Managed by `scripts/setup-damian-container.sh`. Use `toolbox enter damian` to en
 | `gh` | GitHub CLI |
 | `claude` (`@anthropic-ai/claude-code`) | Claude Code CLI |
 | `codex` (`@openai/codex`) | OpenAI Codex CLI |
+| `deepseek` (`deepseek-tui`) | DeepSeek TUI |
 | `sgpt` (`shell-gpt`) | ShellGPT terminal assistant |
 | `ccstatusline` | Claude Code Waybar status (bundled with claude-code) |
 | `faster-whisper` | Local Whisper AI speech recognition (voice typing) |
@@ -512,6 +513,10 @@ First use requires interactive login:
 codex login
 ```
 
+### DeepSeek TUI
+
+DeepSeek TUI is launched through wrapper entries in `~/.local/bin` and `~/.npm-global/bin`. The wrapper calls the npm package entry point directly, sets `NO_ANIMATIONS=1`, and passes `--no-mouse-capture` to reduce foot/Sway repaint flicker.
+
 ### ShellGPT
 
 ShellGPT is installed automatically by `scripts/setup-damian-container.sh` via `pip3 install --user "shell-gpt[litellm]"`.
@@ -604,7 +609,7 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 - [x] All system packages via packages.sh (rpm-ostree)
 - [x] Neovim 0.12.1 user-local binary with Chris Titus Tech `titus-kickstart` config
 - [x] PWA shortcuts (Claude AI, ChatGPT, WhatsApp)
-- [x] toolbox `damian` with node, npm, gh, Claude Code, OpenAI Codex CLI, ShellGPT
+- [x] toolbox `damian` with node, npm, gh, Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT
 - [x] Claude Code settings.json symlinked from dotfiles
 - [x] Claude Code plugins auto-installed (superpowers, code-simplifier, context7)
 - [x] distrobox `security` with full pentesting toolkit

@@ -219,8 +219,16 @@ if host toolbox list 2>/dev/null | grep -qw "damian"; then
     check_toolbox_tool "gh"     "gh (GitHub CLI)"
     check_toolbox_tool "claude" "claude (Claude Code)"
     check_toolbox_tool "codex"  "codex (OpenAI Codex CLI)"
+    check_toolbox_tool "deepseek" "deepseek (DeepSeek TUI)"
     check_toolbox_tool "sgpt"   "sgpt (ShellGPT)"
     check_toolbox_tool "git"    "git"
+
+    if host toolbox run --container damian bash -c \
+        'expected="$(readlink -f "$HOME/dotfiles-sway/scripts/deepseek-wrapper.sh")" && test "$(readlink -f ~/.local/bin/deepseek 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.local/bin/deepseek-tui 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.npm-global/bin/deepseek 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.npm-global/bin/deepseek-tui 2>/dev/null)" = "$expected"' &>/dev/null 2>&1; then
+        pass "DeepSeek TUI low-motion wrapper installed"
+    else
+        warn "DeepSeek TUI low-motion wrapper missing — rerun bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
+    fi
 
     if host toolbox run --container damian bash -c \
         'PATH="$HOME/.npm-global/bin:$PATH" command -v markdownlint-cli2' &>/dev/null 2>&1; then

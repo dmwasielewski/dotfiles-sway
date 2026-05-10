@@ -303,5 +303,3 @@ assign [app_id="Vivaldi-flatpak"] workspace number 2
 
 # ── Other apps ──
 assign [title=".*WhatsApp.*"] workspace number 9
-
-

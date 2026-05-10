@@ -41,7 +41,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Gitleaks secret scanner with a repo `pre-push` hook
 - Voice typing — push-to-talk (`Mod+T`) with local Whisper AI + Gemini UK English correction
 - Neovim 0.12.1 — user-local latest pinned binary with Chris Titus Tech `titus-kickstart` config
-- AI terminal tools in toolbox: Claude Code, OpenAI Codex CLI, ShellGPT (`sgpt`)
+- AI terminal tools in toolbox: Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT (`sgpt`)
 
 ---
 
@@ -97,7 +97,7 @@ bash ~/dotfiles-sway/scripts/setup-kvm.sh
 > Then log out and back in for group changes to take effect.
 > If the current machine already uses `192.168.122.0/24` for its upstream network, the script moves libvirt's `default` NAT network to `192.168.125.0/24` to avoid breaking connectivity.
 
-7. Set up the damian dev container (node, npm, gh, Claude Code, Codex CLI, ShellGPT):
+7. Set up the damian dev container (node, npm, gh, Claude Code, Codex CLI, DeepSeek TUI, ShellGPT):
 ```bash
 bash ~/dotfiles-sway/scripts/setup-damian-container.sh
 ```
@@ -512,6 +512,7 @@ Host (rpm-ostree immutable)
 │   ├─ gh (GitHub CLI)
 │   ├─ claude (Claude Code)
 │   ├─ codex (OpenAI Codex CLI)
+│   ├─ deepseek (DeepSeek TUI)
 │   ├─ sgpt (ShellGPT terminal assistant)
 │   ├─ ccstatusline (Claude Code Waybar integration)
 │   └─ faster-whisper (local Whisper AI for voice typing)
@@ -548,6 +549,14 @@ claude
 # Inside damian container
 codex
 ```
+
+### Run DeepSeek TUI
+```bash
+# Inside damian container
+deepseek
+```
+
+`~/.local/bin/deepseek`, `~/.local/bin/deepseek-tui`, and the matching `~/.npm-global/bin/*` entries wrap the npm-installed binaries with `NO_ANIMATIONS=1` and `--no-mouse-capture` to avoid foot/Sway repaint flicker.
 
 ### Run ShellGPT
 ```bash

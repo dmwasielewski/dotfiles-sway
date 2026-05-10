@@ -1,5 +1,5 @@
 #!/bin/bash
-# setup-damian-container.sh — Fedora 43 toolbox: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins
+# setup-damian-container.sh — Fedora 43 toolbox: node, npm, gh, Claude Code, Codex CLI, DeepSeek TUI, ShellGPT + plugins
 # Run after first reboot: bash ~/dotfiles-sway/scripts/setup-damian-container.sh
 
 set -euo pipefail
@@ -41,13 +41,26 @@ run_step "TOOLBOX_NPM_PREFIX" "Configuring npm prefix (~/.npm-global)" \
     '
 
 # ── Install AI coding CLIs ───────────────────────────────────────────────
-run_step "AI_CLI_TOOLS_INSTALLED" "Installing Claude Code, OpenAI Codex CLI, and markdownlint-cli2" \
+run_step "AI_CLI_TOOLS_INSTALLED" "Installing Claude Code, OpenAI Codex CLI, DeepSeek TUI, and markdownlint-cli2" \
     toolbox run --container "$CONTAINER" bash -c '
         set -eo pipefail
-        PATH="$HOME/.npm-global/bin:$PATH" npm install -g @anthropic-ai/claude-code @openai/codex markdownlint-cli2
+        PATH="$HOME/.npm-global/bin:$PATH" npm install -g @anthropic-ai/claude-code @openai/codex deepseek-tui markdownlint-cli2
     '
 step_done "CLAUDE_CODE_INSTALLED"
 step_done "CODEX_CLI_INSTALLED"
+step_done "DEEPSEEK_TUI_INSTALLED"
+
+run_step "DEEPSEEK_TUI_WRAPPER" "Installing DeepSeek TUI low-motion wrapper" \
+    toolbox run --container "$CONTAINER" bash -c '
+        set -eo pipefail
+        mkdir -p ~/.local/bin ~/.npm-global/bin
+        ln -sf "$HOME/dotfiles-sway/scripts/deepseek-wrapper.sh" ~/.local/bin/deepseek
+        ln -sf "$HOME/dotfiles-sway/scripts/deepseek-wrapper.sh" ~/.local/bin/deepseek-tui
+        ln -sf "$HOME/dotfiles-sway/scripts/deepseek-wrapper.sh" ~/.npm-global/bin/deepseek
+        ln -sf "$HOME/dotfiles-sway/scripts/deepseek-wrapper.sh" ~/.npm-global/bin/deepseek-tui
+        chmod +x "$HOME/dotfiles-sway/scripts/deepseek-wrapper.sh"
+        grep -q ".local/bin" ~/.bashrc || echo "export PATH=\$HOME/.local/bin:\$PATH" >> ~/.bashrc
+    '
 
 # ── Install and configure ShellGPT ───────────────────────────────────────
 run_step "SHELLGPT_INSTALLED" "Installing ShellGPT CLI (sgpt)" \
@@ -102,7 +115,7 @@ run_step "VOICE_WHISPER" "Installing faster-whisper + google-genai (voice typing
 # ── Verify ───────────────────────────────────────────────────────────────
 echo -e "\n${CYAN}==> Verifying toolbox 'damian'...${NC}"
 VERIFY_FAIL=0
-for tool in node npm gh claude codex sgpt git; do
+for tool in node npm gh claude codex deepseek sgpt git; do
     if toolbox run --container "$CONTAINER" which "$tool" &>/dev/null 2>&1; then
         echo -e "  ${GREEN}✓${NC} $tool"
     else

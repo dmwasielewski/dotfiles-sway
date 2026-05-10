@@ -42,6 +42,12 @@ ln -sf "$DOTFILES/applications/claude-ai.desktop"             ~/.local/share/app
 ln -sf "$DOTFILES/applications/chatgpt.desktop"               ~/.local/share/applications/chatgpt.desktop
 ln -sf "$DOTFILES/applications/whatsapp.desktop"              ~/.local/share/applications/whatsapp.desktop
 ln -sf "$DOTFILES/claude/settings.json"                        ~/.claude/settings.json
+mkdir -p ~/.local/bin
+ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.local/bin/deepseek
+ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.local/bin/deepseek-tui
+mkdir -p ~/.npm-global/bin
+ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.npm-global/bin/deepseek
+ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.npm-global/bin/deepseek-tui
 update-desktop-database ~/.local/share/applications/
 
 # Make scripts executable
