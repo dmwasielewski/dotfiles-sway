@@ -331,7 +331,7 @@ if host systemctl list-unit-files adguard-*.service 2>/dev/null | grep -q '^adgu
     if host systemctl is-active --quiet adguard-ctrl; then
         pass "AdGuard background service running"
     else
-        warn "AdGuard service installed but not running yet — complete sudo adguard-cli activate && sudo adguard-cli configure && sudo adguard-cli start"
+        warn "AdGuard service installed but not running yet — complete adguard-cli activate && adguard-cli configure && adguard-cli start"
     fi
 else
     warn "AdGuard service unit not found yet — complete bash ~/dotfiles-sway/scripts/setup-adguard.sh"
@@ -547,8 +547,8 @@ echo    "     • MCP: Gmail, Calendar, Drive, Slack — log in at claude.ai →
 echo    "     • Bluetooth — pair via bluetoothctl"
 echo    "     • NordVPN — run nordvpn login, or use nordvpn login --token <token> if browser callback fails"
 echo    "       Daily use: nordvpn connect | nordvpn status | nordvpn disconnect"
-echo    "     • AdGuard for Linux — sudo adguard-cli activate && sudo adguard-cli configure && sudo adguard-cli start"
-echo    "       Daily use: adguard-cli status | sudo adguard-cli start | sudo adguard-cli stop"
+echo    "     • AdGuard for Linux — adguard-cli activate && adguard-cli configure && adguard-cli start"
+echo    "       Daily use: adguard-cli status | adguard-cli start | adguard-cli stop"
 echo    "     • Vivaldi — log in, restore bookmarks/extensions"
 
 # ── Summary ───────────────────────────────────────────────────────────────

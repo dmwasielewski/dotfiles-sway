@@ -68,13 +68,13 @@ tooltip="$(summarize "$status_output")"
 if [[ "$action" == "hint" ]]; then
     case "$state" in
         enabled)
-            notify "AdGuard jest wlaczony. Aby wylaczyc: sudo adguard-cli stop"
+            notify "AdGuard jest wlaczony. Aby wylaczyc: adguard-cli stop"
             ;;
         disabled)
-            notify "AdGuard jest wylaczony. Aby wlaczyc: sudo adguard-cli start"
+            notify "AdGuard jest wylaczony. Aby wlaczyc: adguard-cli start"
             ;;
         needs-setup)
-            notify "AdGuard wymaga aktywacji lub konfiguracji. Uzyj: sudo adguard-cli activate"
+            notify "AdGuard wymaga aktywacji lub konfiguracji. Uzyj: adguard-cli activate"
             ;;
         missing)
             notify "AdGuard CLI nie jest zainstalowany"

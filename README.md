@@ -150,9 +150,9 @@ bash ~/dotfiles-sway/scripts/setup-adguard.sh
 ```
 This installs the official AdGuard CLI. First-time activation and configuration remain manual:
 ```bash
-sudo adguard-cli activate
-sudo adguard-cli configure
-sudo adguard-cli start
+adguard-cli activate
+adguard-cli configure
+adguard-cli start
 ```
 Recommended first-time setup for this laptop:
 - enable protection
@@ -162,8 +162,8 @@ Recommended first-time setup for this laptop:
 Daily manual CLI usage:
 ```bash
 adguard-cli status
-sudo adguard-cli start
-sudo adguard-cli stop
+adguard-cli start
+adguard-cli stop
 ```
 
 10. Create the security container:

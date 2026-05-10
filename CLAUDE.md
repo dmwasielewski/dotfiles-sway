@@ -351,7 +351,7 @@ Config is in `sway/config.d/90-swayidle.conf` (overrides Fedora's system default
 - Position: **bottom**, height 25px
 - Dark muted blue-slate theme (low contrast, easy on the eyes)
 - Modules right → left: `nordvpn` · tray · clock · battery · `adguard` · backlight · temp · RAM · CPU · power profile · network · audio · idle inhibitor · `claude` status
-- `custom/adguard`: calls `~/.local/bin/adguard-waybar` every 10s — shows `AG on/off`; click only shows the matching terminal command because `adguard-cli start/stop` require elevated privileges
+- `custom/adguard`: calls `~/.local/bin/adguard-waybar` every 10s — shows `AG on/off`; click only shows the matching terminal command because this module is intentionally status-only
 - `custom/claude`: calls `~/.npm-global/bin/ccstatusline waybar` every 5s — shows Claude Code state (idle/working/waiting/error) with colour coding
 - `custom/nordvpn`: calls `~/.local/bin/nordvpn-waybar` every 15s — shows NordVPN state and toggles connect/disconnect on click
 
@@ -654,7 +654,7 @@ These require human interaction — document them so nothing is forgotten after 
 | MCP integrations (Gmail, Calendar, Drive, Slack) | `claude.ai` → Settings → Integrations |
 | Bluetooth pairing | `bluetoothctl` → `power on` → `scan on` → `pair <MAC>` |
 | NordVPN login | `nordvpn login` or, if browser callback fails, `nordvpn login --token <token>` |
-| AdGuard first-time setup | `sudo adguard-cli activate` → `sudo adguard-cli configure` → `sudo adguard-cli start` |
+| AdGuard first-time setup | `adguard-cli activate` → `adguard-cli configure` → `adguard-cli start` |
 | Bitwarden / Obsidian / Spotify login | In-app after Flatpak install |
 | Vivaldi: sign in, restore bookmarks/extensions | In-app after Flatpak install |
 
@@ -665,4 +665,4 @@ NordVPN notes:
 - Preferred baseline after login: `Technology: NORDLYNX`, `Firewall: enabled`, `Routing: enabled`, `Notify: enabled`, `Auto-connect: disabled`, `Kill Switch: disabled`.
 - Daily manual CLI usage: `nordvpn connect`, `nordvpn status`, `nordvpn disconnect`. Optional country selection: `nordvpn connect Poland`.
 - `scripts/setup-adguard.sh` installs the official AdGuard CLI, but activation/configuration remains manual because it requires the interactive first-run wizard and license/trial choice.
-- Daily AdGuard CLI usage: `adguard-cli status`, `sudo adguard-cli start`, `sudo adguard-cli stop`.
+- Daily AdGuard CLI usage: `adguard-cli status`, `adguard-cli start`, `adguard-cli stop`.
