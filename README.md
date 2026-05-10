@@ -132,6 +132,17 @@ Expected baseline:
 
 No extra post-login changes are required for the current setup.
 
+Daily manual CLI usage:
+```bash
+nordvpn connect
+nordvpn status
+nordvpn disconnect
+```
+Use `nordvpn connect <country>` for a specific country, for example:
+```bash
+nordvpn connect Poland
+```
+
 9. Create the security container:
 ```bash
 bash ~/dotfiles-sway/scripts/setup-security-container.sh

@@ -658,3 +658,4 @@ NordVPN notes:
 - Login cannot be automated. On this setup, browser callback can fail with Flatpak browsers, so token login is the most reliable fallback.
 - Generate the token in Nord Account → NordVPN → Advanced settings → Get access token.
 - Preferred baseline after login: `Technology: NORDLYNX`, `Firewall: enabled`, `Routing: enabled`, `Notify: enabled`, `Auto-connect: disabled`, `Kill Switch: disabled`.
+- Daily manual CLI usage: `nordvpn connect`, `nordvpn status`, `nordvpn disconnect`. Optional country selection: `nordvpn connect Poland`.
