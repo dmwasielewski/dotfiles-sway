@@ -166,6 +166,29 @@ button:hover {
     color: #ff0000;
 }
 
+/* ── NordVPN status ─────────────────────────────────────── */
+#custom-nordvpn {
+    background-color: #1e2230;
+    color: #8a9bb5;
+}
+
+#custom-nordvpn.connected {
+    background-color: #1a2a1a;
+    color: #6ab56a;
+}
+
+#custom-nordvpn.connecting {
+    background-color: #2a2010;
+    color: #c8a060;
+}
+
+#custom-nordvpn.disconnected,
+#custom-nordvpn.unknown,
+#custom-nordvpn.missing {
+    background-color: #2a0000;
+    color: #ff6b6b;
+}
+
 /* ── Audio — muted olive ────────────────────────────────── */
 #pulseaudio {
     background-color: #1e2230;

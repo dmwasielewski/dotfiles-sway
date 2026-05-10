@@ -19,6 +19,7 @@
         "idle_inhibitor",
         "pulseaudio",
         "network",
+        "custom/nordvpn",
         "power-profiles-daemon",
         "cpu",
         "memory",
@@ -51,6 +52,13 @@
         "return-type": "json",
         "interval": 5,
         "tooltip": true
+    },
+    "custom/nordvpn": {
+        "exec": "$HOME/.local/bin/nordvpn-waybar",
+        "return-type": "json",
+        "interval": 15,
+        "tooltip": true,
+        "on-click": "$HOME/.local/bin/nordvpn-waybar toggle"
     },
     "keyboard-state": {
         "numlock": true,

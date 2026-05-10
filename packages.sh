@@ -82,4 +82,7 @@ echo "==> Configuring firewall..."
 sudo firewall-cmd --remove-service=dhcpv6-client --permanent
 sudo firewall-cmd --reload
 
+# NordVPN CLI
+bash "$DOTFILES/scripts/setup-nordvpn.sh"
+
 echo "==> Done. Please reboot: systemctl reboot"

@@ -42,6 +42,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Voice typing — push-to-talk (`Mod+T`) with local Whisper AI + Gemini UK English correction
 - Neovim 0.12.1 — user-local latest pinned binary with Chris Titus Tech `titus-kickstart` config
 - AI terminal tools in toolbox: Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT (`sgpt`)
+- NordVPN CLI with Waybar status/toggle helper
 
 ---
 
@@ -102,17 +103,23 @@ bash ~/dotfiles-sway/scripts/setup-kvm.sh
 bash ~/dotfiles-sway/scripts/setup-damian-container.sh
 ```
 
-8. Create the security container:
+8. Install NordVPN CLI and the Waybar helper:
+```bash
+bash ~/dotfiles-sway/scripts/setup-nordvpn.sh
+```
+After that, log out or reboot so the `nordvpn` group membership takes effect.
+
+9. Create the security container:
 ```bash
 bash ~/dotfiles-sway/scripts/setup-security-container.sh
 ```
 
-9. Run full verification:
+10. Run full verification:
 ```bash
 bash ~/dotfiles-sway/scripts/verify.sh
 ```
 
-10. Optional: validate the fresh-install flow in a disposable Fedora Sway Atomic VM:
+11. Optional: validate the fresh-install flow in a disposable Fedora Sway Atomic VM:
 ```bash
 bash ~/dotfiles-sway/scripts/create-fedora-sway-vm.sh
 ```
@@ -288,7 +295,7 @@ Dark muted blue-slate palette — low contrast, easy on the eyes.
 
 **Centre:** `window` (focused window title)
 
-**Right:** `claude` · `idle_inhibitor` · `pulseaudio` · `network` · `power-profiles-daemon` · `cpu` · `memory` · `temperature` · `backlight` · `language` · `battery` · `clock` · `tray`
+**Right:** `claude` · `nordvpn` · `idle_inhibitor` · `pulseaudio` · `network` · `power-profiles-daemon` · `cpu` · `memory` · `temperature` · `backlight` · `language` · `battery` · `clock` · `tray`
 
 ### Alert thresholds
 
@@ -324,7 +331,7 @@ pair <MAC_ADDRESS>
 ## Notes
 
 - `pavucontrol` is already included in Fedora Atomic base — no separate install needed
-- NordVPN: no Flatpak available — install via official NordVPN Linux CLI script when needed
+- NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh`
 - Security container must be created after first reboot (distrobox installed via packages.sh)
 - Rebuild security container manually: `bash ~/dotfiles-sway/scripts/setup-security-container.sh`
 - Enter security container: `distrobox enter security`
@@ -355,8 +362,10 @@ dotfiles-sway/
 │   ├── check-hardware.sh              # Hardware check (GPU, VA-API, audio, ...) — writes state
 │   ├── setup-kvm.sh                   # KVM/QEMU setup (libvirtd, groups, network) — writes state
 │   ├── setup-neovim-config.sh         # Neovim 0.12.1 + Chris Titus Tech config symlink
+│   ├── setup-nordvpn.sh               # NordVPN CLI install + group setup — writes state
 │   ├── setup-damian-container.sh      # Toolbox damian: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
 │   ├── configure-shellgpt.sh          # Non-interactive ShellGPT config from private env/API files
+│   ├── nordvpn-waybar.sh              # NordVPN status/toggle helper for Waybar
 │   ├── setup-security-container.sh   # Distrobox security: pentesting toolkit — writes state
 │   ├── voice-type-start.sh           # Voice typing: start recording (Mod+T press)
 │   ├── voice-type-stop.sh            # Voice typing: stop recording, transcribe, inject text (Mod+T release)

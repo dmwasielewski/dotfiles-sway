@@ -280,8 +280,29 @@ else
     fail "Toolbox 'damian'  NOT FOUND" "bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
 fi
 
-# ── 5a. Neovim ───────────────────────────────────────────────────────────
-section "5a. Neovim"
+# ── 5a. NordVPN ──────────────────────────────────────────────────────────
+section "5a. NordVPN"
+
+if host which nordvpn &>/dev/null 2>&1; then
+    pass "NordVPN CLI"
+else
+    fail "NordVPN CLI  MISSING" "bash ~/dotfiles-sway/scripts/setup-nordvpn.sh"
+fi
+
+if [[ -x "$HOME/.local/bin/nordvpn-waybar" ]]; then
+    pass "NordVPN Waybar status helper"
+else
+    fail "NordVPN Waybar status helper  MISSING" "bash ~/dotfiles-sway/setup.sh"
+fi
+
+if host id -nG 2>/dev/null | grep -qw nordvpn; then
+    pass "User in nordvpn group"
+else
+    warn "User not in nordvpn group yet — re-run bash ~/dotfiles-sway/scripts/setup-nordvpn.sh and log out/in"
+fi
+
+# ── 5b. Neovim ───────────────────────────────────────────────────────────
+section "5b. Neovim"
 
 if [[ -x "$HOME/.local/bin/nvim" ]]; then
     NVIM_LINE=$("$HOME/.local/bin/nvim" --version | head -n1)
@@ -326,8 +347,8 @@ else
     warn "Git pre-push secret scan hook not configured — run: git -C ~/dotfiles-sway config core.hooksPath .githooks"
 fi
 
-# ── 5b. Voice typing ─────────────────────────────────────────────────────
-section "5b. Voice typing"
+# ── 5c. Voice typing ─────────────────────────────────────────────────────
+section "5c. Voice typing"
 
 if host which wtype &>/dev/null 2>&1; then
     pass "wtype (Wayland text injection)"

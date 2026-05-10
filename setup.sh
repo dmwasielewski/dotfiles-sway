@@ -45,6 +45,7 @@ ln -sf "$DOTFILES/claude/settings.json"                        ~/.claude/setting
 mkdir -p ~/.local/bin
 ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.local/bin/deepseek
 ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.local/bin/deepseek-tui
+ln -sf "$DOTFILES/scripts/nordvpn-waybar.sh"                   ~/.local/bin/nordvpn-waybar
 mkdir -p ~/.npm-global/bin
 ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.npm-global/bin/deepseek
 ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.npm-global/bin/deepseek-tui

@@ -75,8 +75,10 @@ dotfiles-sway/
     ├── check-hardware.sh              ← Verifies VA-API, GPU, KVM after reboot — writes state
     ├── setup-kvm.sh                   ← KVM/QEMU setup (libvirtd, user groups, NAT network) — writes state
     ├── setup-neovim-config.sh         ← Neovim 0.12.1 user-local binary + Chris Titus Tech config symlink
+    ├── setup-nordvpn.sh               ← NordVPN CLI install + group setup — writes state
     ├── setup-damian-container.sh      ← Toolbox damian: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
     ├── configure-shellgpt.sh          ← Non-interactive ShellGPT config from private env/API files
+    ├── nordvpn-waybar.sh              ← NordVPN status/toggle helper for Waybar
     ├── setup-security-container.sh   ← Distrobox security: pentesting toolkit — writes state
     ├── voice-type-start.sh           ← Voice typing: start recording on Mod+T press
     ├── voice-type-stop.sh            ← Voice typing: stop, transcribe, inject text on Mod+T release
@@ -153,7 +155,6 @@ bash ~/dotfiles-sway/scripts/setup-security-container.sh # security distrobox
 
 - Set `ANTHROPIC_API_KEY` in private `~/.bashrc.d/ai-keys.bash`
 - Pair Bluetooth devices manually via `bluetoothctl`
-- Install NordVPN via official Linux CLI script (no Flatpak available)
 - Set up virtual machines — see KVM section below
 - Log in to: Vivaldi, Bitwarden, Obsidian, Spotify, GitHub (gh auth login)
 
@@ -214,7 +215,7 @@ Managed by `setup.sh`. Installed from Flathub as user Flatpaks (`--user`) to avo
 
 Notes:
 - `pavucontrol` is in Fedora Atomic base — no separate install needed.
-- NordVPN: no Flatpak available — install via official NordVPN Linux CLI when needed.
+- NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh`.
 
 ### Layer 3: toolbox `damian` (Fedora 43 dev environment)
 
@@ -346,8 +347,9 @@ Config is in `sway/config.d/90-swayidle.conf` (overrides Fedora's system default
 
 - Position: **bottom**, height 25px
 - Dark muted blue-slate theme (low contrast, easy on the eyes)
-- Modules right → left: `claude` status · idle inhibitor · audio · network · power profile · CPU · RAM · temp · backlight · language · battery · clock · tray
+- Modules right → left: `claude` status · `nordvpn` · idle inhibitor · audio · network · power profile · CPU · RAM · temp · backlight · language · battery · clock · tray
 - `custom/claude`: calls `~/.npm-global/bin/ccstatusline waybar` every 5s — shows Claude Code state (idle/working/waiting/error) with colour coding
+- `custom/nordvpn`: calls `~/.local/bin/nordvpn-waybar` every 15s — shows NordVPN state and toggles connect/disconnect on click
 
 **Alert thresholds:**
 | Module | Warning | Critical |
@@ -632,7 +634,7 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 - [ ] Windows Server 2022 VM — Active Directory lab (Sysadmin AD Lab project)
 - [ ] Kali Linux VM
 - [ ] virtiofs fully working in Windows 11 (VirtioFsSvc setup)
-- [ ] NordVPN — automate install in bootstrap (currently manual CLI script)
+- [ ] NordVPN — CLI install and Waybar status helper (blocked here until `sudo -v` succeeds)
 - [ ] `gh auth login` automation
 
 ## Manual post-install steps (cannot be automated)
@@ -647,6 +649,6 @@ These require human interaction — document them so nothing is forgotten after 
 | GitHub CLI login | `toolbox enter damian` → `gh auth login` |
 | MCP integrations (Gmail, Calendar, Drive, Slack) | `claude.ai` → Settings → Integrations |
 | Bluetooth pairing | `bluetoothctl` → `power on` → `scan on` → `pair <MAC>` |
-| NordVPN install | Official Linux CLI script from nordvpn.com |
+| NordVPN install | `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` |
 | Bitwarden / Obsidian / Spotify login | In-app after Flatpak install |
 | Vivaldi: sign in, restore bookmarks/extensions | In-app after Flatpak install |
