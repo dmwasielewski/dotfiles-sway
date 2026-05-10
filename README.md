@@ -43,6 +43,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Neovim 0.12.1 — user-local latest pinned binary with Chris Titus Tech `titus-kickstart` config
 - AI terminal tools in toolbox: Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT (`sgpt`)
 - NordVPN CLI with Waybar status/toggle helper
+- AdGuard for Linux CLI
 
 ---
 
@@ -143,17 +144,39 @@ Use `nordvpn connect <country>` for a specific country, for example:
 nordvpn connect Poland
 ```
 
-9. Create the security container:
+9. Install AdGuard for Linux:
+```bash
+bash ~/dotfiles-sway/scripts/setup-adguard.sh
+```
+This installs the official AdGuard CLI. First-time activation and configuration remain manual:
+```bash
+sudo adguard-cli activate
+sudo adguard-cli configure
+sudo adguard-cli start
+```
+Recommended first-time setup for this laptop:
+- enable protection
+- keep DNS filtering local to the laptop
+- do not try to replace your NAS `AdGuard Home` or your network `NextDNS` design with this client
+
+Daily manual CLI usage:
+```bash
+adguard-cli status
+sudo adguard-cli start
+sudo adguard-cli stop
+```
+
+10. Create the security container:
 ```bash
 bash ~/dotfiles-sway/scripts/setup-security-container.sh
 ```
 
-10. Run full verification:
+11. Run full verification:
 ```bash
 bash ~/dotfiles-sway/scripts/verify.sh
 ```
 
-11. Optional: validate the fresh-install flow in a disposable Fedora Sway Atomic VM:
+12. Optional: validate the fresh-install flow in a disposable Fedora Sway Atomic VM:
 ```bash
 bash ~/dotfiles-sway/scripts/create-fedora-sway-vm.sh
 ```
@@ -329,7 +352,7 @@ Dark muted blue-slate palette — low contrast, easy on the eyes.
 
 **Centre:** `window` (focused window title)
 
-**Right:** `claude` · `nordvpn` · `idle_inhibitor` · `pulseaudio` · `network` · `power-profiles-daemon` · `cpu` · `memory` · `temperature` · `backlight` · `language` · `battery` · `clock` · `tray`
+**Right:** `claude` · `idle_inhibitor` · `pulseaudio` · `network` · `power-profiles-daemon` · `cpu` · `memory` · `temperature` · `backlight` · `adguard` · `battery` · `clock` · `tray` · `nordvpn`
 
 ### Alert thresholds
 
@@ -350,7 +373,7 @@ Both fonts are installed automatically by `setup.sh`.
 
 ## Keyboard layout
 
-GB layout with Polish characters via PL variant. No switching needed.
+GB layout with Polish characters via PL variant. No switching needed, so the Waybar language indicator is intentionally removed.
 
 ## Bluetooth devices
 
@@ -366,6 +389,7 @@ pair <MAC_ADDRESS>
 
 - `pavucontrol` is already included in Fedora Atomic base — no separate install needed
 - NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start
+- AdGuard for Linux: official CLI install via `bash ~/dotfiles-sway/scripts/setup-adguard.sh`; first-time `activate/configure/start` stays manual
 - Security container must be created after first reboot (distrobox installed via packages.sh)
 - Rebuild security container manually: `bash ~/dotfiles-sway/scripts/setup-security-container.sh`
 - Enter security container: `distrobox enter security`
@@ -397,8 +421,10 @@ dotfiles-sway/
 │   ├── setup-kvm.sh                   # KVM/QEMU setup (libvirtd, groups, network) — writes state
 │   ├── setup-neovim-config.sh         # Neovim 0.12.1 + Chris Titus Tech config symlink
 │   ├── setup-nordvpn.sh               # NordVPN CLI install + nordvpnd enable/start + group setup — writes state
+│   ├── setup-adguard.sh               # AdGuard for Linux CLI install — writes state
 │   ├── setup-damian-container.sh      # Toolbox damian: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
 │   ├── configure-shellgpt.sh          # Non-interactive ShellGPT config from private env/API files
+│   ├── adguard-waybar.sh              # AdGuard Waybar status helper (AG on/off + click hint)
 │   ├── nordvpn-waybar.sh              # NordVPN status/toggle helper for Waybar
 │   ├── setup-security-container.sh   # Distrobox security: pentesting toolkit — writes state
 │   ├── voice-type-start.sh           # Voice typing: start recording (Mod+T press)

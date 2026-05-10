@@ -85,4 +85,7 @@ sudo firewall-cmd --reload
 # NordVPN CLI
 bash "$DOTFILES/scripts/setup-nordvpn.sh"
 
+# AdGuard for Linux CLI
+bash "$DOTFILES/scripts/setup-adguard.sh"
+
 echo "==> Done. Please reboot: systemctl reboot"

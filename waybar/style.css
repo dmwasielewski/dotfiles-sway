@@ -63,6 +63,7 @@ button:hover {
 #mode,
 #idle_inhibitor,
 #scratchpad,
+#custom-adguard,
 #custom-nordvpn,
 #power-profiles-daemon,
 #language {
@@ -165,6 +166,33 @@ button:hover {
 #network.disconnected {
     background-color: #2a0000;
     color: #ff0000;
+}
+
+/* ── NordVPN status ─────────────────────────────────────── */
+#custom-adguard {
+    background-color: #1e2230;
+    color: #8a9bb5;
+}
+
+#custom-adguard.enabled {
+    background-color: #1e2230;
+    color: #8a9bb5;
+}
+
+#custom-adguard.disabled {
+    background-color: #2a0000;
+    color: #ff3333;
+}
+
+#custom-adguard.needs-setup {
+    background-color: #2a2010;
+    color: #c8a060;
+}
+
+#custom-adguard.unknown,
+#custom-adguard.missing {
+    background-color: #2a0000;
+    color: #ff6b6b;
 }
 
 /* ── NordVPN status ─────────────────────────────────────── */

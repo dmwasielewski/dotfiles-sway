@@ -312,8 +312,33 @@ else
     warn "User not in nordvpn group yet — re-run bash ~/dotfiles-sway/scripts/setup-nordvpn.sh and log out/in"
 fi
 
-# ── 5b. Neovim ───────────────────────────────────────────────────────────
-section "5b. Neovim"
+# ── 5b. AdGuard for Linux ────────────────────────────────────────────────
+section "5b. AdGuard for Linux"
+
+if host which adguard-cli &>/dev/null 2>&1 || host test -x /opt/adguard-cli/adguard-cli; then
+    pass "AdGuard CLI"
+else
+    fail "AdGuard CLI  MISSING" "bash ~/dotfiles-sway/scripts/setup-adguard.sh"
+fi
+
+if host which iptables &>/dev/null 2>&1; then
+    pass "iptables present for AdGuard auto mode"
+else
+    fail "iptables  MISSING (required by AdGuard auto mode)" "bash ~/dotfiles-sway/packages.sh && systemctl reboot"
+fi
+
+if host systemctl list-unit-files adguard-*.service 2>/dev/null | grep -q '^adguard-'; then
+    if host systemctl is-active --quiet adguard-ctrl; then
+        pass "AdGuard background service running"
+    else
+        warn "AdGuard service installed but not running yet — complete sudo adguard-cli activate && sudo adguard-cli configure && sudo adguard-cli start"
+    fi
+else
+    warn "AdGuard service unit not found yet — complete bash ~/dotfiles-sway/scripts/setup-adguard.sh"
+fi
+
+# ── 5c. Neovim ───────────────────────────────────────────────────────────
+section "5c. Neovim"
 
 if [[ -x "$HOME/.local/bin/nvim" ]]; then
     NVIM_LINE=$("$HOME/.local/bin/nvim" --version | head -n1)
@@ -522,6 +547,8 @@ echo    "     • MCP: Gmail, Calendar, Drive, Slack — log in at claude.ai →
 echo    "     • Bluetooth — pair via bluetoothctl"
 echo    "     • NordVPN — run nordvpn login, or use nordvpn login --token <token> if browser callback fails"
 echo    "       Daily use: nordvpn connect | nordvpn status | nordvpn disconnect"
+echo    "     • AdGuard for Linux — sudo adguard-cli activate && sudo adguard-cli configure && sudo adguard-cli start"
+echo    "       Daily use: adguard-cli status | sudo adguard-cli start | sudo adguard-cli stop"
 echo    "     • Vivaldi — log in, restore bookmarks/extensions"
 
 # ── Summary ───────────────────────────────────────────────────────────────

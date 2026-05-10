@@ -76,8 +76,10 @@ dotfiles-sway/
     ├── setup-kvm.sh                   ← KVM/QEMU setup (libvirtd, user groups, NAT network) — writes state
     ├── setup-neovim-config.sh         ← Neovim 0.12.1 user-local binary + Chris Titus Tech config symlink
     ├── setup-nordvpn.sh               ← NordVPN CLI install + nordvpnd enable/start + group setup — writes state
+    ├── setup-adguard.sh               ← AdGuard for Linux CLI install — writes state
     ├── setup-damian-container.sh      ← Toolbox damian: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
     ├── configure-shellgpt.sh          ← Non-interactive ShellGPT config from private env/API files
+    ├── adguard-waybar.sh              ← AdGuard Waybar status helper (AG on/off + click hint)
     ├── nordvpn-waybar.sh              ← NordVPN status/toggle helper for Waybar
     ├── setup-security-container.sh   ← Distrobox security: pentesting toolkit — writes state
     ├── voice-type-start.sh           ← Voice typing: start recording on Mod+T press
@@ -216,6 +218,7 @@ Managed by `setup.sh`. Installed from Flathub as user Flatpaks (`--user`) to avo
 Notes:
 - `pavucontrol` is in Fedora Atomic base — no separate install needed.
 - NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start.
+- AdGuard for Linux: official CLI install via `bash ~/dotfiles-sway/scripts/setup-adguard.sh`; first-time activation/configuration remains manual.
 
 ### Layer 3: toolbox `damian` (Fedora 43 dev environment)
 
@@ -347,7 +350,8 @@ Config is in `sway/config.d/90-swayidle.conf` (overrides Fedora's system default
 
 - Position: **bottom**, height 25px
 - Dark muted blue-slate theme (low contrast, easy on the eyes)
-- Modules right → left: `claude` status · `nordvpn` · idle inhibitor · audio · network · power profile · CPU · RAM · temp · backlight · language · battery · clock · tray
+- Modules right → left: `nordvpn` · tray · clock · battery · `adguard` · backlight · temp · RAM · CPU · power profile · network · audio · idle inhibitor · `claude` status
+- `custom/adguard`: calls `~/.local/bin/adguard-waybar` every 10s — shows `AG on/off`; click only shows the matching terminal command because `adguard-cli start/stop` require elevated privileges
 - `custom/claude`: calls `~/.npm-global/bin/ccstatusline waybar` every 5s — shows Claude Code state (idle/working/waiting/error) with colour coding
 - `custom/nordvpn`: calls `~/.local/bin/nordvpn-waybar` every 15s — shows NordVPN state and toggles connect/disconnect on click
 
@@ -650,6 +654,7 @@ These require human interaction — document them so nothing is forgotten after 
 | MCP integrations (Gmail, Calendar, Drive, Slack) | `claude.ai` → Settings → Integrations |
 | Bluetooth pairing | `bluetoothctl` → `power on` → `scan on` → `pair <MAC>` |
 | NordVPN login | `nordvpn login` or, if browser callback fails, `nordvpn login --token <token>` |
+| AdGuard first-time setup | `sudo adguard-cli activate` → `sudo adguard-cli configure` → `sudo adguard-cli start` |
 | Bitwarden / Obsidian / Spotify login | In-app after Flatpak install |
 | Vivaldi: sign in, restore bookmarks/extensions | In-app after Flatpak install |
 
@@ -659,3 +664,5 @@ NordVPN notes:
 - Generate the token in Nord Account → NordVPN → Advanced settings → Get access token.
 - Preferred baseline after login: `Technology: NORDLYNX`, `Firewall: enabled`, `Routing: enabled`, `Notify: enabled`, `Auto-connect: disabled`, `Kill Switch: disabled`.
 - Daily manual CLI usage: `nordvpn connect`, `nordvpn status`, `nordvpn disconnect`. Optional country selection: `nordvpn connect Poland`.
+- `scripts/setup-adguard.sh` installs the official AdGuard CLI, but activation/configuration remains manual because it requires the interactive first-run wizard and license/trial choice.
+- Daily AdGuard CLI usage: `adguard-cli status`, `sudo adguard-cli start`, `sudo adguard-cli stop`.
