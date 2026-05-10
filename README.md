@@ -107,7 +107,8 @@ bash ~/dotfiles-sway/scripts/setup-damian-container.sh
 ```bash
 bash ~/dotfiles-sway/scripts/setup-nordvpn.sh
 ```
-After that, log out or reboot so the `nordvpn` group membership takes effect.
+This also enables and starts `nordvpnd` automatically when the service unit is available.
+After that, log out or reboot so the `nordvpn` group membership takes effect, then run `nordvpn login`.
 
 9. Create the security container:
 ```bash
@@ -331,7 +332,7 @@ pair <MAC_ADDRESS>
 ## Notes
 
 - `pavucontrol` is already included in Fedora Atomic base — no separate install needed
-- NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh`
+- NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start
 - Security container must be created after first reboot (distrobox installed via packages.sh)
 - Rebuild security container manually: `bash ~/dotfiles-sway/scripts/setup-security-container.sh`
 - Enter security container: `distrobox enter security`
@@ -362,7 +363,7 @@ dotfiles-sway/
 │   ├── check-hardware.sh              # Hardware check (GPU, VA-API, audio, ...) — writes state
 │   ├── setup-kvm.sh                   # KVM/QEMU setup (libvirtd, groups, network) — writes state
 │   ├── setup-neovim-config.sh         # Neovim 0.12.1 + Chris Titus Tech config symlink
-│   ├── setup-nordvpn.sh               # NordVPN CLI install + group setup — writes state
+│   ├── setup-nordvpn.sh               # NordVPN CLI install + nordvpnd enable/start + group setup — writes state
 │   ├── setup-damian-container.sh      # Toolbox damian: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
 │   ├── configure-shellgpt.sh          # Non-interactive ShellGPT config from private env/API files
 │   ├── nordvpn-waybar.sh              # NordVPN status/toggle helper for Waybar

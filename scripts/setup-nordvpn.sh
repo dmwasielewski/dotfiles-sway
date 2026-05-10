@@ -114,6 +114,19 @@ else
     run_step "NORDVPN_CLI" "Installing NordVPN CLI" sudo -n rpm-ostree install nordvpn
 fi
 
+if command -v nordvpn >/dev/null 2>&1 && command -v systemctl >/dev/null 2>&1 && [[ -d /run/systemd/system ]]; then
+    if systemctl list-unit-files nordvpnd.service 2>/dev/null | grep -q '^nordvpnd\.service'; then
+        if systemctl is-enabled --quiet nordvpnd 2>/dev/null && systemctl is-active --quiet nordvpnd 2>/dev/null; then
+            echo "==> NordVPN background service already enabled and running — skipping."
+            step_done "NORDVPN_SERVICE"
+        else
+            run_step "NORDVPN_SERVICE" "Enabling NordVPN background service" sudo -n systemctl enable --now nordvpnd
+        fi
+    else
+        echo -e "${YELLOW}⚠ nordvpnd.service not available yet — reboot may still be required before the service can be enabled${NC}"
+    fi
+fi
+
 if getent group nordvpn >/dev/null 2>&1; then
     if id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx nordvpn; then
         echo "==> User already in nordvpn group — skipping."

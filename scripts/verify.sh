@@ -289,6 +289,17 @@ else
     fail "NordVPN CLI  MISSING" "bash ~/dotfiles-sway/scripts/setup-nordvpn.sh"
 fi
 
+if host systemctl list-unit-files nordvpnd.service 2>/dev/null | grep -q '^nordvpnd\.service'; then
+    if host systemctl is-enabled --quiet nordvpnd && host systemctl is-active --quiet nordvpnd; then
+        pass "NordVPN background service (enabled and running)"
+    else
+        fail "NordVPN background service  NOT RUNNING" \
+             "sudo systemctl enable --now nordvpnd"
+    fi
+else
+    warn "NordVPN background service unit not found yet — reboot after rpm-ostree install may still be required"
+fi
+
 if [[ -x "$HOME/.local/bin/nordvpn-waybar" ]]; then
     pass "NordVPN Waybar status helper"
 else
@@ -509,7 +520,7 @@ echo    "     • codex login  (OpenAI/ChatGPT account)"
 echo    "     • gh auth login  (GitHub CLI)"
 echo    "     • MCP: Gmail, Calendar, Drive, Slack — log in at claude.ai → Integrations"
 echo    "     • Bluetooth — pair via bluetoothctl"
-echo    "     • NordVPN — install from nordvpn.com/linux"
+echo    "     • NordVPN — run nordvpn login"
 echo    "     • Vivaldi — log in, restore bookmarks/extensions"
 
 # ── Summary ───────────────────────────────────────────────────────────────

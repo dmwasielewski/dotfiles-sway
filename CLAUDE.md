@@ -75,7 +75,7 @@ dotfiles-sway/
     ├── check-hardware.sh              ← Verifies VA-API, GPU, KVM after reboot — writes state
     ├── setup-kvm.sh                   ← KVM/QEMU setup (libvirtd, user groups, NAT network) — writes state
     ├── setup-neovim-config.sh         ← Neovim 0.12.1 user-local binary + Chris Titus Tech config symlink
-    ├── setup-nordvpn.sh               ← NordVPN CLI install + group setup — writes state
+    ├── setup-nordvpn.sh               ← NordVPN CLI install + nordvpnd enable/start + group setup — writes state
     ├── setup-damian-container.sh      ← Toolbox damian: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
     ├── configure-shellgpt.sh          ← Non-interactive ShellGPT config from private env/API files
     ├── nordvpn-waybar.sh              ← NordVPN status/toggle helper for Waybar
@@ -215,7 +215,7 @@ Managed by `setup.sh`. Installed from Flathub as user Flatpaks (`--user`) to avo
 
 Notes:
 - `pavucontrol` is in Fedora Atomic base — no separate install needed.
-- NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh`.
+- NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start.
 
 ### Layer 3: toolbox `damian` (Fedora 43 dev environment)
 
@@ -634,7 +634,7 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 - [ ] Windows Server 2022 VM — Active Directory lab (Sysadmin AD Lab project)
 - [ ] Kali Linux VM
 - [ ] virtiofs fully working in Windows 11 (VirtioFsSvc setup)
-- [ ] NordVPN — CLI install and Waybar status helper (blocked here until `sudo -v` succeeds)
+- [x] NordVPN — CLI install, `nordvpnd` enable/start, and Waybar status helper
 - [ ] `gh auth login` automation
 
 ## Manual post-install steps (cannot be automated)
@@ -649,6 +649,6 @@ These require human interaction — document them so nothing is forgotten after 
 | GitHub CLI login | `toolbox enter damian` → `gh auth login` |
 | MCP integrations (Gmail, Calendar, Drive, Slack) | `claude.ai` → Settings → Integrations |
 | Bluetooth pairing | `bluetoothctl` → `power on` → `scan on` → `pair <MAC>` |
-| NordVPN install | `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` |
+| NordVPN login | `nordvpn login` |
 | Bitwarden / Obsidian / Spotify login | In-app after Flatpak install |
 | Vivaldi: sign in, restore bookmarks/extensions | In-app after Flatpak install |
