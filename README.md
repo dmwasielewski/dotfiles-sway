@@ -44,6 +44,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - AI terminal tools in toolbox: Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT (`sgpt`)
 - NordVPN CLI with Waybar status/toggle helper (click to connect/disconnect)
 - AdGuard for Linux CLI with Waybar toggle helper (click to enable/disable)
+- LibreOffice — open source office suite (Writer, Calc, Impress)
 - Thunderbird email client (Flatpak)
 
 ---

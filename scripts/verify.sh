@@ -169,6 +169,7 @@ declare -A FLATPAKS=(
     ["com.visualstudio.code"]="VSCode"
     ["md.obsidian.Obsidian"]="Obsidian"
     ["org.mozilla.Thunderbird"]="Thunderbird"
+    ["org.libreoffice.LibreOffice"]="LibreOffice"
     ["com.bitwarden.desktop"]="Bitwarden"
     ["com.spotify.Client"]="Spotify"
     ["com.obsproject.Studio"]="OBS Studio"

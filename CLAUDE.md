@@ -219,6 +219,7 @@ Managed by `setup.sh`. Installed from Flathub as user Flatpaks (`--user`) to avo
 Notes:
 - `pavucontrol` is in Fedora Atomic base — no separate install needed.
 - Thunderbird is installed as the verified Flathub Flatpak `org.mozilla.Thunderbird`.
+- LibreOffice is installed as the verified Flathub Flatpak `org.libreoffice.LibreOffice` (Writer, Calc, Impress).
 - NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start.
 - AdGuard for Linux: official CLI install via `bash ~/dotfiles-sway/scripts/setup-adguard.sh`; first-time activation/configuration remains manual.
 
@@ -625,7 +626,7 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 - [x] Mako notifications (5s auto-dismiss)
 - [x] Clipboard manager (clipman + rofi)
 - [x] Fonts (JetBrainsMono Nerd Font, Font Awesome)
-- [x] All Flatpak apps installed via setup.sh
+- [x] All Flatpak apps installed via setup.sh (Vivaldi, mpv, VSCode, Obsidian, Bitwarden, Thunderbird, LibreOffice, Spotify, OBS, JDownloader, Sticky)
 - [x] All system packages via packages.sh (rpm-ostree)
 - [x] Neovim 0.12.1 user-local binary with Chris Titus Tech `titus-kickstart` config
 - [x] PWA shortcuts (Claude AI, ChatGPT, WhatsApp)
