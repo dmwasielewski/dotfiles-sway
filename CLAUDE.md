@@ -225,6 +225,15 @@ Notes:
 
 Managed by `scripts/setup-damian-container.sh`. By default it targets the host Fedora release and the toolbox name `damian`. Override with `TOOLBOX_VERSION=<ver>` and `TOOLBOX_CONTAINER=<name>` for side-by-side migrations.
 
+For toolbox cutovers across Fedora releases, use a parallel container first, verify it, then replace the old default name only at the end:
+1. `TOOLBOX_CONTAINER=damian44 TOOLBOX_VERSION=44 bash ~/dotfiles-sway/scripts/setup-damian-container.sh`
+2. `TOOLBOX_CONTAINER=damian44 bash ~/dotfiles-sway/scripts/verify.sh`
+3. compare old and new for anything ad-hoc outside this repo
+4. `podman stop damian damian44 >/dev/null 2>&1 || true && toolbox rm -f damian && podman rename damian44 damian`
+5. `bash ~/dotfiles-sway/scripts/verify.sh`
+
+Normal version drift is expected during those migrations. Fedora 44, for example, uses `nodejs22` / `nodejs22-npm` instead of the older generic package names, and `mesa-dri-drivers` satisfies the old `mesa-va-drivers` capability.
+
 | Tool | Purpose |
 |---|---|
 | `node 22` | Node.js runtime |

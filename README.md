@@ -650,11 +650,20 @@ TOOLBOX_CONTAINER=damian44 bash ~/dotfiles-sway/scripts/verify.sh
 3. Compare old and new manually for anything ad-hoc you installed outside the script.
 4. Point any custom helpers that depend on a toolbox name at the new container. `scripts/voice-type-stop.sh` and `scripts/verify.sh` both respect `TOOLBOX_CONTAINER`.
 5. Keep the old toolbox until you have finished a full work session inside the new one.
-6. Only then remove the old toolbox:
+6. When you are satisfied, remove the old toolbox and rename the validated replacement back to `damian` so the default automation keeps working:
 ```bash
-toolbox rm damian
+podman stop damian damian44 >/dev/null 2>&1 || true
+toolbox rm -f damian
+podman rename damian44 damian
 ```
-7. If you want the new toolbox to become the default `damian`, recreate it under that name during a maintenance window rather than while actively using the environment.
+7. Re-run verification against the restored default name:
+```bash
+bash ~/dotfiles-sway/scripts/verify.sh
+```
+8. Expect a few Fedora-version package name changes during this cutover. For example:
+   - `nodejs` / `nodejs-npm` on Fedora 43 become `nodejs22` / `nodejs22-npm` on Fedora 44.
+   - `mesa-va-drivers` can be satisfied by `mesa-dri-drivers` on Fedora 44.
+   - If Fedora no longer ships a specific Java major version, install the nearest supported runtime and verify that your own scripts do not pin the removed version.
 
 ### Run ShellGPT
 ```bash
