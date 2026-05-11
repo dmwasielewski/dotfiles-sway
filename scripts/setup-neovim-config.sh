@@ -35,14 +35,21 @@ fi
 mkdir -p "$HOME/.local/bin" "$NVIM_OPT_DIR" "$HOME/.config" "$HOME/.vim/undodir" "$HOME/.scripts"
 
 installed_version=""
+installed_from_install_dir=0
 if [[ -x "$NVIM_RELEASE_DIR/bin/nvim" ]]; then
     installed_version="$("$NVIM_RELEASE_DIR/bin/nvim" --version | head -n1 | awk '{print $2}' | sed 's/^v//')"
 elif [[ -x "$NVIM_INSTALL_DIR/bin/nvim" ]]; then
     installed_version="$("$NVIM_INSTALL_DIR/bin/nvim" --version | head -n1 | awk '{print $2}' | sed 's/^v//')"
+    installed_from_install_dir=1
 fi
 
 if [[ "$installed_version" == "${NVIM_VERSION#v}" ]]; then
-    echo "==> Neovim ${NVIM_VERSION} already installed in $NVIM_RELEASE_DIR"
+    if [[ "$installed_from_install_dir" -eq 1 && ! -e "$NVIM_RELEASE_DIR" ]]; then
+        echo "==> Promoting existing Neovim ${NVIM_VERSION} install into versioned directory $NVIM_RELEASE_DIR"
+        mv "$NVIM_INSTALL_DIR" "$NVIM_RELEASE_DIR"
+    else
+        echo "==> Neovim ${NVIM_VERSION} already installed in $NVIM_RELEASE_DIR"
+    fi
 else
     tmpdir="$(mktemp -d)"
     trap 'rm -rf "$tmpdir"' EXIT
