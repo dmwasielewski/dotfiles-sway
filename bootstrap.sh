@@ -19,6 +19,58 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+print_state_summary() {
+    local done_count=0 failed_count=0 skipped_count=0 pending_count=0
+    local key val
+
+    echo ""
+    echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${BOLD} Install summary${NC}"
+    echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+    [[ -f "$STATE_FILE" ]] || {
+        echo -e " ${YELLOW}No state file found at $STATE_FILE${NC}"
+        return
+    }
+
+    while IFS='=' read -r key val; do
+        case "$val" in
+            done)    ((done_count+=1)) ;;
+            failed)  ((failed_count+=1)) ;;
+            skipped) ((skipped_count+=1)) ;;
+            pending) ((pending_count+=1)) ;;
+        esac
+    done < "$STATE_FILE"
+
+    echo -e " ${GREEN}Done:${NC}    $done_count"
+    echo -e " ${RED}Failed:${NC}  $failed_count"
+    echo -e " ${YELLOW}Skipped:${NC} $skipped_count"
+    echo -e " ${CYAN}Pending:${NC} $pending_count"
+
+    if grep -q '=failed$' "$STATE_FILE" 2>/dev/null; then
+        echo ""
+        echo -e "${RED}Failed steps:${NC}"
+        grep '=failed$' "$STATE_FILE" | cut -d= -f1 | sed 's/^/  - /'
+    fi
+
+    if grep -q '=skipped$' "$STATE_FILE" 2>/dev/null; then
+        echo ""
+        echo -e "${YELLOW}Skipped steps:${NC}"
+        grep '=skipped$' "$STATE_FILE" | cut -d= -f1 | sed 's/^/  - /'
+    fi
+
+    if grep -q '=pending$' "$STATE_FILE" 2>/dev/null; then
+        echo ""
+        echo -e "${CYAN}Pending steps:${NC}"
+        grep '=pending$' "$STATE_FILE" | cut -d= -f1 | sed 's/^/  - /'
+    fi
+
+    echo ""
+    echo "State file: $STATE_FILE"
+    echo "Log file:   $LOG_FILE"
+    echo "Verify:     bash ~/dotfiles-sway/scripts/verify.sh"
+}
+
 setup_logging() {
     export DOTFILES_LOG_FILE="$LOG_FILE"
 
@@ -133,3 +185,4 @@ echo -e "     Full verification — checks every component"
 echo ""
 echo -e " ${BOLD}Reboot now:${NC}  ${CYAN}systemctl reboot${NC}"
 echo ""
+print_state_summary

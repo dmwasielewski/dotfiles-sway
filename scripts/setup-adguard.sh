@@ -90,3 +90,4 @@ echo "  adguard-cli status"
 echo "  adguard-cli start"
 echo "  adguard-cli stop"
 echo ""
+print_state_summary

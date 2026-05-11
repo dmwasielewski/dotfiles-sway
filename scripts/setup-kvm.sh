@@ -115,3 +115,4 @@ echo -e "   Windows 11:      4 vCPU, 8 GB RAM, 80 GB disk"
 echo -e "   Windows Server:  2 vCPU, 4 GB RAM, 60 GB disk"
 echo -e "   Kali Linux:      2 vCPU, 4 GB RAM, 40 GB disk"
 echo ""
+print_state_summary

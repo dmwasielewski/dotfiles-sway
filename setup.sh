@@ -133,3 +133,4 @@ echo "==> Next steps:"
 echo "    1. Run packages.sh then reboot: bash ~/dotfiles-sway/packages.sh"
 echo "    2. After reboot run: bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
 echo "    3. After reboot run: bash ~/dotfiles-sway/scripts/setup-security-container.sh"
+print_state_summary

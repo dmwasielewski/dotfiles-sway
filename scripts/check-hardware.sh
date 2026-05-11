@@ -91,3 +91,4 @@ else
 fi
 
 echo ""
+print_state_summary

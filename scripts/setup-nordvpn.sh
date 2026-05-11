@@ -150,3 +150,4 @@ echo "Check status with: nordvpn status"
 echo "Connect with:       nordvpn connect"
 echo "Disconnect with:    nordvpn disconnect"
 echo ""
+print_state_summary

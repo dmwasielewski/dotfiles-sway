@@ -90,3 +90,4 @@ bash "$DOTFILES/scripts/setup-nordvpn.sh"
 bash "$DOTFILES/scripts/setup-adguard.sh"
 
 echo "==> Done. Please reboot: systemctl reboot"
+print_state_summary

@@ -123,3 +123,4 @@ echo -e "   Wordlists:  ${CYAN}/opt/SecLists${NC}"
 echo -e "   MSF:        ${CYAN}msfconsole${NC}"
 echo -e "   WinRM:      ${CYAN}evil-winrm${NC}"
 echo ""
+print_state_summary

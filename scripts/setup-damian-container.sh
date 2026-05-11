@@ -171,3 +171,4 @@ echo ""
 echo -e "  6. Log in to Codex CLI:"
 echo -e "     ${CYAN}toolbox enter damian${NC}  →  ${CYAN}codex login${NC}"
 echo ""
+print_state_summary
