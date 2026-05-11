@@ -194,8 +194,7 @@ else
     fail "JetBrainsMono Nerd Font  MISSING" "bash ~/dotfiles-sway/setup.sh"
 fi
 
-if ls "$HOME/.local/share/fonts/FontAwesome/"*.otf &>/dev/null 2>&1 || \
-   ls "$HOME/.local/share/fonts/FontAwesome/"*.ttf &>/dev/null 2>&1; then
+if find "$HOME/.local/share/fonts/FontAwesome" -type f \( -name '*.otf' -o -name '*.ttf' \) 2>/dev/null | grep -q .; then
     pass "Font Awesome"
 else
     warn "Font Awesome — check ~/.local/share/fonts/FontAwesome/"
@@ -272,7 +271,7 @@ if host toolbox list 2>/dev/null | grep -qw "$TOOLBOX_CONTAINER"; then
     fi
 
     if host toolbox run --container "$TOOLBOX_CONTAINER" bash -c \
-        'grep -q "^DEFAULT_MODEL=gemini/gemini-3.1-flash-lite-preview$" ~/.config/shell_gpt/.sgptrc 2>/dev/null && grep -q "SGPT_FALLBACK_MODEL" ~/.local/bin/sgpt 2>/dev/null && grep -q "gemini/gemini-2.5-flash" ~/.local/bin/sgpt 2>/dev/null' 2>/dev/null; then
+        'test -x ~/.local/bin/sgpt && grep -q "real_sgpt=" ~/.local/bin/sgpt 2>/dev/null && grep -q "SGPT_FALLBACK_MODEL" ~/.local/bin/sgpt 2>/dev/null && grep -q "gemini/gemini-2.5-flash" ~/.local/bin/sgpt 2>/dev/null' 2>/dev/null; then
         pass "ShellGPT executable fallback configured"
     else
         warn "ShellGPT executable fallback not configured — rerun bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
@@ -329,14 +328,16 @@ else
     fail "iptables  MISSING (required by AdGuard auto mode)" "bash ~/dotfiles-sway/packages.sh && systemctl reboot"
 fi
 
-if host systemctl list-unit-files adguard-*.service 2>/dev/null | grep -q '^adguard-'; then
+if host adguard-cli status >/dev/null 2>&1; then
+    pass "AdGuard background service running"
+elif host systemctl list-unit-files adguard-*.service 2>/dev/null | grep -q '^adguard-'; then
     if host systemctl is-active --quiet adguard-ctrl; then
         pass "AdGuard background service running"
     else
         warn "AdGuard service installed but not running yet — complete adguard-cli activate && adguard-cli configure && adguard-cli start"
     fi
 else
-    warn "AdGuard service unit not found yet — complete bash ~/dotfiles-sway/scripts/setup-adguard.sh"
+    warn "AdGuard service unit not found — this CLI install may be using the root helper only; verify with adguard-cli status"
 fi
 
 # ── 5c. Neovim ───────────────────────────────────────────────────────────

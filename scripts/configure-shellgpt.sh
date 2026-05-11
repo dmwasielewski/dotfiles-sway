@@ -114,14 +114,28 @@ chmod 600 "$CONFIG_FILE"
 install_sgpt_wrapper() {
     mkdir -p "$LOCAL_BIN"
 
+    is_stock_sgpt_launcher() {
+        local path="$1"
+        grep -q 'from sgpt import cli' "$path" 2>/dev/null && ! grep -q 'SGPT_REAL_BIN' "$path" 2>/dev/null
+    }
+
+    if [[ -x "$SGPT_WRAPPER" ]] && grep -q 'from sgpt import cli' "$SGPT_WRAPPER" 2>/dev/null && [[ ! -x "$SGPT_REAL_BIN" ]]; then
+        mv "$SGPT_WRAPPER" "$SGPT_REAL_BIN"
+        chmod +x "$SGPT_REAL_BIN"
+    fi
+
     if [[ -x "$SGPT_WRAPPER" ]] && ! grep -q 'SGPT_REAL_BIN' "$SGPT_WRAPPER" 2>/dev/null; then
-        if [[ -x "$SGPT_REAL_BIN" ]]; then
+        if is_stock_sgpt_launcher "$SGPT_WRAPPER"; then
+            :
+        elif [[ -x "$SGPT_REAL_BIN" ]]; then
             echo "==> Existing unmanaged sgpt wrapper detected at $SGPT_WRAPPER — preserving it."
             return 0
         fi
-        echo "==> Existing unmanaged sgpt wrapper detected at $SGPT_WRAPPER — leaving it unchanged."
-        echo "==> If you want the managed fallback wrapper, move your custom launcher aside first."
-        return 0
+        if ! is_stock_sgpt_launcher "$SGPT_WRAPPER"; then
+            echo "==> Existing unmanaged sgpt wrapper detected at $SGPT_WRAPPER — leaving it unchanged."
+            echo "==> If you want the managed fallback wrapper, move your custom launcher aside first."
+            return 0
+        fi
     elif [[ ! -x "$SGPT_REAL_BIN" && -x "$SGPT_WRAPPER" ]]; then
         cp "$SGPT_WRAPPER" "$SGPT_REAL_BIN"
         chmod +x "$SGPT_REAL_BIN"

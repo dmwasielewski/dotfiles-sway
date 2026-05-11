@@ -114,7 +114,7 @@ else
 fi
 
 echo "==> Installing Font Awesome..."
-if ls ~/.local/share/fonts/FontAwesome/*.otf >/dev/null 2>&1 || ls ~/.local/share/fonts/FontAwesome/*.ttf >/dev/null 2>&1; then
+if find ~/.local/share/fonts/FontAwesome -type f \( -name '*.otf' -o -name '*.ttf' \) 2>/dev/null | grep -q .; then
     echo "==> Font Awesome already installed — skipping download"
 else
     FA_URL=$(curl -fsSL https://api.github.com/repos/FortAwesome/Font-Awesome/releases/latest | grep -o 'https://[^"]*desktop\.zip' | head -n1)
@@ -123,6 +123,7 @@ else
     else
         curl -fL "$FA_URL" -o FontAwesome.zip
         unzip -oq FontAwesome.zip -d ~/.local/share/fonts/FontAwesome
+        find ~/.local/share/fonts/FontAwesome -mindepth 2 -type f \( -name '*.otf' -o -name '*.ttf' \) -exec cp -f {} ~/.local/share/fonts/FontAwesome/ \;
         rm -f FontAwesome.zip
         fc-cache -fv
     fi
