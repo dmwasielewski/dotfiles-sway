@@ -1,5 +1,5 @@
 #!/bin/bash
-# setup-damian-container.sh — Fedora 43 toolbox: node, npm, gh, Claude Code, Codex CLI, DeepSeek TUI, ShellGPT + plugins
+# setup-damian-container.sh — versioned Fedora toolbox: node, npm, gh, Claude Code, Codex CLI, DeepSeek TUI, ShellGPT + plugins
 # Run after first reboot: bash ~/dotfiles-sway/scripts/setup-damian-container.sh
 
 set -euo pipefail
@@ -8,11 +8,14 @@ DOTFILES="$HOME/dotfiles-sway"
 source "$DOTFILES/scripts/lib-install.sh"
 setup_logging "scripts/setup-damian-container.sh"
 
-CONTAINER="damian"
+HOST_FEDORA_VERSION="$(. /etc/os-release && printf '%s' "${VERSION_ID:-44}")"
+TOOLBOX_VERSION="${TOOLBOX_VERSION:-$HOST_FEDORA_VERSION}"
+CONTAINER="${TOOLBOX_CONTAINER:-damian}"
+TOOLBOX_IMAGE="${TOOLBOX_IMAGE:-registry.fedoraproject.org/fedora-toolbox:${TOOLBOX_VERSION}}"
 
 echo ""
 echo -e "${BOLD}${CYAN}╔══════════════════════════════════════════╗${NC}"
-echo -e "${BOLD}${CYAN}║   Toolbox 'damian' — setup               ║${NC}"
+echo -e "${BOLD}${CYAN}║   Toolbox '$CONTAINER' — setup           ║${NC}"
 echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -22,7 +25,7 @@ if toolbox list 2>/dev/null | grep -qw "$CONTAINER"; then
     step_done "TOOLBOX_CREATED"
 else
     run_step "TOOLBOX_CREATED" "Creating toolbox '$CONTAINER'" \
-        toolbox create --assumeyes --image registry.fedoraproject.org/fedora-toolbox:43 "$CONTAINER"
+        toolbox create --assumeyes --image "$TOOLBOX_IMAGE" "$CONTAINER"
 fi
 
 # ── Install packages ─────────────────────────────────────────────────────
@@ -98,7 +101,7 @@ toolbox run --container "$CONTAINER" bash -c '
 ' && step_done "CLAUDE_PLUGINS_INSTALLED" \
   || { step_failed "CLAUDE_PLUGINS_INSTALLED"
        echo -e "${YELLOW}⚠ Plugins: install manually after entering the container:${NC}"
-       echo -e "  toolbox enter damian"
+       echo -e "  toolbox enter $CONTAINER"
        echo -e "  claude plugin install superpowers@claude-plugins-official --yes"
      }
 
@@ -117,7 +120,7 @@ run_step "VOICE_WHISPER" "Installing faster-whisper + google-genai (voice typing
     '
 
 # ── Verify ───────────────────────────────────────────────────────────────
-echo -e "\n${CYAN}==> Verifying toolbox 'damian'...${NC}"
+echo -e "\n${CYAN}==> Verifying toolbox '$CONTAINER'...${NC}"
 VERIFY_FAIL=0
 for tool in node npm gh claude codex deepseek sgpt git; do
     if toolbox run --container "$CONTAINER" which "$tool" &>/dev/null 2>&1; then
@@ -137,10 +140,11 @@ fi
 # ── Summary ──────────────────────────────────────────────────────────────
 echo ""
 echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BOLD} Toolbox 'damian' ready!${NC}"
+echo -e "${BOLD} Toolbox '$CONTAINER' ready!${NC}"
 echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-echo -e " Enter container:  ${CYAN}toolbox enter damian${NC}"
+echo -e " Fedora version:   ${CYAN}${TOOLBOX_VERSION}${NC}"
+echo -e " Enter container:  ${CYAN}toolbox enter $CONTAINER${NC}"
 echo -e " Run Claude Code:  ${CYAN}claude${NC}"
 echo -e " Run Codex CLI:    ${CYAN}codex${NC}"
 echo -e " Run ShellGPT:     ${CYAN}sgpt${NC}"
@@ -163,12 +167,12 @@ echo -e "     ${CYAN}GEMINI_API_KEY${NC}, ${CYAN}GOOGLE_API_KEY${NC}, ${CYAN}OPE
 echo -e "     ${CYAN}~/.config/ai/api.env${NC}, ${CYAN}~/.config/shell_gpt/credentials.env${NC}, or ${CYAN}~/.bashrc.d/ai-keys.bash${NC}"
 echo ""
 echo -e "  4. Log in to Claude Code:"
-echo -e "     ${CYAN}toolbox enter damian${NC}  →  ${CYAN}claude login${NC}"
+echo -e "     ${CYAN}toolbox enter $CONTAINER${NC}  →  ${CYAN}claude login${NC}"
 echo ""
 echo -e "  5. Log in to GitHub CLI:"
-echo -e "     ${CYAN}toolbox enter damian${NC}  →  ${CYAN}gh auth login${NC}"
+echo -e "     ${CYAN}toolbox enter $CONTAINER${NC}  →  ${CYAN}gh auth login${NC}"
 echo ""
 echo -e "  6. Log in to Codex CLI:"
-echo -e "     ${CYAN}toolbox enter damian${NC}  →  ${CYAN}codex login${NC}"
+echo -e "     ${CYAN}toolbox enter $CONTAINER${NC}  →  ${CYAN}codex login${NC}"
 echo ""
 print_state_summary

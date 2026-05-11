@@ -1,13 +1,14 @@
 #!/bin/bash
 # verify.sh — post-install verification checklist
 # Run at any time to see what's installed, what's missing, and how to fix it.
-# Works from inside the 'damian' toolbox or directly on the host.
+# Works from inside the selected toolbox or directly on the host.
 
 set -euo pipefail
 
 STATE_FILE="$HOME/.dotfiles-install-state"
 LOG_FILE="${DOTFILES_LOG_FILE:-$HOME/.dotfiles-install.log}"
 DOTFILES="${DOTFILES:-$HOME/dotfiles-sway}"
+TOOLBOX_CONTAINER="${TOOLBOX_CONTAINER:-damian}"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -200,15 +201,15 @@ else
     warn "Font Awesome — check ~/.local/share/fonts/FontAwesome/"
 fi
 
-# ── 5. Toolbox 'damian' ───────────────────────────────────────────────────
-section "5. Toolbox 'damian' (dev environment)"
+# ── 5. Toolbox ────────────────────────────────────────────────────────────
+section "5. Toolbox '$TOOLBOX_CONTAINER' (dev environment)"
 
-if host toolbox list 2>/dev/null | grep -qw "damian"; then
-    pass "Toolbox 'damian' exists"
+if host toolbox list 2>/dev/null | grep -qw "$TOOLBOX_CONTAINER"; then
+    pass "Toolbox '$TOOLBOX_CONTAINER' exists"
 
     check_toolbox_tool() {
         local tool="$1" label="${2:-$1}"
-        if host toolbox run --container damian which "$tool" &>/dev/null 2>&1; then
+        if host toolbox run --container "$TOOLBOX_CONTAINER" which "$tool" &>/dev/null 2>&1; then
             pass "$label"
         else
             fail "$label  MISSING in toolbox" "bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
@@ -224,14 +225,14 @@ if host toolbox list 2>/dev/null | grep -qw "damian"; then
     check_toolbox_tool "sgpt"   "sgpt (ShellGPT)"
     check_toolbox_tool "git"    "git"
 
-    if host toolbox run --container damian bash -c \
+    if host toolbox run --container "$TOOLBOX_CONTAINER" bash -c \
         'expected="$(readlink -f "$HOME/dotfiles-sway/scripts/deepseek-wrapper.sh")" && test "$(readlink -f ~/.local/bin/deepseek 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.local/bin/deepseek-tui 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.npm-global/bin/deepseek 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.npm-global/bin/deepseek-tui 2>/dev/null)" = "$expected"' &>/dev/null 2>&1; then
         pass "DeepSeek TUI low-motion wrapper installed"
     else
         warn "DeepSeek TUI low-motion wrapper missing — rerun bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
     fi
 
-    if host toolbox run --container damian bash -c \
+    if host toolbox run --container "$TOOLBOX_CONTAINER" bash -c \
         'PATH="$HOME/.npm-global/bin:$PATH" command -v markdownlint-cli2' &>/dev/null 2>&1; then
         pass "markdownlint-cli2 (Neovim Markdown linting)"
     else
@@ -241,36 +242,36 @@ if host toolbox list 2>/dev/null | grep -qw "damian"; then
 
     # Plugins — check settings.json
     for plugin in superpowers code-simplifier context7; do
-        if host toolbox run --container damian bash -c \
+        if host toolbox run --container "$TOOLBOX_CONTAINER" bash -c \
             "grep -q '$plugin' ~/.claude/settings.json 2>/dev/null" 2>/dev/null; then
             pass "Claude plugin: $plugin"
         else
             fail "Claude plugin: $plugin  MISSING" \
-                 "toolbox enter damian → claude plugin install ${plugin}@claude-plugins-official --yes"
+                 "toolbox enter $TOOLBOX_CONTAINER → claude plugin install ${plugin}@claude-plugins-official --yes"
         fi
     done
 
     # API key
-    if host toolbox run --container damian bash -c \
+    if host toolbox run --container "$TOOLBOX_CONTAINER" bash -c \
         '[[ -n "${ANTHROPIC_API_KEY:-}" ]] || grep -q ANTHROPIC_API_KEY ~/.bashrc.d/ai-keys.bash 2>/dev/null || grep -q ANTHROPIC_API_KEY ~/.bashrc 2>/dev/null' 2>/dev/null; then
         pass "ANTHROPIC_API_KEY available"
     else
         warn "ANTHROPIC_API_KEY not found — put it in ~/.bashrc.d/ai-keys.bash for Claude Code"
     fi
 
-    if host toolbox run --container damian bash -c \
+    if host toolbox run --container "$TOOLBOX_CONTAINER" bash -c \
         'test -s ~/.config/shell_gpt/.sgptrc && ! grep -q "^OPENAI_API_KEY=missing-shellgpt-api-key$" ~/.config/shell_gpt/.sgptrc || [[ -n "${OPENAI_API_KEY:-}" ]] || [[ -n "${SHELLGPT_API_KEY:-}" ]] || [[ -n "${GEMINI_API_KEY:-}" ]] || test -s ~/.config/voice-type/gemini-api-key' 2>/dev/null; then
         pass "ShellGPT API config present"
     else
         warn "ShellGPT API config placeholder — provide ~/.config/voice-type/gemini-api-key, GEMINI_API_KEY, OPENAI_API_KEY/SHELLGPT_API_KEY, or a private env file before running setup-damian-container.sh"
     fi
 
-    if host toolbox run --container damian bash -c \
+    if host toolbox run --container "$TOOLBOX_CONTAINER" bash -c \
         'grep -q "^DEFAULT_MODEL=gemini/" ~/.config/shell_gpt/.sgptrc 2>/dev/null && { [[ -n "${GEMINI_API_KEY:-}" ]] || test -s ~/.config/voice-type/gemini-api-key || grep -q GEMINI_API_KEY ~/.bashrc.d/shellgpt-gemini.bash 2>/dev/null; }' 2>/dev/null; then
         pass "ShellGPT Gemini config shares voice typing key source"
     fi
 
-    if host toolbox run --container damian bash -c \
+    if host toolbox run --container "$TOOLBOX_CONTAINER" bash -c \
         'grep -q "^DEFAULT_MODEL=gemini/gemini-3.1-flash-lite-preview$" ~/.config/shell_gpt/.sgptrc 2>/dev/null && grep -q "SGPT_FALLBACK_MODEL" ~/.local/bin/sgpt 2>/dev/null && grep -q "gemini/gemini-2.5-flash" ~/.local/bin/sgpt 2>/dev/null' 2>/dev/null; then
         pass "ShellGPT executable fallback configured"
     else
@@ -278,7 +279,7 @@ if host toolbox list 2>/dev/null | grep -qw "damian"; then
     fi
 
 else
-    fail "Toolbox 'damian'  NOT FOUND" "bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
+    fail "Toolbox '$TOOLBOX_CONTAINER'  NOT FOUND" "bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
 fi
 
 # ── 5a. NordVPN ──────────────────────────────────────────────────────────
@@ -399,11 +400,11 @@ else
     fail "arecord  MISSING (alsa-utils)" "bash ~/dotfiles-sway/packages.sh && systemctl reboot"
 fi
 
-if host toolbox list 2>/dev/null | grep -qw "damian"; then
-    if host toolbox run --container damian python3 -c "import faster_whisper" &>/dev/null 2>&1; then
-        pass "faster-whisper AI model (Whisper small) in damian toolbox"
+if host toolbox list 2>/dev/null | grep -qw "$TOOLBOX_CONTAINER"; then
+    if host toolbox run --container "$TOOLBOX_CONTAINER" python3 -c "import faster_whisper" &>/dev/null 2>&1; then
+        pass "faster-whisper AI model (Whisper small) in $TOOLBOX_CONTAINER toolbox"
     else
-        fail "faster-whisper  MISSING in damian toolbox" \
+        fail "faster-whisper  MISSING in $TOOLBOX_CONTAINER toolbox" \
              "bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
     fi
 fi

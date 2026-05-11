@@ -66,10 +66,14 @@ fi
 
 # Toolbox — skip if already exists
 echo "==> Creating toolbox container..."
-if toolbox list | grep -q "damian"; then
-    echo "==> Toolbox 'damian' already exists — skipping."
+HOST_FEDORA_VERSION="$(. /etc/os-release && printf '%s' "${VERSION_ID:-44}")"
+TOOLBOX_VERSION="${TOOLBOX_VERSION:-$HOST_FEDORA_VERSION}"
+TOOLBOX_CONTAINER="${TOOLBOX_CONTAINER:-damian}"
+TOOLBOX_IMAGE="${TOOLBOX_IMAGE:-registry.fedoraproject.org/fedora-toolbox:${TOOLBOX_VERSION}}"
+if toolbox list | grep -q "$TOOLBOX_CONTAINER"; then
+    echo "==> Toolbox '$TOOLBOX_CONTAINER' already exists — skipping."
 else
-    toolbox create --assumeyes --image registry.fedoraproject.org/fedora-toolbox:43 damian
+    toolbox create --assumeyes --image "$TOOLBOX_IMAGE" "$TOOLBOX_CONTAINER"
 fi
 
 # Flatpaks

@@ -31,7 +31,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - WhatsApp — opens as minimal window without browser UI
 
 ### System
-- `damian` Fedora 43 toolbox container (Fedora dev environment)
+- `damian` toolbox container (Fedora dev environment, versioned with the host unless overridden)
 - `security` Ubuntu 26.04 distrobox container — full security/pentesting toolkit
 - KVM/QEMU virtualisation — virt-manager, virt-install, Windows 11 / Windows Server capable
 - distrobox — for Ubuntu containers
@@ -68,7 +68,7 @@ printf '%s\n' 'your-gemini-api-key-here' > ~/.config/voice-type/gemini-api-key
 chmod 600 ~/.config/voice-type/gemini-api-key
 ```
 
-This file is private, outside git, and is shared with the `damian` toolbox through the home directory. Voice typing uses it directly, and `scripts/configure-shellgpt.sh` uses the same key by default through LiteLLM. ShellGPT prefers `gemini-3.1-flash-lite-preview` and its installed `sgpt` wrapper retries `gemini-2.5-flash` if the preview model is overloaded. On a fresh machine the key should be restored from your private backup or secret manager before `setup-damian-container.sh` runs.
+This file is private, outside git, and is shared with the active dev toolbox through the home directory. Voice typing uses it directly, and `scripts/configure-shellgpt.sh` uses the same key by default through LiteLLM. ShellGPT prefers `gemini-3.1-flash-lite-preview` and its installed `sgpt` wrapper retries `gemini-2.5-flash` if the preview model is overloaded. On a fresh machine the key should be restored from your private backup or secret manager before `setup-damian-container.sh` runs.
 
 ShellGPT also accepts `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SHELLGPT_API_KEY`, `ANTHROPIC_API_KEY`, `~/.config/ai/api.env`, `~/.config/shell_gpt/credentials.env`, and `~/.bashrc.d/ai-keys.bash`. Use `SHELLGPT_PROVIDER=openai`, `gemini`, or `anthropic` only when you need to override the automatic choice.
 
@@ -100,9 +100,13 @@ bash ~/dotfiles-sway/scripts/setup-kvm.sh
 > Then log out and back in for group changes to take effect.
 > The script creates its own libvirt NAT network named `dotfiles-nat` on the first free subnet from `192.168.125.0/24` upward, so it does not have to rewrite libvirt's `default` network.
 
-7. Set up the damian dev container (node, npm, gh, Claude Code, Codex CLI, DeepSeek TUI, ShellGPT):
+7. Set up the dev toolbox (node, npm, gh, Claude Code, Codex CLI, DeepSeek TUI, ShellGPT):
 ```bash
 bash ~/dotfiles-sway/scripts/setup-damian-container.sh
+```
+By default the script targets the host Fedora version and the toolbox name `damian`. You can override both for migrations:
+```bash
+TOOLBOX_CONTAINER=damian44 TOOLBOX_VERSION=44 bash ~/dotfiles-sway/scripts/setup-damian-container.sh
 ```
 
 8. Install NordVPN CLI and the Waybar helper:
@@ -576,7 +580,7 @@ Host (rpm-ostree immutable)
 ├─ Flatpak apps
 │   └─ User Flatpaks from Flathub: Obsidian, Vivaldi, Thunderbird, VSCode, Bitwarden, Spotify, OBS, mpv, JDownloader
 │
-├─ toolbox: damian (Fedora 43) — dev/DevOps
+├─ toolbox: damian (Fedora version follows the host by default) — dev/DevOps
 │   ├─ node 22
 │   ├─ npm
 │   ├─ git
@@ -599,12 +603,12 @@ Host (rpm-ostree immutable)
     └─ Utils:      tmux, vim, jq, htop, btop, curl, wget, git, python3
 ```
 
-### Setup damian container
+### Setup dev toolbox
 ```bash
 bash ~/dotfiles-sway/scripts/setup-damian-container.sh
 ```
 
-### Enter damian container
+### Enter current toolbox
 ```bash
 toolbox enter damian
 ```
@@ -630,6 +634,27 @@ deepseek
 `~/.local/bin/deepseek`, `~/.local/bin/deepseek-tui`, and the matching `~/.npm-global/bin/*` entries wrap the npm-installed binaries with `NO_ANIMATIONS=1` and `--no-mouse-capture` to avoid foot/Sway repaint flicker.
 
 `foot/foot.ini` also enables `damage-whole-window=yes`, which reduces rare full-window DeepSeek TUI repaint flicker when the terminal is maximized.
+
+### Toolbox migration
+
+When the host Fedora version moves forward, migrate the dev toolbox in parallel instead of replacing it in place.
+
+1. Create a new versioned toolbox alongside the old one:
+```bash
+TOOLBOX_CONTAINER=damian44 TOOLBOX_VERSION=44 bash ~/dotfiles-sway/scripts/setup-damian-container.sh
+```
+2. Verify the new toolbox:
+```bash
+TOOLBOX_CONTAINER=damian44 bash ~/dotfiles-sway/scripts/verify.sh
+```
+3. Compare old and new manually for anything ad-hoc you installed outside the script.
+4. Point any custom helpers that depend on a toolbox name at the new container. `scripts/voice-type-stop.sh` and `scripts/verify.sh` both respect `TOOLBOX_CONTAINER`.
+5. Keep the old toolbox until you have finished a full work session inside the new one.
+6. Only then remove the old toolbox:
+```bash
+toolbox rm damian
+```
+7. If you want the new toolbox to become the default `damian`, recreate it under that name during a maintenance window rather than while actively using the environment.
 
 ### Run ShellGPT
 ```bash

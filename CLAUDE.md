@@ -23,7 +23,7 @@ The system belongs to **Damian** (dmwasielewski). Communicate in **Polish** unle
 
 ### AI coding CLIs run inside a Toolbox container
 
-- Claude Code, OpenAI Codex CLI, DeepSeek TUI, and ShellGPT are installed **inside the `damian` toolbox container** (Fedora 43), not as host rpm-ostree packages.
+- Claude Code, OpenAI Codex CLI, DeepSeek TUI, and ShellGPT are installed **inside the dev toolbox container** (`damian` by default), not as host rpm-ostree packages.
 - Bash commands from these CLIs run **inside the toolbox**, not on the host.
 - To run a command **on the host** from inside the toolbox: `flatpak-spawn --host <command>`
 - The home directory (`~`) is **shared** between host and toolbox — files written to `~` are visible on both sides.
@@ -107,7 +107,7 @@ cat ~/.ssh/id_ed25519.pub
 
 An SSH key is only needed if you want to use SSH remotes or private forks. `bootstrap.sh` clones this repo over HTTPS by default.
 
-If ShellGPT should be ready immediately after the `damian` toolbox setup, restore `~/.config/voice-type/gemini-api-key` before `setup-damian-container.sh` runs. ShellGPT reuses that same Gemini key through LiteLLM by default. ShellGPT prefers `gemini-3.1-flash-lite-preview` and the installed `sgpt` wrapper retries `gemini-2.5-flash` when the preview model is overloaded. Other supported private sources are `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SHELLGPT_API_KEY`, `ANTHROPIC_API_KEY`, `~/.config/ai/api.env`, `~/.config/shell_gpt/credentials.env`, and `~/.bashrc.d/ai-keys.bash`. These files are private and must not be committed to this repo.
+If ShellGPT should be ready immediately after the dev toolbox setup, restore `~/.config/voice-type/gemini-api-key` before `setup-damian-container.sh` runs. ShellGPT reuses that same Gemini key through LiteLLM by default. ShellGPT prefers `gemini-3.1-flash-lite-preview` and the installed `sgpt` wrapper retries `gemini-2.5-flash` when the preview model is overloaded. Other supported private sources are `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SHELLGPT_API_KEY`, `ANTHROPIC_API_KEY`, `~/.config/ai/api.env`, `~/.config/shell_gpt/credentials.env`, and `~/.bashrc.d/ai-keys.bash`. These files are private and must not be committed to this repo.
 
 ### Step 1 — Bootstrap
 
@@ -221,9 +221,9 @@ Notes:
 - NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start.
 - AdGuard for Linux: official CLI install via `bash ~/dotfiles-sway/scripts/setup-adguard.sh`; first-time activation/configuration remains manual.
 
-### Layer 3: toolbox `damian` (Fedora 43 dev environment)
+### Layer 3: toolbox `damian` (Fedora dev environment, versioned with the host unless overridden)
 
-Managed by `scripts/setup-damian-container.sh`. Use `toolbox enter damian` to enter.
+Managed by `scripts/setup-damian-container.sh`. By default it targets the host Fedora release and the toolbox name `damian`. Override with `TOOLBOX_VERSION=<ver>` and `TOOLBOX_CONTAINER=<name>` for side-by-side migrations.
 
 | Tool | Purpose |
 |---|---|

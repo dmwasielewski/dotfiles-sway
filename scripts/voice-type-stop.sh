@@ -4,6 +4,7 @@
 
 PID_FILE="$HOME/.cache/voice-type/record.pid"
 AUDIO_FILE="$HOME/.cache/voice-type/voice-input.wav"
+TOOLBOX_CONTAINER="${TOOLBOX_CONTAINER:-damian}"
 
 # Stop recording
 if [ -f "$PID_FILE" ]; then
@@ -23,8 +24,8 @@ fi
 notify-send "Voice Typing" "Transcribing..." -t 30000 \
     -h string:x-canonical-private-synchronous:voice-typing 2>/dev/null || true
 
-# Run Whisper inside the damian toolbox (shared home dir makes the audio file accessible)
-TEXT=$(toolbox run --container damian python3 \
+# Run Whisper inside the selected toolbox (shared home dir makes the audio file accessible)
+TEXT=$(toolbox run --container "$TOOLBOX_CONTAINER" python3 \
     ~/dotfiles-sway/scripts/voice-transcribe.py "$AUDIO_FILE" 2>/dev/null)
 
 rm -f "$AUDIO_FILE"
