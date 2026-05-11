@@ -65,6 +65,7 @@ button:hover {
 #scratchpad,
 #custom-adguard,
 #custom-nordvpn,
+#custom-power,
 #power-profiles-daemon,
 #language {
     padding: 0 10px;
@@ -202,8 +203,8 @@ button:hover {
 }
 
 #custom-nordvpn.connected {
-    background-color: #1a2a1a;
-    color: #5a9955;
+    background-color: #1e2230;
+    color: #8a9bb5;
 }
 
 #custom-nordvpn.connecting {
@@ -212,8 +213,8 @@ button:hover {
 }
 
 #custom-nordvpn.disconnected {
-    background-color: #1e2230;
-    color: #8a9bb5;
+    background-color: #2a0000;
+    color: #ff3333;
 }
 
 #custom-nordvpn.unknown,
@@ -349,6 +350,13 @@ button:hover {
 
 #scratchpad.empty {
     background-color: transparent;
+}
+
+/* ── Power ─────────────────────────────────────────────── */
+#custom-power {
+    background-color: #1e2230;
+    color: #8a9bb5;
+    padding: 0 12px;
 }
 
 /* ── Claude Code status ─────────────────────────────────── */

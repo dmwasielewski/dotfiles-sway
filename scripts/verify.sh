@@ -102,6 +102,7 @@ check_symlink "claude-ai.desktop"    "$HOME/.local/share/applications/claude-ai.
 check_symlink "chatgpt.desktop"      "$HOME/.local/share/applications/chatgpt.desktop"
 check_symlink "whatsapp.desktop"     "$HOME/.local/share/applications/whatsapp.desktop"
 check_symlink "nvim Chris Titus Tech config" "$HOME/.config/nvim"
+check_symlink "power-menu"                 "$HOME/.local/bin/power-menu"
 
 # ── 2. System packages (rpm-ostree) ──────────────────────────────────────
 section "2. System packages (rpm-ostree)"

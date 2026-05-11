@@ -6,7 +6,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 
 ### Window manager & UI
 - Sway window manager config (borders, keybindings, idle/lock, screenshots, touchpad)
-- Waybar status bar (bottom, muted dark theme, colour thresholds for CPU/RAM/temp/battery, Claude Code status via ccstatusline)
+- Waybar status bar (bottom, muted dark theme, colour thresholds for CPU/RAM/temp/battery, Claude Code status, NordVPN toggle, AdGuard toggle, power menu)
 - Autostart layout: terminal on ws1, Vivaldi on ws2, Obsidian on ws3, Claude/ChatGPT PWA on ws4
 - Foot terminal config
 - Mako notification daemon (5s auto-dismiss)
@@ -42,8 +42,8 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Voice typing — push-to-talk (`Mod+T`) with local Whisper AI + Gemini UK English correction
 - Neovim 0.12.1 — user-local latest pinned binary with Chris Titus Tech `titus-kickstart` config
 - AI terminal tools in toolbox: Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT (`sgpt`)
-- NordVPN CLI with Waybar status/toggle helper
-- AdGuard for Linux CLI
+- NordVPN CLI with Waybar status/toggle helper (click to connect/disconnect)
+- AdGuard for Linux CLI with Waybar toggle helper (click to enable/disable)
 - Thunderbird email client (Flatpak)
 
 ---
@@ -430,8 +430,9 @@ dotfiles-sway/
 │   ├── setup-adguard.sh               # AdGuard for Linux CLI install — writes state
 │   ├── setup-damian-container.sh      # Toolbox damian: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
 │   ├── configure-shellgpt.sh          # Non-interactive ShellGPT config from private env/API files
-│   ├── adguard-waybar.sh              # AdGuard Waybar status helper (AG on/off + click hint)
-│   ├── nordvpn-waybar.sh              # NordVPN status/toggle helper for Waybar
+│   ├── adguard-waybar.sh              # AdGuard Waybar toggle helper (AG — click to start/stop)
+│   ├── nordvpn-waybar.sh              # NordVPN Waybar toggle helper (VPN — click to connect/disconnect)
+│   ├── power-menu.sh                  # Rofi power menu (shutdown/reboot/suspend/hibernate/logout)
 │   ├── setup-security-container.sh   # Distrobox security: pentesting toolkit — writes state
 │   ├── voice-type-start.sh           # Voice typing: start recording (Mod+T press)
 │   ├── voice-type-stop.sh            # Voice typing: stop recording, transcribe, inject text (Mod+T release)

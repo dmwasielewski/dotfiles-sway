@@ -24,11 +24,12 @@
         "memory",
         "temperature",
         "backlight",
-        "custom/adguard",
         "battery",
         "clock",
         "tray",
-        "custom/nordvpn"
+        "custom/adguard",
+        "custom/nordvpn",
+        "custom/power"
     ],
     // Modules configuration
     // "sway/workspaces": {
@@ -58,7 +59,7 @@
         "return-type": "json",
         "interval": 10,
         "tooltip": true,
-        "on-click": "$HOME/.local/bin/adguard-waybar hint"
+        "on-click": "$HOME/.local/bin/adguard-waybar toggle"
     },
     "custom/nordvpn": {
         "exec": "$HOME/.local/bin/nordvpn-waybar",
@@ -236,15 +237,8 @@
         // "exec": "$HOME/.config/waybar/mediaplayer.py --player spotify 2> /dev/null" // Filter player based on name
     },
     "custom/power": {
-        "format" : "⏻ ",
-		"tooltip": false,
-		"menu": "on-click",
-		"menu-file": "$HOME/.config/waybar/power_menu.xml", // Menu file in resources folder
-		"menu-actions": {
-			"shutdown": "shutdown",
-			"reboot": "reboot",
-			"suspend": "systemctl suspend",
-			"hibernate": "systemctl hibernate"
-		}
+        "format": "⏻ ",
+        "tooltip": false,
+        "on-click": "$HOME/.local/bin/power-menu"
     }
 }

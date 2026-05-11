@@ -86,20 +86,37 @@ if [[ "$action" == "hint" ]]; then
     exit 0
 fi
 
+if [[ "$action" == "toggle" ]]; then
+    case "$state" in
+        enabled)
+            adguard_cmd stop >/dev/null 2>&1 || true
+            exit 0
+            ;;
+        disabled)
+            adguard_cmd start >/dev/null 2>&1 || true
+            exit 0
+            ;;
+        *)
+            notify "Cannot toggle: AdGuard is not ready"
+            exit 0
+            ;;
+    esac
+fi
+
 case "$state" in
     enabled)
-        emit "AG on" "enabled" "${tooltip:-AdGuard protection is enabled}"
+        emit "AG" "enabled" "${tooltip:-AdGuard protection is enabled}"
         ;;
     disabled)
-        emit "AG off" "disabled" "${tooltip:-AdGuard protection is disabled}"
+        emit "AG" "disabled" "${tooltip:-AdGuard protection is disabled}"
         ;;
     needs-setup)
-        emit "AG SET" "needs-setup" "${tooltip:-AdGuard requires activation or setup}"
+        emit "AG" "needs-setup" "${tooltip:-AdGuard requires activation or setup}"
         ;;
     missing)
-        emit "AG ?" "missing" "AdGuard CLI is not installed"
+        emit "AG" "missing" "AdGuard CLI is not installed"
         ;;
     *)
-        emit "AG ?" "unknown" "${tooltip:-AdGuard status is unavailable}"
+        emit "AG" "unknown" "${tooltip:-AdGuard status is unavailable}"
         ;;
 esac

@@ -31,7 +31,7 @@ summarize() {
 case "${status_line:-}" in
     Connected)
         state="connected"
-        text="VPN ON"
+        text="VPN"
         tooltip="$(summarize "$status_output")"
         ;;
     Connecting)
@@ -41,7 +41,7 @@ case "${status_line:-}" in
         ;;
     Disconnected|"")
         state="disconnected"
-        text="VPN OFF"
+        text="VPN"
         tooltip="$(summarize "$status_output")"
         if [[ -z "$tooltip" ]]; then
             tooltip="NordVPN is disconnected"

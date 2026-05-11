@@ -32,6 +32,7 @@ echo -n > ~/.config/sway/config.d/60-bindings-screenshot.conf
 echo "==> Creating symlinks..."
 ln -sf "$DOTFILES/sway/config"                                ~/.config/sway/config
 ln -sf "$DOTFILES/sway/config.d/90-swayidle.conf"            ~/.config/sway/config.d/90-swayidle.conf
+ln -sf "$DOTFILES/sway/config.d/90-bar.conf"                 ~/.config/sway/config.d/90-bar.conf
 ln -sf "$DOTFILES/waybar/config"                              ~/.config/waybar/config
 ln -sf "$DOTFILES/waybar/style.css"                           ~/.config/waybar/style.css
 ln -sf "$DOTFILES/foot/foot.ini"                              ~/.config/foot/foot.ini
@@ -47,6 +48,7 @@ ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.local/bin/deep
 ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.local/bin/deepseek-tui
 ln -sf "$DOTFILES/scripts/adguard-waybar.sh"                   ~/.local/bin/adguard-waybar
 ln -sf "$DOTFILES/scripts/nordvpn-waybar.sh"                   ~/.local/bin/nordvpn-waybar
+ln -sf "$DOTFILES/scripts/power-menu.sh"                       ~/.local/bin/power-menu
 mkdir -p ~/.npm-global/bin
 ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.npm-global/bin/deepseek
 ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.npm-global/bin/deepseek-tui

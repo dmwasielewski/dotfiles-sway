@@ -79,8 +79,9 @@ dotfiles-sway/
     ├── setup-adguard.sh               ← AdGuard for Linux CLI install — writes state
     ├── setup-damian-container.sh      ← Toolbox damian: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
     ├── configure-shellgpt.sh          ← Non-interactive ShellGPT config from private env/API files
-    ├── adguard-waybar.sh              ← AdGuard Waybar status helper (AG on/off + click hint)
-    ├── nordvpn-waybar.sh              ← NordVPN status/toggle helper for Waybar
+    ├── adguard-waybar.sh              ← AdGuard Waybar status helper (AG + click toggle)
+    ├── nordvpn-waybar.sh              ← NordVPN Waybar status helper (VPN + click toggle)
+    ├── power-menu.sh                  ← Rofi power menu (shutdown/reboot/suspend/hibernate/logout)
     ├── setup-security-container.sh   ← Distrobox security: pentesting toolkit — writes state
     ├── voice-type-start.sh           ← Voice typing: start recording on Mod+T press
     ├── voice-type-stop.sh            ← Voice typing: stop, transcribe, inject text on Mod+T release
@@ -360,10 +361,11 @@ Config is in `sway/config.d/90-swayidle.conf` (overrides Fedora's system default
 
 - Position: **bottom**, height 25px
 - Dark muted blue-slate theme (low contrast, easy on the eyes)
-- Modules right → left: `nordvpn` · tray · clock · battery · `adguard` · backlight · temp · RAM · CPU · power profile · network · audio · idle inhibitor · `claude` status
-- `custom/adguard`: calls `~/.local/bin/adguard-waybar` every 10s — shows `AG on/off`; click only shows the matching terminal command because this module is intentionally status-only
+- Modules right → left: `power` · `nordvpn` · tray · clock · battery · `adguard` · backlight · temp · RAM · CPU · power profile · network · audio · idle inhibitor · `claude` status
+- `custom/adguard`: calls `~/.local/bin/adguard-waybar` every 10s — shows `AG`; click toggles protection on/off
 - `custom/claude`: calls `~/.npm-global/bin/ccstatusline waybar` every 5s — shows Claude Code state (idle/working/waiting/error) with colour coding
-- `custom/nordvpn`: calls `~/.local/bin/nordvpn-waybar` every 15s — shows NordVPN state and toggles connect/disconnect on click
+- `custom/nordvpn`: calls `~/.local/bin/nordvpn-waybar` every 15s — shows `VPN`; click toggles connect/disconnect
+- `custom/power`: shows ⏻ icon; click opens rofi power menu (shutdown/reboot/suspend/hibernate/logout)
 
 **Alert thresholds:**
 | Module | Warning | Critical |
@@ -618,7 +620,7 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 ## What is complete
 
 - [x] Sway config (borders, keybindings, idle/lock, touchpad, autostart)
-- [x] Waybar (dark theme, CPU/RAM/temp/battery thresholds, Claude Code status)
+- [x] Waybar (dark theme, CPU/RAM/temp/battery thresholds, Claude Code status, NordVPN/AdGuard toggles, power menu)
 - [x] Foot terminal config
 - [x] Mako notifications (5s auto-dismiss)
 - [x] Clipboard manager (clipman + rofi)
@@ -641,6 +643,9 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 - [x] verify.sh — full post-install verification with checklist, failure summary, and fix commands
 - [x] lib-install.sh — shared state tracking (`~/.dotfiles-install-state`) used by all scripts
 - [x] All install scripts write state — on error, shows exactly what failed and how to resume
+- [x] NordVPN — CLI install, `nordvpnd` enable/start, and Waybar toggle helper
+- [x] AdGuard for Linux — CLI install, and Waybar toggle helper
+- [x] Power button — rofi power menu (shutdown/reboot/suspend/hibernate/logout)
 - [x] Voice typing — push-to-talk `Mod+T` with local Whisper AI (faster-whisper, no cloud)
 
 ## What is planned / in progress
@@ -648,7 +653,6 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 - [ ] Windows Server 2022 VM — Active Directory lab (Sysadmin AD Lab project)
 - [ ] Kali Linux VM
 - [ ] virtiofs fully working in Windows 11 (VirtioFsSvc setup)
-- [x] NordVPN — CLI install, `nordvpnd` enable/start, and Waybar status helper
 - [ ] `gh auth login` automation
 - [ ] Full idempotency audit across setup.sh, packages.sh, and post-reboot scripts — each step should detect pre-existing resources and continue cleanly
 
@@ -671,10 +675,11 @@ These require human interaction — document them so nothing is forgotten after 
 | Vivaldi: sign in, restore bookmarks/extensions | In-app after Flatpak install |
 
 NordVPN notes:
-- `scripts/setup-nordvpn.sh` installs the CLI, enables `nordvpnd`, and prepares Waybar status.
+- `scripts/setup-nordvpn.sh` installs the CLI, enables `nordvpnd`, and symlinks the Waybar toggle helper.
 - Login cannot be automated. On this setup, browser callback can fail with Flatpak browsers, so token login is the most reliable fallback.
 - Generate the token in Nord Account → NordVPN → Advanced settings → Get access token.
 - Preferred baseline after login: `Technology: NORDLYNX`, `Firewall: enabled`, `Routing: enabled`, `Notify: enabled`, `Auto-connect: disabled`, `Kill Switch: disabled`.
 - Daily manual CLI usage: `nordvpn connect`, `nordvpn status`, `nordvpn disconnect`. Optional country selection: `nordvpn connect Poland`.
 - `scripts/setup-adguard.sh` installs the official AdGuard CLI, but activation/configuration remains manual because it requires the interactive first-run wizard and license/trial choice.
-- Daily AdGuard CLI usage: `adguard-cli status`, `adguard-cli start`, `adguard-cli stop`.
+- Daily AdGuard CLI usage: `adguard-cli status`, `adguard-cli start`, `adguard-cli stop`. The Waybar `AG` icon also toggles protection on click.
+- `scripts/adguard-waybar.sh` is symlinked to `~/.local/bin/adguard-waybar` and shows `AG` on the Waybar (colour indicates state: green enabled, red disabled, amber needs-setup).
