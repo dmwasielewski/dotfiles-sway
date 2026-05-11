@@ -434,8 +434,9 @@ dotfiles-sway/
 │   ├── adguard-waybar.sh              # AdGuard Waybar toggle helper (AG — click to start/stop)
 │   ├── nordvpn-waybar.sh              # NordVPN Waybar toggle helper (VPN — click to connect/disconnect)
 │   ├── power-menu.sh                  # Rofi power menu (shutdown/reboot/suspend/hibernate/logout)
-│   ├── setup-splunk.sh                # OPTIONAL — Splunk Free in security container (SIEM lab)
+│   ├── setup-splunk.sh                # OPTIONAL — Splunk Enterprise (free) via podman (SIEM lab)
 │   ├── setup-wazuh.sh                 # OPTIONAL — Wazuh all-in-one via podman (SIEM/XDR lab)
+│   ├── backup-container.sh            # Snapshot a distrobox container for restore
 │   ├── setup-security-container.sh   # Distrobox security: pentesting toolkit — writes state
 │   ├── voice-type-start.sh           # Voice typing: start recording (Mod+T press)
 │   ├── voice-type-stop.sh            # Voice typing: stop recording, transcribe, inject text (Mod+T release)

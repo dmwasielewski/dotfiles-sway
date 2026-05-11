@@ -82,8 +82,9 @@ dotfiles-sway/
     ├── adguard-waybar.sh              ← AdGuard Waybar status helper (AG + click toggle)
     ├── nordvpn-waybar.sh              ← NordVPN Waybar status helper (VPN + click toggle)
     ├── power-menu.sh                  ← Rofi power menu (shutdown/reboot/suspend/hibernate/logout)
-    ├── setup-splunk.sh                ← OPTIONAL: Splunk Free in security container (SIEM lab)
+    ├── setup-splunk.sh                ← OPTIONAL: Splunk Enterprise (free) via podman (SIEM lab)
     ├── setup-wazuh.sh                 ← OPTIONAL: Wazuh all-in-one via podman (SIEM/XDR lab)
+    ├── backup-container.sh            ← Snapshot a distrobox container for restore
     ├── setup-security-container.sh   ← Distrobox security: pentesting toolkit — writes state
     ├── voice-type-start.sh           ← Voice typing: start recording on Mod+T press
     ├── voice-type-stop.sh            ← Voice typing: stop, transcribe, inject text on Mod+T release
@@ -661,25 +662,42 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 
 ## Optional lab tools (run manually — not part of bootstrap)
 
-For SIEM/SOC learning (SC-200 supplementary):
+### Container backup (snapshot before experimenting)
+```bash
+bash ~/dotfiles-sway/scripts/backup-container.sh security
+```
+Creates a podman image snapshot. After breaking something:
+```bash
+distrobox create -i localhost/security-backup:YYYYMMDD -n security-fresh
+distrobox enter security-fresh
+```
 
-### Splunk Free
+### Splunk Enterprise (free, podman container)
 ```bash
 bash ~/dotfiles-sway/scripts/setup-splunk.sh
 ```
-Installs Splunk Free (500 MB/day license) in the `security` distrobox container.
-- Web UI: `http://localhost:8000`
-- Login: `admin` / `changeme`
-- Clean up: remove from inside the security container (`sudo dpkg -r splunk`)
+Runs official `splunk/splunk:latest` image with free license (500 MB/day).
+- Web UI: `http://localhost:8000`  |  Login: `admin / SplunkLab123!`
+- Stop: `podman stop splunk`  |  Clean up: `podman rm -f splunk`
 
-### Wazuh (all-in-one via podman)
+### Wazuh (all-in-one, podman pod)
 ```bash
 bash ~/dotfiles-sway/scripts/setup-wazuh.sh
 ```
-Deploys Wazuh indexer + manager + dashboard in podman containers.
-- Dashboard: `https://localhost`
-- Login: `admin` / `SecretPassword123!`
+Deploys Wazuh indexer + manager + dashboard in a podman pod.
+- Dashboard: `https://localhost` (accept self-signed cert)
+- Login: `admin / WazuhLab123!`
 - Clean up: `podman pod rm -f wazuh-pod`
+
+### SOC learning path (beginner)
+
+1. **Splunk Fundamentals 1** (free, splunk.com) — SPL basics, searching, reporting
+2. **Wazuh documentation** (wazuh.com) — agent install, FIM, alerts
+3. **Practice flow:**
+   - Ingest your own logs: `podman logs splunk` → Splunk HTTP Event Collector
+   - Deploy Wazuh agent on Windows 11 VM
+   - Compare how Splunk and Wazuh handle the same data
+4. **SC-200 specific:** Microsoft Learn path + Azure free trial for Sentinel
 
 ## Manual post-install steps (cannot be automated)
 
