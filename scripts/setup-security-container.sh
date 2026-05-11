@@ -85,11 +85,11 @@ run_step "SECURITY_EVIL_WINRM" "Installing evil-winrm" \
         sudo gem install evil-winrm"
 
 # ── enum4linux-ng ────────────────────────────────────────────────────────
-run_step "SECURITY_ENUM4LINUX" "Installing enum4linux-ng" \
+run_step_warn "SECURITY_ENUM4LINUX" "Installing enum4linux-ng" \
     dbox "if [ -d /opt/enum4linux-ng/.git ]; then
             sudo git -C /opt/enum4linux-ng pull --ff-only
           elif [ -e /opt/enum4linux-ng ]; then
-            echo 'ERROR: /opt/enum4linux-ng exists but is not a git checkout; refusing to delete it automatically.' >&2
+            echo 'WARNING: /opt/enum4linux-ng exists but is not a git checkout; skipping enum4linux-ng setup.' >&2
             exit 1
           else
             sudo git clone --depth 1 https://github.com/cddmp/enum4linux-ng /opt/enum4linux-ng
@@ -98,11 +98,11 @@ run_step "SECURITY_ENUM4LINUX" "Installing enum4linux-ng" \
         sudo ln -sf /opt/enum4linux-ng/enum4linux-ng.py /usr/local/bin/enum4linux-ng"
 
 # ── SecLists wordlists ───────────────────────────────────────────────────
-run_step "SECURITY_SECLISTS" "Downloading SecLists wordlists (~1 GB — may take a while)" \
+run_step_warn "SECURITY_SECLISTS" "Downloading SecLists wordlists (~1 GB — may take a while)" \
     dbox "if [ -d /opt/SecLists/.git ]; then
             sudo git -C /opt/SecLists pull --ff-only
           elif [ -e /opt/SecLists ]; then
-            echo 'ERROR: /opt/SecLists exists but is not a git checkout; refusing to delete it automatically.' >&2
+            echo 'WARNING: /opt/SecLists exists but is not a git checkout; skipping SecLists setup.' >&2
             exit 1
           else
             sudo git clone --depth 1 https://github.com/danielmiessler/SecLists /opt/SecLists
