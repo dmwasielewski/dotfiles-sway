@@ -66,8 +66,7 @@ button:hover {
 #custom-adguard,
 #custom-nordvpn,
 #custom-power,
-#power-profiles-daemon,
-#language {
+#power-profiles-daemon {
     padding: 0 10px;
     color: #c0c8d8;
 }
@@ -309,13 +308,6 @@ button:hover {
 #power-profiles-daemon.power-saver {
     background-color: #1a2a1a;
     color: #5a9955;
-}
-
-/* ── Language ───────────────────────────────────────────── */
-#language {
-    background-color: #1e2230;
-    color: #8a9bb5;
-    min-width: 16px;
 }
 
 /* ── Tray ───────────────────────────────────────────────── */
