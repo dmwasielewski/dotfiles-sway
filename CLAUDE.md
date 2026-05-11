@@ -85,6 +85,9 @@ dotfiles-sway/
     ├── setup-splunk.sh                ← OPTIONAL: Splunk Enterprise (free) via podman (SIEM lab)
     ├── setup-wazuh.sh                 ← OPTIONAL: Wazuh all-in-one via podman (SIEM/XDR lab)
     ├── backup-container.sh            ← Snapshot a distrobox container for restore
+    ├── backup-win11.sh                ← Snapshot/restore Windows 11 VM (SOC lab)
+    ├── setup-misp.sh                  ← OPTIONAL: MISP threat intel platform (podman)
+    ├── setup-thehive-cortex.sh        ← OPTIONAL: TheHive + Cortex IR automation (podman, advanced)
     ├── setup-security-container.sh   ← Distrobox security: pentesting toolkit — writes state
     ├── voice-type-start.sh           ← Voice typing: start recording on Mod+T press
     ├── voice-type-stop.sh            ← Voice typing: stop, transcribe, inject text on Mod+T release
@@ -698,6 +701,39 @@ Deploys Wazuh indexer + manager + dashboard in a podman pod.
    - Deploy Wazuh agent on Windows 11 VM
    - Compare how Splunk and Wazuh handle the same data
 4. **SC-200 specific:** Microsoft Learn path + Azure free trial for Sentinel
+
+### MISP — Threat Intelligence Platform
+```bash
+bash ~/dotfiles-sway/scripts/setup-misp.sh
+```
+- Web UI: `https://localhost:8443`  |  Login: `admin@lab.local / MispLab123!`
+- Clean up: `podman pod rm -f misp-pod`
+
+### TheHive + Cortex — Incident Response automation (advanced)
+```bash
+bash ~/dotfiles-sway/scripts/setup-thehive-cortex.sh
+```
+- TheHive: `http://localhost:9000`  |  Cortex: `http://localhost:9001`
+- First visit creates admin account; then link Cortex to TheHive via API key
+- Clean up: `podman pod rm -f soc-pod`
+
+### Windows 11 VM backup (for destructive testing)
+```bash
+bash ~/dotfiles-sway/scripts/backup-win11.sh            # snapshot
+bash ~/dotfiles-sway/scripts/backup-win11.sh restore    # restore clean VM
+```
+Snapshot before running malware/attacks — restore in seconds.
+
+### Complete SOC lab architecture
+```
+┌────────────────────────────────────────────────────────┐
+│ Splunk :8000    Wazuh :443     MISP :8443              │  ← SIEM + Threat Intel
+│ TheHive :9000   Cortex :9001                           │  ← IR Automation
+│ Windows 11 VM  (Wazuh agent + Defender)                │  ← Monitored endpoint
+│ Kali VM        (attack simulation)                     │  ← Red team
+│ Security container (nmap, Metasploit, Wireshark)       │  ← Tools
+└────────────────────────────────────────────────────────┘
+```
 
 ## Manual post-install steps (cannot be automated)
 

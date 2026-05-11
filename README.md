@@ -437,6 +437,9 @@ dotfiles-sway/
 │   ├── setup-splunk.sh                # OPTIONAL — Splunk Enterprise (free) via podman (SIEM lab)
 │   ├── setup-wazuh.sh                 # OPTIONAL — Wazuh all-in-one via podman (SIEM/XDR lab)
 │   ├── backup-container.sh            # Snapshot a distrobox container for restore
+│   ├── backup-win11.sh                # Snapshot/restore Windows 11 VM (SOC lab)
+│   ├── setup-misp.sh                  # OPTIONAL — MISP threat intel platform (podman)
+│   ├── setup-thehive-cortex.sh        # OPTIONAL — TheHive + Cortex IR automation (podman)
 │   ├── setup-security-container.sh   # Distrobox security: pentesting toolkit — writes state
 │   ├── voice-type-start.sh           # Voice typing: start recording (Mod+T press)
 │   ├── voice-type-stop.sh            # Voice typing: stop recording, transcribe, inject text (Mod+T release)
