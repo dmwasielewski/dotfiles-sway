@@ -224,7 +224,8 @@ Managed by `setup.sh`. Installed from Flathub as user Flatpaks (`--user`) to avo
 
 Notes:
 - `pavucontrol` is in Fedora Atomic base — no separate install needed.
-- Thunderbird is installed as the verified Flathub Flatpak `org.mozilla.Thunderbird`.
+- Thunderbird is installed as the verified Flathub Flatpak `org.mozilla.Thunderbird`. Account setup is manual (OAuth).
+- Thunderbird extensions and `user.js` preferences are documented in `scripts/setup-thunderbird.sh`.
 - LibreOffice is installed as the verified Flathub Flatpak `org.libreoffice.LibreOffice` (Writer, Calc, Impress).
 - NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start.
 - AdGuard for Linux: official CLI install via `bash ~/dotfiles-sway/scripts/setup-adguard.sh`; first-time activation/configuration remains manual.
@@ -735,6 +736,41 @@ Snapshot before running malware/attacks — restore in seconds.
 └────────────────────────────────────────────────────────┘
 ```
 
+## Thunderbird configuration
+
+Thunderbird is installed as Flatpak. Account setup is manual (OAuth to Gmail).
+Profile: `~/.var/app/org.mozilla.Thunderbird/.thunderbird/<profile>.default-esr/`
+
+### user.js preferences (apply automatically on start)
+```
+mail.mdn.receipt.request_policy = 4     → Always request read receipt
+mail.dark-reader.enabled = false        → Disable Dark Reader (use light mode)
+layout.css.prefers-color-scheme.content-override = 1 → Force light scheme
+```
+
+### Extensions (install manually from Thunderbird Add-ons)
+| Extension | ID | Purpose |
+|---|---|---|
+| Modern Theme Green | `all4you.modernthemegreen@...` | Green UI theme (active) |
+| Dark Reader | `addon@darkreader.org` | Dark mode (disabled via pref) |
+| Darko | `admin@fastaddons.com_Darko` | Alternative dark mode |
+| Owl | `owl@beonex.com` | Exchange/Outlook support |
+| ThunderAI | `thunderai@micz.it` | AI integration |
+| Send Later 3 | `sendlater3@kamens.us` | Scheduled sending |
+| Quote Colors | `quotecolors@thunderbird-mail.de` | Colored quote levels |
+| ImportExportTools NG | `ImportExportToolsNG@...` | Import/export |
+| Thunderbird Pro | `tbpro-add-on@thunderbird.net` | Premium features |
+
+Language packs: EN-GB, EN-US, PL (installed as Flatpak distro addons).
+
+### Replicate after fresh install
+```bash
+bash ~/dotfiles-sway/scripts/setup-thunderbird.sh  # shows the checklist
+```
+1. Launch Thunderbird → add accounts (OAuth)
+2. Install extensions from Add-ons Manager
+3. Copy `user.js` to the new profile directory
+
 ## Manual post-install steps (cannot be automated)
 
 These require human interaction — document them so nothing is forgotten after a fresh install:
@@ -750,6 +786,8 @@ These require human interaction — document them so nothing is forgotten after 
 | NordVPN login | `nordvpn login` or, if browser callback fails, `nordvpn login --token <token>` |
 | AdGuard first-time setup | `adguard-cli activate` → `adguard-cli configure` → `adguard-cli start` |
 | Thunderbird account setup | In-app after Flatpak install |
+| Thunderbird extensions | In-app → Add-ons Manager → search by name (see thunderbird-section) |
+| Thunderbird user.js prefs | Copy from documented profile (`~/.var/app/org.mozilla.Thunderbird/.thunderbird/<profile>.default-esr/user.js`) |
 | Bitwarden / Obsidian / Spotify login | In-app after Flatpak install |
 | Vivaldi: sign in, restore bookmarks/extensions | In-app after Flatpak install |
 

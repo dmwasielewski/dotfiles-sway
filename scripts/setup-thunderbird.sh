@@ -1,0 +1,40 @@
+#!/bin/bash
+# setup-thunderbird.sh — documents Thunderbird profile configuration
+# Thunderbird is installed as Flatpak (org.mozilla.Thunderbird) by setup.sh.
+# Account setup remains manual (OAuth). This script documents extensions and
+# profile preferences that have been set up.
+set -euo pipefail
+
+echo "==> Thunderbird setup notes"
+echo ""
+echo "Flatpak: org.mozilla.Thunderbird (installed automatically by setup.sh)"
+echo "Profile: ~/.var/app/org.mozilla.Thunderbird/.thunderbird/<profile>.default-esr/"
+echo ""
+echo "==> user.js preferences (apply automatically on next Thunderbird start)"
+echo ""
+echo "  mail.mdn.receipt.request_policy = 4"
+echo "    → Always request read receipt for outgoing emails"
+echo ""
+echo "  mail.dark-reader.enabled = false"
+echo "    → Disable Dark Reader extension (use light mode)"
+echo ""
+echo "  layout.css.prefers-color-scheme.content-override = 1"
+echo "    → Force light color scheme (0=dark, 1=light, 2=auto)"
+echo ""
+echo "==> Installed extensions (manual install from Thunderbird Add-ons)"
+echo ""
+echo "  Modern Theme Green    — green UI theme (active)"
+echo "  Dark Reader           — dark mode (disabled via pref)"
+echo "  Darko                 — dark mode alternative"
+echo "  Owl                   — Exchange/Outlook support"
+echo "  ThunderAI             — AI integration in emails"
+echo "  Send Later 3          — scheduled email sending"
+echo "  Quote Colors          — colored quote levels in threads"
+echo "  ImportExportTools NG  — import/export emails"
+echo "  Thunderbird Pro       — premium features"
+echo "  Lang: EN-GB, PL       — language packs"
+echo ""
+echo "==> To replicate after fresh install:"
+echo "  1. Launch Thunderbird, add email accounts (OAuth)"
+echo "  2. Install extensions from Thunderbird Add-ons"
+echo "  3. Copy user.js to profile directory"
