@@ -98,7 +98,7 @@ bash ~/dotfiles-sway/scripts/check-hardware.sh
 bash ~/dotfiles-sway/scripts/setup-kvm.sh
 ```
 > Then log out and back in for group changes to take effect.
-> If the current machine already uses `192.168.122.0/24` for its upstream network, the script moves libvirt's `default` NAT network to `192.168.125.0/24` to avoid breaking connectivity.
+> The script creates its own libvirt NAT network named `dotfiles-nat` on the first free subnet from `192.168.125.0/24` upward, so it does not have to rewrite libvirt's `default` network.
 
 7. Set up the damian dev container (node, npm, gh, Claude Code, Codex CLI, DeepSeek TUI, ShellGPT):
 ```bash
@@ -507,7 +507,7 @@ Get a free key at: https://aistudio.google.com
 Modern text editor — Vim fork with Lua config, built-in LSP, and a large plugin ecosystem.
 
 This setup uses:
-- Official upstream Neovim `v0.12.1` installed to `~/.local/opt/nvim-linux-x86_64`
+- Official upstream Neovim `v0.12.1` installed to a versioned directory under `~/.local/opt/`, with `~/.local/opt/nvim-linux-x86_64` pointing at the active release
 - `~/.local/bin/nvim` symlink, which wins over `/usr/bin/nvim` because `.bashrc` puts `~/.local/bin` first
 - Chris Titus Tech's Neovim config as a git submodule: `nvim/christitustech`
 - `~/.config/nvim` symlinked to `~/dotfiles-sway/nvim/christitustech/titus-kickstart`
@@ -557,7 +557,7 @@ nvim filename.txt
 
 ## Vivaldi profile recovery
 
-If Vivaldi shows Session Recovery dialog after reboot, the crash flag fix runs automatically on every sway start via `scripts/fix-vivaldi-profiles.sh`.
+If Vivaldi shows Session Recovery dialog after reboot, the crash flag fix runs automatically on every sway start via `scripts/fix-vivaldi-profiles.sh`. The script writes `Preferences` atomically and keeps a one-time `*.bak-before-dotfiles` backup beside each repaired file.
 
 To fix manually (Vivaldi must be closed first):
 ```bash
@@ -719,8 +719,8 @@ virt-manager
 ```
 
 ### Default network
-NAT network (`default`) is enabled and set to autostart. VMs get IPs in `192.168.122.0/24`.
-If `192.168.122.0/24` is already present before libvirt starts, `setup-kvm.sh` redefines the `default` network as `192.168.125.0/24`. This matters for nested validation VMs, where the outer host libvirt network commonly already owns `192.168.122.0/24`.
+NAT network (`dotfiles-nat`) is enabled and set to autostart. VMs get IPs from the first free subnet starting at `192.168.125.0/24`.
+`setup-kvm.sh` does not modify libvirt's upstream `default` network. This keeps local or nested-libvirt setups safer when `default` is already in use elsewhere.
 
 ### Windows 11 — TPM & Secure Boot
 Windows 11 requires TPM 2.0 and Secure Boot. In virt-manager:

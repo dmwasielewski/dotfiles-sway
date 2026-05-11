@@ -5,11 +5,8 @@ DOTFILES="$HOME/dotfiles-sway"
 if [[ -f "$DOTFILES/scripts/lib-install.sh" ]]; then
     source "$DOTFILES/scripts/lib-install.sh"
     setup_logging "packages.sh"
+    require_sudo_session
 fi
-
-# Verify sudo works non-interactively and extend timeout for this install phase.
-sudo -n true
-echo "Defaults timestamp_timeout=30" | sudo tee /etc/sudoers.d/timeout > /dev/null
 
 # Run this once after fresh install, then reboot
 echo "==> Layering system packages (reboot required after)..."

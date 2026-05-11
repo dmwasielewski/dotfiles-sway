@@ -487,16 +487,16 @@ else
     fail "/dev/kvm NOT available" "Check BIOS — enable AMD-V / Intel VT-x"
 fi
 
-if host virsh --connect qemu:///system net-list --all 2>/dev/null | grep -q "default"; then
+if host virsh --connect qemu:///system net-list --all 2>/dev/null | grep -q "dotfiles-nat"; then
     NETSTATE=$(host virsh --connect qemu:///system net-list 2>/dev/null | \
-        awk '/default/ {print $2}' || echo "unknown")
+        awk '/dotfiles-nat/ {print $2}' || echo "unknown")
     if [[ "$NETSTATE" == "active" ]]; then
-        pass "NAT network 'default' active"
+        pass "NAT network 'dotfiles-nat' active"
     else
-        warn "NAT network 'default' exists but not active — run: virsh --connect qemu:///system net-start default"
+        warn "NAT network 'dotfiles-nat' exists but not active — run: virsh --connect qemu:///system net-start dotfiles-nat"
     fi
 else
-    fail "NAT network 'default'  MISSING" "bash ~/dotfiles-sway/scripts/setup-kvm.sh"
+    fail "NAT network 'dotfiles-nat'  MISSING" "bash ~/dotfiles-sway/scripts/setup-kvm.sh"
 fi
 
 if host groups 2>/dev/null | grep -q libvirt; then

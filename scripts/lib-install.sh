@@ -11,6 +11,20 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+declare -a DOTFILES_EXIT_HOOKS=()
+
+run_exit_hooks() {
+    local idx
+    for ((idx=${#DOTFILES_EXIT_HOOKS[@]}-1; idx>=0; idx--)); do
+        eval "${DOTFILES_EXIT_HOOKS[$idx]}"
+    done
+}
+
+add_exit_hook() {
+    DOTFILES_EXIT_HOOKS+=("$1")
+    trap run_exit_hooks EXIT
+}
+
 setup_logging() {
     local script_name="${1:-unknown}"
     export DOTFILES_LOG_FILE="$LOG_FILE"
@@ -25,10 +39,35 @@ setup_logging() {
     touch "$LOG_FILE"
     exec > >(awk '{ print strftime("[%Y-%m-%d %H:%M:%S]"), $0; fflush(); }' | tee -a "$LOG_FILE") 2>&1
     DOTFILES_LOG_PID=$!
-    trap 'exec >&- 2>&-; wait "$DOTFILES_LOG_PID" 2>/dev/null || true' EXIT
+    add_exit_hook 'exec >&- 2>&-; wait "$DOTFILES_LOG_PID" 2>/dev/null || true'
 
     echo "==> Logging to $LOG_FILE"
     echo "==> Script: $script_name"
+}
+
+require_sudo_session() {
+    local parent_pid
+
+    if [[ -n "${DOTFILES_SUDO_KEEPALIVE_PID:-}" ]] && kill -0 "$DOTFILES_SUDO_KEEPALIVE_PID" 2>/dev/null; then
+        return 0
+    fi
+
+    echo "==> Acquiring sudo session for unattended install steps..."
+    sudo -v
+
+    parent_pid="$$"
+    (
+        while true; do
+            sleep 20
+            if ! sudo -n -v >/dev/null 2>&1; then
+                echo "ERROR: sudo session expired during installation." >&2
+                kill -TERM "$parent_pid" 2>/dev/null || true
+                exit 1
+            fi
+        done
+    ) &
+    DOTFILES_SUDO_KEEPALIVE_PID=$!
+    add_exit_hook 'if [[ -n "${DOTFILES_SUDO_KEEPALIVE_PID:-}" ]]; then kill "$DOTFILES_SUDO_KEEPALIVE_PID" 2>/dev/null || true; wait "$DOTFILES_SUDO_KEEPALIVE_PID" 2>/dev/null || true; fi'
 }
 
 step_save() {

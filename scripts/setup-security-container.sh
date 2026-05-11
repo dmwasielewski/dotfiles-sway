@@ -21,6 +21,8 @@ echo -e "${BOLD}${CYAN}║   Distrobox 'security' — setup           ║${NC}"
 echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════╝${NC}"
 echo ""
 
+require_sudo_session
+
 # ── Build image with apt HTTP pipeline disabled ──────────────────────────
 if ! podman image exists "$FIXED_IMAGE" 2>/dev/null; then
     echo -e "${CYAN}==> Building Ubuntu ${SECURITY_VERSION} image with apt HTTP pipeline disabled...${NC}"
@@ -86,8 +88,10 @@ run_step "SECURITY_EVIL_WINRM" "Installing evil-winrm" \
 run_step "SECURITY_ENUM4LINUX" "Installing enum4linux-ng" \
     dbox "if [ -d /opt/enum4linux-ng/.git ]; then
             sudo git -C /opt/enum4linux-ng pull --ff-only
+          elif [ -e /opt/enum4linux-ng ]; then
+            echo 'ERROR: /opt/enum4linux-ng exists but is not a git checkout; refusing to delete it automatically.' >&2
+            exit 1
           else
-            sudo rm -rf /opt/enum4linux-ng &&
             sudo git clone --depth 1 https://github.com/cddmp/enum4linux-ng /opt/enum4linux-ng
           fi &&
         pip3 install -r /opt/enum4linux-ng/requirements.txt --break-system-packages &&
@@ -97,8 +101,10 @@ run_step "SECURITY_ENUM4LINUX" "Installing enum4linux-ng" \
 run_step "SECURITY_SECLISTS" "Downloading SecLists wordlists (~1 GB — may take a while)" \
     dbox "if [ -d /opt/SecLists/.git ]; then
             sudo git -C /opt/SecLists pull --ff-only
+          elif [ -e /opt/SecLists ]; then
+            echo 'ERROR: /opt/SecLists exists but is not a git checkout; refusing to delete it automatically.' >&2
+            exit 1
           else
-            sudo rm -rf /opt/SecLists &&
             sudo git clone --depth 1 https://github.com/danielmiessler/SecLists /opt/SecLists
           fi"
 

@@ -115,11 +115,14 @@ install_sgpt_wrapper() {
     mkdir -p "$LOCAL_BIN"
 
     if [[ -x "$SGPT_WRAPPER" ]] && ! grep -q 'SGPT_REAL_BIN' "$SGPT_WRAPPER" 2>/dev/null; then
-        cp "$SGPT_WRAPPER" "$SGPT_REAL_BIN"
-        chmod +x "$SGPT_REAL_BIN"
-    fi
-
-    if [[ ! -x "$SGPT_REAL_BIN" && -x "$SGPT_WRAPPER" ]]; then
+        if [[ -x "$SGPT_REAL_BIN" ]]; then
+            echo "==> Existing unmanaged sgpt wrapper detected at $SGPT_WRAPPER — preserving it."
+            return 0
+        fi
+        echo "==> Existing unmanaged sgpt wrapper detected at $SGPT_WRAPPER — leaving it unchanged."
+        echo "==> If you want the managed fallback wrapper, move your custom launcher aside first."
+        return 0
+    elif [[ ! -x "$SGPT_REAL_BIN" && -x "$SGPT_WRAPPER" ]]; then
         cp "$SGPT_WRAPPER" "$SGPT_REAL_BIN"
         chmod +x "$SGPT_REAL_BIN"
     fi

@@ -135,7 +135,7 @@ VM validation details:
 - The Fedora ostree content URL is resolved from `https://ostree.fedoraproject.org/mirrorlist`.
 - The disposable VM kickstart uses `ostreesetup --nogpg` because the Fedora 44 netinst Anaconda environment can miss the current ostree signing key even when the installer ISO checksum is valid.
 - Anaconda may shut off the VM after installation; the script starts it again from disk and then waits for SSH.
-- `setup-kvm.sh` detects an existing upstream `192.168.122.0/24` route and moves the guest libvirt `default` NAT network to `192.168.125.0/24`; this prevents nested VM validation from breaking SSH back to the outer host.
+- `setup-kvm.sh` defines a dedicated libvirt NAT network named `dotfiles-nat` on the first free subnet from `192.168.125.0/24` upward; it does not modify libvirt's upstream `default` network.
 
 ### Step 2 — Reboot (mandatory after rpm-ostree)
 
@@ -240,7 +240,7 @@ Managed by `scripts/setup-damian-container.sh`. Use `toolbox enter damian` to en
 
 npm prefix is set to `~/.npm-global` — global npm packages visible from host too.
 
-ShellGPT config is generated non-interactively by `scripts/configure-shellgpt.sh` into `~/.config/shell_gpt/.sgptrc`. The preferred provider is Gemini via LiteLLM, using the same private key file as voice typing: `~/.config/voice-type/gemini-api-key`. It sets `gemini/gemini-3.1-flash-lite-preview` as the primary ShellGPT model and installs `~/.local/bin/sgpt` as an executable wrapper around `~/.local/bin/sgpt-cli`; the wrapper retries `gemini/gemini-2.5-flash` on temporary availability errors and prints a clear diagnostic if both models fail. If no private API key source exists, the config uses the placeholder `OPENAI_API_KEY=missing-shellgpt-api-key` so `sgpt` never blocks setup with an interactive prompt. Do not commit API keys to this repo.
+ShellGPT config is generated non-interactively by `scripts/configure-shellgpt.sh` into `~/.config/shell_gpt/.sgptrc`. The preferred provider is Gemini via LiteLLM, using the same private key file as voice typing: `~/.config/voice-type/gemini-api-key`. It sets `gemini/gemini-3.1-flash-lite-preview` as the primary ShellGPT model and installs `~/.local/bin/sgpt` as an executable wrapper around `~/.local/bin/sgpt-cli`; the wrapper retries `gemini/gemini-2.5-flash` on temporary availability errors and prints a clear diagnostic if both models fail. If Damian already has a custom unmanaged `sgpt`, the script leaves it untouched instead of overwriting it. If no private API key source exists, the config uses the placeholder `OPENAI_API_KEY=missing-shellgpt-api-key` so `sgpt` never blocks setup with an interactive prompt. Do not commit API keys to this repo.
 
 ### Layer 4: distrobox `security` (Ubuntu 26.04 pentesting)
 
@@ -380,7 +380,7 @@ Both installed to `~/.local/share/fonts/` by `setup.sh`.
 Neovim is installed in two layers:
 
 - Fedora `neovim` rpm remains layered as a fallback.
-- `scripts/setup-neovim-config.sh` installs the official upstream Neovim `v0.12.1` binary to `~/.local/opt/nvim-linux-x86_64`, symlinks `~/.local/bin/nvim`, and syncs plugins to Chris Titus Tech's `nvim-pack-lock.json`.
+- `scripts/setup-neovim-config.sh` installs the official upstream Neovim `v0.12.1` binary to a versioned directory under `~/.local/opt/`, points `~/.local/opt/nvim-linux-x86_64` and `~/.local/bin/nvim` at the active release, and syncs plugins to Chris Titus Tech's `nvim-pack-lock.json`.
 
 The active config is Chris Titus Tech's `titus-kickstart`, pinned as a git submodule at `nvim/christitustech`:
 
@@ -545,7 +545,7 @@ Preferred source, shared with voice typing:
 - `GEMINI_API_KEY`
 - `GOOGLE_API_KEY`
 
-With that key, the generated config uses `USE_LITELLM=true` and `DEFAULT_MODEL=gemini/gemini-3.1-flash-lite-preview`, writes `~/.bashrc.d/shellgpt-gemini.bash` to export `GEMINI_API_KEY` in toolbox shells, and installs `~/.local/bin/sgpt` as a fallback wrapper. The original ShellGPT launcher is preserved as `~/.local/bin/sgpt-cli`. The wrapper retries `gemini/gemini-2.5-flash` if the preview model fails with temporary availability errors such as `503`, `UNAVAILABLE`, high demand, overload, or rate limits. If both models fail, it prints a short "nie udalo sie polaczyc z AI" diagnostic.
+With that key, the generated config uses `USE_LITELLM=true` and `DEFAULT_MODEL=gemini/gemini-3.1-flash-lite-preview`, writes `~/.bashrc.d/shellgpt-gemini.bash` to export `GEMINI_API_KEY` in toolbox shells, and installs `~/.local/bin/sgpt` as a fallback wrapper. The original ShellGPT launcher is preserved as `~/.local/bin/sgpt-cli` when the existing launcher is already repo-managed; if Damian already has a custom unmanaged `sgpt`, the script leaves it untouched and prints a warning instead of overwriting it. The wrapper retries `gemini/gemini-2.5-flash` if the preview model fails with temporary availability errors such as `503`, `UNAVAILABLE`, high demand, overload, or rate limits. If both models fail, it prints a short "nie udalo sie polaczyc z AI" diagnostic.
 
 Other supported private sources:
 

@@ -14,6 +14,7 @@ NVIM_ARCHIVE="nvim-linux-x86_64.tar.gz"
 NVIM_URL="https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/${NVIM_ARCHIVE}"
 NVIM_OPT_DIR="$HOME/.local/opt"
 NVIM_INSTALL_DIR="$NVIM_OPT_DIR/nvim-linux-x86_64"
+NVIM_RELEASE_DIR="$NVIM_OPT_DIR/nvim-linux-x86_64-${NVIM_VERSION#v}"
 NVIM_BIN="$HOME/.local/bin/nvim"
 CTT_REPO_DIR="$DOTFILES/nvim/christitustech"
 CTT_CONFIG_DIR="$CTT_REPO_DIR/titus-kickstart"
@@ -34,12 +35,14 @@ fi
 mkdir -p "$HOME/.local/bin" "$NVIM_OPT_DIR" "$HOME/.config" "$HOME/.vim/undodir" "$HOME/.scripts"
 
 installed_version=""
-if [[ -x "$NVIM_INSTALL_DIR/bin/nvim" ]]; then
+if [[ -x "$NVIM_RELEASE_DIR/bin/nvim" ]]; then
+    installed_version="$("$NVIM_RELEASE_DIR/bin/nvim" --version | head -n1 | awk '{print $2}' | sed 's/^v//')"
+elif [[ -x "$NVIM_INSTALL_DIR/bin/nvim" ]]; then
     installed_version="$("$NVIM_INSTALL_DIR/bin/nvim" --version | head -n1 | awk '{print $2}' | sed 's/^v//')"
 fi
 
 if [[ "$installed_version" == "${NVIM_VERSION#v}" ]]; then
-    echo "==> Neovim ${NVIM_VERSION} already installed in $NVIM_INSTALL_DIR"
+    echo "==> Neovim ${NVIM_VERSION} already installed in $NVIM_RELEASE_DIR"
 else
     tmpdir="$(mktemp -d)"
     trap 'rm -rf "$tmpdir"' EXIT
@@ -48,12 +51,23 @@ else
     curl -fL "$NVIM_URL" -o "$tmpdir/$NVIM_ARCHIVE"
     tar -xzf "$tmpdir/$NVIM_ARCHIVE" -C "$tmpdir"
 
-    rm -rf "$NVIM_INSTALL_DIR.tmp"
-    mv "$tmpdir/nvim-linux-x86_64" "$NVIM_INSTALL_DIR.tmp"
-    rm -rf "$NVIM_INSTALL_DIR"
-    mv "$NVIM_INSTALL_DIR.tmp" "$NVIM_INSTALL_DIR"
+    mv "$tmpdir/nvim-linux-x86_64" "$tmpdir/nvim-release"
+    [[ -x "$tmpdir/nvim-release/bin/nvim" ]] || {
+        echo "ERROR: Downloaded Neovim archive did not contain a runnable bin/nvim"
+        exit 1
+    }
+    rm -rf "$NVIM_RELEASE_DIR.tmp"
+    mv "$tmpdir/nvim-release" "$NVIM_RELEASE_DIR.tmp"
+    mv "$NVIM_RELEASE_DIR.tmp" "$NVIM_RELEASE_DIR"
 fi
 
+if [[ -e "$NVIM_INSTALL_DIR" && ! -L "$NVIM_INSTALL_DIR" ]]; then
+    legacy_target="$NVIM_OPT_DIR/nvim-linux-x86_64-legacy-$(date +%Y%m%d-%H%M%S)"
+    echo "==> Existing $NVIM_INSTALL_DIR is a directory; moving it to $legacy_target"
+    mv "$NVIM_INSTALL_DIR" "$legacy_target"
+fi
+
+ln -sfn "$NVIM_RELEASE_DIR" "$NVIM_INSTALL_DIR"
 ln -sfn "$NVIM_INSTALL_DIR/bin/nvim" "$NVIM_BIN"
 
 if [[ -L "$NVIM_CONFIG" ]]; then
