@@ -82,6 +82,8 @@ dotfiles-sway/
     ├── adguard-waybar.sh              ← AdGuard Waybar status helper (AG + click toggle)
     ├── nordvpn-waybar.sh              ← NordVPN Waybar status helper (VPN + click toggle)
     ├── power-menu.sh                  ← Rofi power menu (shutdown/reboot/suspend/hibernate/logout)
+    ├── setup-splunk.sh                ← OPTIONAL: Splunk Free in security container (SIEM lab)
+    ├── setup-wazuh.sh                 ← OPTIONAL: Wazuh all-in-one via podman (SIEM/XDR lab)
     ├── setup-security-container.sh   ← Distrobox security: pentesting toolkit — writes state
     ├── voice-type-start.sh           ← Voice typing: start recording on Mod+T press
     ├── voice-type-stop.sh            ← Voice typing: stop, transcribe, inject text on Mod+T release
@@ -656,6 +658,28 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 - [ ] virtiofs fully working in Windows 11 (VirtioFsSvc setup)
 - [ ] `gh auth login` automation
 - [ ] Full idempotency audit across setup.sh, packages.sh, and post-reboot scripts — each step should detect pre-existing resources and continue cleanly
+
+## Optional lab tools (run manually — not part of bootstrap)
+
+For SIEM/SOC learning (SC-200 supplementary):
+
+### Splunk Free
+```bash
+bash ~/dotfiles-sway/scripts/setup-splunk.sh
+```
+Installs Splunk Free (500 MB/day license) in the `security` distrobox container.
+- Web UI: `http://localhost:8000`
+- Login: `admin` / `changeme`
+- Clean up: remove from inside the security container (`sudo dpkg -r splunk`)
+
+### Wazuh (all-in-one via podman)
+```bash
+bash ~/dotfiles-sway/scripts/setup-wazuh.sh
+```
+Deploys Wazuh indexer + manager + dashboard in podman containers.
+- Dashboard: `https://localhost`
+- Login: `admin` / `SecretPassword123!`
+- Clean up: `podman pod rm -f wazuh-pod`
 
 ## Manual post-install steps (cannot be automated)
 
