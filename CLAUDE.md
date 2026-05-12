@@ -2,6 +2,8 @@
 
 This file is for AI assistants (Claude, Gemini, Copilot, etc.). Read it fully before making any suggestions or changes.
 
+**ALSO READ `AI_ERRORS.md`** — it records known mistakes, tool limitations, and verified workarounds. Do not repeat errors already documented there.
+
 ---
 
 ## Project goal
