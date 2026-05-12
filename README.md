@@ -69,7 +69,7 @@ printf '%s\n' 'your-gemini-api-key-here' > ~/.config/voice-type/gemini-api-key
 chmod 600 ~/.config/voice-type/gemini-api-key
 ```
 
-This file is private, outside git, and is shared with the active dev toolbox through the home directory. Voice typing uses it directly, and `scripts/configure-shellgpt.sh` uses the same key by default through LiteLLM. ShellGPT prefers `gemini-3.1-flash-lite-preview` and its installed `sgpt` wrapper retries `gemini-2.5-flash` if the preview model is overloaded. On a fresh machine the key should be restored from your private backup or secret manager before `setup-damian-container.sh` runs.
+This file is private, outside git, and is shared with the active dev toolbox through the home directory. Voice typing uses it directly, and `scripts/configure-shellgpt.sh` uses the same key by default through LiteLLM. ShellGPT prefers `gemini-3.1-flash-lite` and its installed `sgpt` wrapper retries `gemini-2.5-flash` if the preview model is overloaded. On a fresh machine the key should be restored from your private backup or secret manager before `setup-damian-container.sh` runs.
 
 ShellGPT also accepts `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SHELLGPT_API_KEY`, `ANTHROPIC_API_KEY`, `~/.config/ai/api.env`, `~/.config/shell_gpt/credentials.env`, and `~/.bashrc.d/ai-keys.bash`. Use `SHELLGPT_PROVIDER=openai`, `gemini`, or `anthropic` only when you need to override the automatic choice.
 
@@ -499,7 +499,7 @@ chmod 600 ~/.config/voice-type/gemini-api-key
 
 Voice correction tries Gemini models in this order:
 
-1. `gemini-3.1-flash-lite-preview`
+1. `gemini-3.1-flash-lite`
 2. `gemini-2.5-flash-lite`
 
 Override with `VOICE_TYPE_GEMINI_MODELS` as a comma-separated list if needed.
@@ -694,7 +694,7 @@ By default ShellGPT reuses the same private Gemini API key as voice typing:
 When that key exists, the script configures:
 
 - `USE_LITELLM=true`
-- `DEFAULT_MODEL=gemini/gemini-3.1-flash-lite-preview`
+- `DEFAULT_MODEL=gemini/gemini-3.1-flash-lite`
 - `~/.bashrc.d/shellgpt-gemini.bash` to export `GEMINI_API_KEY` inside the toolbox shell
 - `~/.local/bin/sgpt` wrapper around `~/.local/bin/sgpt-cli`; it retries `gemini/gemini-2.5-flash` when the preview model fails with temporary availability errors such as `503`, `UNAVAILABLE`, high demand, overload, or rate limits
 
@@ -714,7 +714,7 @@ Other supported private sources:
 - `~/.config/shell_gpt/credentials.env`
 - `~/.bashrc.d/ai-keys.bash`
 
-If no private key exists, the config contains `OPENAI_API_KEY=missing-shellgpt-api-key` and `verify.sh` reports a warning. Optional settings are `SHELLGPT_PROVIDER`, `SHELLGPT_API_BASE_URL`, `SHELLGPT_DEFAULT_MODEL`, `SHELLGPT_USE_LITELLM`, `SHELLGPT_GEMINI_PRIMARY_MODEL` defaulting to `gemini/gemini-3.1-flash-lite-preview`, and `SHELLGPT_GEMINI_FALLBACK_MODEL` defaulting to `gemini/gemini-2.5-flash`.
+If no private key exists, the config contains `OPENAI_API_KEY=missing-shellgpt-api-key` and `verify.sh` reports a warning. Optional settings are `SHELLGPT_PROVIDER`, `SHELLGPT_API_BASE_URL`, `SHELLGPT_DEFAULT_MODEL`, `SHELLGPT_USE_LITELLM`, `SHELLGPT_GEMINI_PRIMARY_MODEL` defaulting to `gemini/gemini-3.1-flash-lite`, and `SHELLGPT_GEMINI_FALLBACK_MODEL` defaulting to `gemini/gemini-2.5-flash`.
 
 ### ccstatusline — Claude Code status in Waybar
 

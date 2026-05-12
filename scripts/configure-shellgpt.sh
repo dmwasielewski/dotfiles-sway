@@ -36,7 +36,7 @@ fi
 PLACEHOLDER_KEY="missing-shellgpt-api-key"
 DEFAULT_MODEL_FALLBACK="gpt-4o"
 USE_LITELLM_FALLBACK="false"
-GEMINI_PRIMARY_MODEL="${SHELLGPT_GEMINI_PRIMARY_MODEL:-gemini/gemini-3.1-flash-lite-preview}"
+GEMINI_PRIMARY_MODEL="${SHELLGPT_GEMINI_PRIMARY_MODEL:-gemini/gemini-3.1-flash-lite}"
 GEMINI_FALLBACK_MODEL="${SHELLGPT_GEMINI_FALLBACK_MODEL:-gemini/gemini-2.5-flash}"
 API_KEY="$OPENAI_STYLE_API_KEY"
 SHELLGPT_PLACEHOLDER_CONFIG=false
@@ -151,7 +151,7 @@ install_sgpt_wrapper() {
 set -uo pipefail
 
 real_sgpt="${SGPT_REAL_BIN:-$HOME/.local/bin/sgpt-cli}"
-primary_model="${SGPT_PRIMARY_MODEL:-${SHELLGPT_GEMINI_PRIMARY_MODEL:-gemini/gemini-3.1-flash-lite-preview}}"
+primary_model="${SGPT_PRIMARY_MODEL:-${SHELLGPT_GEMINI_PRIMARY_MODEL:-gemini/gemini-3.1-flash-lite}}"
 fallback_model="${SGPT_FALLBACK_MODEL:-${SHELLGPT_GEMINI_FALLBACK_MODEL:-gemini/gemini-2.5-flash}}"
 
 load_env_file() {
@@ -238,7 +238,7 @@ if [ -z "${GEMINI_API_KEY:-}" ] && [ -r "$HOME/.config/voice-type/gemini-api-key
     export GEMINI_API_KEY="$(tr -d '\r\n' < "$HOME/.config/voice-type/gemini-api-key")"
 fi
 
-export SHELLGPT_GEMINI_PRIMARY_MODEL="${SHELLGPT_GEMINI_PRIMARY_MODEL:-gemini/gemini-3.1-flash-lite-preview}"
+export SHELLGPT_GEMINI_PRIMARY_MODEL="${SHELLGPT_GEMINI_PRIMARY_MODEL:-gemini/gemini-3.1-flash-lite}"
 export SHELLGPT_GEMINI_FALLBACK_MODEL="${SHELLGPT_GEMINI_FALLBACK_MODEL:-gemini/gemini-2.5-flash}"
 EOF
 chmod 600 "$ENV_LOADER"
