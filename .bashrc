@@ -19,8 +19,10 @@ if command -v dircolors >/dev/null 2>&1; then
 fi
 
 if [[ $- == *i* ]] && [[ -z "${DOTFILES_PS1_COLORIZED:-}" ]]; then
-    if [[ -f /run/.containerenv || -f /run/.toolboxenv ]]; then
+    if [[ -f /run/.containerenv ]]; then
         PS1='\[\e[0;31m\]'"${PS1}"'\[\e[0m\]'
+    elif [[ -f /run/.toolboxenv ]]; then
+        PS1='\[\e[0;36m\]'"${PS1}"'\[\e[0m\]'
     else
         PS1='\[\e[0;32m\]'"${PS1}"'\[\e[0m\]'
     fi
