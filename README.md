@@ -69,7 +69,7 @@ printf '%s\n' 'your-gemini-api-key-here' > ~/.config/voice-type/gemini-api-key
 chmod 600 ~/.config/voice-type/gemini-api-key
 ```
 
-This file is private, outside git, and is shared with the active dev toolbox through the home directory. Voice typing uses it directly, and `scripts/configure-shellgpt.sh` uses the same key by default through LiteLLM. ShellGPT prefers `gemini-3.1-flash-lite` and its installed `sgpt` wrapper retries `gemini-2.5-flash` if the preview model is overloaded. On a fresh machine the key should be restored from your private backup or secret manager before `setup-damian-container.sh` runs.
+This file is private, outside git, and is shared with the active dev toolbox through the home directory. Voice typing uses it directly, and `scripts/configure-shellgpt.sh` uses the same key by default through LiteLLM. ShellGPT prefers `gemini-3.1-flash-lite` and its installed `sgpt` wrapper retries `gemini-2.5-flash` if the primary model is temporarily unavailable. On a fresh machine the key should be restored from your private backup or secret manager before `setup-damian-container.sh` runs.
 
 ShellGPT also accepts `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SHELLGPT_API_KEY`, `ANTHROPIC_API_KEY`, `~/.config/ai/api.env`, `~/.config/shell_gpt/credentials.env`, and `~/.bashrc.d/ai-keys.bash`. Use `SHELLGPT_PROVIDER=openai`, `gemini`, or `anthropic` only when you need to override the automatic choice.
 
@@ -696,13 +696,13 @@ When that key exists, the script configures:
 - `USE_LITELLM=true`
 - `DEFAULT_MODEL=gemini/gemini-3.1-flash-lite`
 - `~/.bashrc.d/shellgpt-gemini.bash` to export `GEMINI_API_KEY` inside the toolbox shell
-- `~/.local/bin/sgpt` wrapper around `~/.local/bin/sgpt-cli`; it retries `gemini/gemini-2.5-flash` when the preview model fails with temporary availability errors such as `503`, `UNAVAILABLE`, high demand, overload, or rate limits
+- `~/.local/bin/sgpt` wrapper around `~/.local/bin/sgpt-cli`; it retries `gemini/gemini-2.5-flash` when the primary model fails with temporary availability errors such as `503`, `UNAVAILABLE`, high demand, overload, or rate limits
 
 If both the primary model and fallback fail, `sgpt` prints a short diagnostic:
 
 ```text
-sgpt: nie udalo sie polaczyc z AI.
-Sprawdz internet, klucz/API i dostepnosc modeli.
+sgpt: could not connect to the AI service.
+Check your network, API key, and model availability.
 ```
 
 Other supported private sources:

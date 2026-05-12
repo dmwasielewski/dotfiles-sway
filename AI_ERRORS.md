@@ -165,6 +165,35 @@ with pipelining enabled.
 **Fix:** The configure script renames the repo-managed launcher to `sgpt-cli` and wraps it.
 If an unmanaged `sgpt` exists, the script warns and leaves it untouched.
 
+### ShellGPT: stale `-preview` env can silently regenerate wrong config
+**Problem:** After the Gemini primary model changed from `gemini/gemini-3.1-flash-lite-preview`
+to `gemini/gemini-3.1-flash-lite`, an old exported
+`SHELLGPT_GEMINI_PRIMARY_MODEL=gemini/gemini-3.1-flash-lite-preview` could still be present in
+the shell environment. `scripts/configure-shellgpt.sh` respected that inherited variable, so it
+rewrote `~/.config/shell_gpt/.sgptrc` with the retired preview model even though the repo default
+was already correct.
+**Fix:** Normalize the old preview model name to `gemini/gemini-3.1-flash-lite` inside
+`scripts/configure-shellgpt.sh`, the generated `~/.local/bin/sgpt` wrapper, and the generated
+`~/.bashrc.d/shellgpt-gemini.bash` loader. When debugging ShellGPT model drift, check both:
+```bash
+grep '^DEFAULT_MODEL=' ~/.config/shell_gpt/.sgptrc
+printf '%s\n' "${SHELLGPT_GEMINI_PRIMARY_MODEL:-}"
+```
+
+### ShellGPT 1.5.1 + LiteLLM: marker API key does NOT work for Gemini
+**Problem:** The local `shell-gpt` version (`1.5.1`) always passes
+`api_key=cfg.get("OPENAI_API_KEY")` into LiteLLM from `sgpt/handlers/handler.py`.
+That means a placeholder like `OPENAI_API_KEY=litellm-provider-env` is sent literally to
+Google as the API key, causing:
+```text
+API key not valid. Please pass a valid API key.
+```
+even when `GEMINI_API_KEY` is exported correctly in the shell.
+**Fix:** For Gemini via LiteLLM, write the real private Gemini key into the private
+`~/.config/shell_gpt/.sgptrc` as `OPENAI_API_KEY=<actual key>` and keep the file mode `600`.
+Do not rely on a marker placeholder for this ShellGPT version. The same rule applies to
+Anthropic via LiteLLM if ShellGPT still passes only `OPENAI_API_KEY`.
+
 ---
 
 ## 6. File Creation vs Symlinks in setup.sh
@@ -230,4 +259,3 @@ NOT for `code_execution` (Python) or `task_shell_wait`. This can cause silent wa
 **Fix:** When the user needs to approve, use `request_user_input` to explicitly ask.
 When doing file writes via `code_execution`, note that no approval prompt will appear
 — confirm with the user verbally in chat first.
-

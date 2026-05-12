@@ -33,6 +33,18 @@ if [[ -z "$GEMINI_API_KEY" && -r "$VOICE_GEMINI_KEY_FILE" ]]; then
     GEMINI_API_KEY="$(tr -d '\r\n' < "$VOICE_GEMINI_KEY_FILE")"
 fi
 
+# Normalize the retired preview model name so stale shell state does not keep
+# regenerating old config after the primary Gemini model was renamed.
+if [[ "${SHELLGPT_GEMINI_PRIMARY_MODEL:-}" == "gemini/gemini-3.1-flash-lite-preview" ]]; then
+    SHELLGPT_GEMINI_PRIMARY_MODEL="gemini/gemini-3.1-flash-lite"
+fi
+if [[ "${SHELLGPT_DEFAULT_MODEL:-}" == "gemini/gemini-3.1-flash-lite-preview" ]]; then
+    SHELLGPT_DEFAULT_MODEL="gemini/gemini-3.1-flash-lite"
+fi
+if [[ "${DEFAULT_MODEL:-}" == "gemini/gemini-3.1-flash-lite-preview" ]]; then
+    DEFAULT_MODEL="gemini/gemini-3.1-flash-lite"
+fi
+
 PLACEHOLDER_KEY="missing-shellgpt-api-key"
 DEFAULT_MODEL_FALLBACK="gpt-4o"
 USE_LITELLM_FALLBACK="false"
@@ -47,7 +59,7 @@ if [[ "$PROVIDER" == "gemini" || ( "$PROVIDER" == "auto" && -n "$GEMINI_API_KEY"
         SHELLGPT_PLACEHOLDER_CONFIG=true
         echo "SHELLGPT_PROVIDER=gemini but no Gemini API key source was found."
     else
-        API_KEY="litellm-provider-env"
+        API_KEY="$GEMINI_API_KEY"
         DEFAULT_MODEL_FALLBACK="$GEMINI_PRIMARY_MODEL"
         USE_LITELLM_FALLBACK="true"
         echo "Using Gemini API key source shared with voice typing via LiteLLM."
@@ -66,7 +78,7 @@ elif [[ "$PROVIDER" == "anthropic" || ( "$PROVIDER" == "auto" && -n "${ANTHROPIC
         SHELLGPT_PLACEHOLDER_CONFIG=true
         echo "SHELLGPT_PROVIDER=anthropic but ANTHROPIC_API_KEY was not found."
     else
-        API_KEY="litellm-provider-env"
+        API_KEY="${ANTHROPIC_API_KEY}"
         DEFAULT_MODEL_FALLBACK="anthropic/claude-sonnet-4-20250514"
         USE_LITELLM_FALLBACK="true"
         echo "Using ANTHROPIC_API_KEY from private environment with LiteLLM."
@@ -171,6 +183,13 @@ if [ -z "${GEMINI_API_KEY:-}" ] && [ -z "${GOOGLE_API_KEY:-}" ] && [ -r "$HOME/.
     export GEMINI_API_KEY="$(tr -d '\r\n' < "$HOME/.config/voice-type/gemini-api-key")"
 fi
 
+if [ "${SHELLGPT_GEMINI_PRIMARY_MODEL:-}" = "gemini/gemini-3.1-flash-lite-preview" ]; then
+    export SHELLGPT_GEMINI_PRIMARY_MODEL="gemini/gemini-3.1-flash-lite"
+fi
+if [ "${SGPT_PRIMARY_MODEL:-}" = "gemini/gemini-3.1-flash-lite-preview" ]; then
+    export SGPT_PRIMARY_MODEL="gemini/gemini-3.1-flash-lite"
+fi
+
 has_model_arg=false
 for arg in "$@"; do
     case "$arg" in
@@ -188,7 +207,7 @@ fi
 tmp_err="$(mktemp -t sgpt-fallback.XXXXXX)"
 trap 'rm -f "$tmp_err"' EXIT
 
-"$real_sgpt" --model "$primary_model" "$@" 2> >(tee "$tmp_err" >&2)
+"$real_sgpt" --model "$primary_model" "$@" 2>"$tmp_err"
 status=$?
 
 if [ "$status" -eq 0 ]; then
@@ -203,9 +222,9 @@ if grep -Eiq '503|UNAVAILABLE|ServiceUnavailableError|APIConnectionError|Connect
     if [ "$fallback_status" -ne 0 ]; then
         cat >&2 <<MSG
 
-sgpt: nie udalo sie polaczyc z AI.
-Sprawdz internet, klucz/API i dostepnosc modeli.
-Model glowny: $primary_model
+sgpt: could not connect to the AI service.
+Check your network, API key, and model availability.
+Primary model: $primary_model
 Fallback: $fallback_model
 MSG
     fi
@@ -213,11 +232,13 @@ MSG
     exit "$fallback_status"
 fi
 
+cat "$tmp_err" >&2
+
 cat >&2 <<'MSG'
 
-sgpt: zapytanie do AI nie powiodlo sie.
-To nie wyglada na chwilowe przeciazenie modelu, wiec fallback nie zostal uruchomiony.
-Sprawdz komunikat bledu powyzej.
+sgpt: the AI request failed.
+This does not look like a temporary model overload, so the fallback was not used.
+Check the error output above.
 MSG
 
 exit "$status"
@@ -233,9 +254,13 @@ chmod 700 "$BASHRC_D"
 cat > "$ENV_LOADER" <<'EOF'
 # ShellGPT Gemini provider env.
 # Reads the same private Gemini key used by voice typing. The sgpt executable
-# wrapper handles fallback when the preview model is overloaded.
+# wrapper handles fallback when the primary model is temporarily unavailable.
 if [ -z "${GEMINI_API_KEY:-}" ] && [ -r "$HOME/.config/voice-type/gemini-api-key" ]; then
     export GEMINI_API_KEY="$(tr -d '\r\n' < "$HOME/.config/voice-type/gemini-api-key")"
+fi
+
+if [ "${SHELLGPT_GEMINI_PRIMARY_MODEL:-}" = "gemini/gemini-3.1-flash-lite-preview" ]; then
+    export SHELLGPT_GEMINI_PRIMARY_MODEL="gemini/gemini-3.1-flash-lite"
 fi
 
 export SHELLGPT_GEMINI_PRIMARY_MODEL="${SHELLGPT_GEMINI_PRIMARY_MODEL:-gemini/gemini-3.1-flash-lite}"

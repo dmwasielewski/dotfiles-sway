@@ -25,4 +25,13 @@ if [ -d ~/.bashrc.d ]; then
         fi
     done
 fi
+
+ai() {
+    if [ "$#" -eq 0 ]; then
+        printf 'Usage: ai <prompt>\n' >&2
+        return 1
+    fi
+    sgpt "$*"
+}
+
 unset rc
