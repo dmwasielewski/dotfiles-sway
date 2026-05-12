@@ -225,7 +225,7 @@ Managed by `setup.sh`. Installed from Flathub as user Flatpaks (`--user`) to avo
 Notes:
 - `pavucontrol` is in Fedora Atomic base — no separate install needed.
 - Thunderbird is installed as the verified Flathub Flatpak `org.mozilla.Thunderbird`. Account setup is manual (OAuth).
-- Thunderbird extensions and `user.js` preferences are documented in `scripts/setup-thunderbird.sh`.
+- Thunderbird profile config (`user.js`, `userChrome.css`, `userContent.css`) is stored in `thunderbird/` and applied by `scripts/setup-thunderbird.sh` after first launch.
 - LibreOffice is installed as the verified Flathub Flatpak `org.libreoffice.LibreOffice` (Writer, Calc, Impress).
 - NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start.
 - AdGuard for Linux: official CLI install via `bash ~/dotfiles-sway/scripts/setup-adguard.sh`; first-time activation/configuration remains manual.
@@ -765,7 +765,7 @@ Language packs: EN-GB, EN-US, PL (installed as Flatpak distro addons).
 
 ### Replicate after fresh install
 ```bash
-bash ~/dotfiles-sway/scripts/setup-thunderbird.sh  # shows the checklist
+bash ~/dotfiles-sway/scripts/setup-thunderbird.sh  # auto-copies user.js + CSS to active profile
 ```
 1. Launch Thunderbird → add accounts (OAuth)
 2. Install extensions from Add-ons Manager
@@ -787,7 +787,7 @@ These require human interaction — document them so nothing is forgotten after 
 | AdGuard first-time setup | `adguard-cli activate` → `adguard-cli configure` → `adguard-cli start` |
 | Thunderbird account setup | In-app after Flatpak install |
 | Thunderbird extensions | In-app → Add-ons Manager → search by name (see thunderbird-section) |
-| Thunderbird user.js prefs | Copy from documented profile (`~/.var/app/org.mozilla.Thunderbird/.thunderbird/<profile>.default-esr/user.js`) |
+| Thunderbird profile config | Run `bash ~/dotfiles-sway/scripts/setup-thunderbird.sh` after first Thunderbird launch |
 | Bitwarden / Obsidian / Spotify login | In-app after Flatpak install |
 | Vivaldi: sign in, restore bookmarks/extensions | In-app after Flatpak install |
 
