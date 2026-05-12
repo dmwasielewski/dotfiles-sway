@@ -18,6 +18,7 @@ mkdir -p ~/.config/sway
 mkdir -p ~/.config/waybar
 mkdir -p ~/.config/foot
 mkdir -p ~/.config/mako
+mkdir -p ~/.config/environment.d
 mkdir -p ~/.local/share/applications
 mkdir -p ~/.claude
 
@@ -38,6 +39,7 @@ ln -sf "$DOTFILES/waybar/style.css"                           ~/.config/waybar/s
 ln -sf "$DOTFILES/foot/foot.ini"                              ~/.config/foot/foot.ini
 ln -sf "$DOTFILES/user-dirs.dirs"                             ~/.config/user-dirs.dirs
 ln -sf "$DOTFILES/mako/config"                                ~/.config/mako/config
+ln -sf "$DOTFILES/environment.d/locale.conf"            ~/.config/environment.d/locale.conf
 ln -sf "$DOTFILES/.bashrc"                                    ~/.bashrc
 ln -sf "$DOTFILES/applications/claude-ai.desktop"             ~/.local/share/applications/claude-ai.desktop
 ln -sf "$DOTFILES/applications/chatgpt.desktop"               ~/.local/share/applications/chatgpt.desktop
@@ -98,6 +100,7 @@ install_flatpak_app com.visualstudio.code
 install_flatpak_app com.bitwarden.desktop
 install_flatpak_app md.obsidian.Obsidian
 install_flatpak_app org.mozilla.Thunderbird
+flatpak override --user --env=LC_TIME=en_GB.UTF-8 org.mozilla.Thunderbird || true
 install_flatpak_app com.spotify.Client
 install_flatpak_app com.obsproject.Studio
 install_flatpak_app org.jdownloader.JDownloader

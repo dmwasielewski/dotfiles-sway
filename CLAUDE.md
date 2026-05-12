@@ -746,6 +746,8 @@ Profile: `~/.var/app/org.mozilla.Thunderbird/.thunderbird/<profile>.default-esr/
 mail.mdn.receipt.request_policy = 4     → Always request read receipt
 mail.dark-reader.enabled = false        → Disable Dark Reader (use light mode)
 layout.css.prefers-color-scheme.content-override = 1 → Force light scheme
+intl.regional_prefs.use_os_locales = true        → Use OS locale for time/date format
+mail.ui.display.dateformat.today = 2             → 24-hour time in message list
 ```
 
 ### Extensions (install manually from Thunderbird Add-ons)
@@ -762,6 +764,13 @@ layout.css.prefers-color-scheme.content-override = 1 → Force light scheme
 | Thunderbird Pro | `tbpro-add-on@thunderbird.net` | Premium features |
 
 Language packs: EN-GB, EN-US, PL (installed as Flatpak distro addons).
+### 24-hour time format
+
+Thunderbird is a Flatpak and does not inherit the system `LC_TIME` locale automatically.
+`setup.sh` applies `flatpak override --user --env=LC_TIME=en_GB.UTF-8 org.mozilla.Thunderbird`
+to force 24-hour time display. Additionally, `~/.config/environment.d/locale.conf` sets
+`LC_TIME=en_GB.UTF-8` globally, and `sway/config` imports it into the systemd user
+environment with `exec_always systemctl --user import-environment LC_TIME`.
 
 ### Replicate after fresh install
 ```bash
