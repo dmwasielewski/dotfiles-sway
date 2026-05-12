@@ -18,6 +18,14 @@ if command -v dircolors >/dev/null 2>&1; then
     eval "$(dircolors -b)"
 fi
 
+if [[ $- == *i* ]]; then
+    if [[ -f /run/.toolboxenv || -f /run/.containerenv ]]; then
+        PS1='\[\e[0;31m\][\u@\h \W]\$\[\e[0m\] '
+    else
+        PS1='\[\e[0;32m\][\u@\h \W]\$\[\e[0m\] '
+    fi
+fi
+
 # Uncomment the following line if you don't like systemctl's auto-paging feature:
 # export SYSTEMD_PAGER=
 
