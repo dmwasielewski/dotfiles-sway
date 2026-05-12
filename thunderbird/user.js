@@ -19,5 +19,8 @@ user_pref("mail.inappnotifications.enabled", false);
 // Permanently suppress start page (which shows donation content)
 user_pref("mailnews.start_page_override.mstone", "ignore");
 
+// Disable the start page entirely (empty message pane shows donation by default)
+user_pref("mailnews.start_page.enabled", false);
+
 // Skip start page — open Inbox with first email selected
 user_pref("messenger.startup.action", 1);
