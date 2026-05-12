@@ -19,7 +19,9 @@ if command -v dircolors >/dev/null 2>&1; then
 fi
 
 if [[ $- == *i* ]]; then
-    if [[ -f /run/.toolboxenv || -f /run/.containerenv ]]; then
+    if [[ -f /run/.containerenv ]]; then
+        :
+    elif [[ -f /run/.toolboxenv ]]; then
         PS1='\[\e[0;31m\][\u@\h \W]\$\[\e[0m\] '
     else
         PS1='\[\e[0;32m\][\u@\h \W]\$\[\e[0m\] '
