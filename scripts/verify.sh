@@ -103,6 +103,10 @@ check_symlink "chatgpt.desktop"      "$HOME/.local/share/applications/chatgpt.de
 check_symlink "whatsapp.desktop"     "$HOME/.local/share/applications/whatsapp.desktop"
 check_symlink "nvim Chris Titus Tech config" "$HOME/.config/nvim"
 check_symlink "power-menu"                 "$HOME/.local/bin/power-menu"
+check_symlink "deepseek"                   "$HOME/.local/bin/deepseek"
+check_symlink "deepseek-tui"               "$HOME/.local/bin/deepseek-tui"
+check_symlink "adguard-waybar"             "$HOME/.local/bin/adguard-waybar"
+check_symlink "nordvpn-waybar"             "$HOME/.local/bin/nordvpn-waybar"
 check_symlink "environment.d/locale.conf"  "$HOME/.config/environment.d/locale.conf"
 
 
