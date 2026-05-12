@@ -18,14 +18,13 @@ if command -v dircolors >/dev/null 2>&1; then
     eval "$(dircolors -b)"
 fi
 
-if [[ $- == *i* ]]; then
-    if [[ -f /run/.containerenv ]]; then
-        :
-    elif [[ -f /run/.toolboxenv ]]; then
-        PS1='\[\e[0;31m\][\u@\h \W]\$\[\e[0m\] '
+if [[ $- == *i* ]] && [[ -z "${DOTFILES_PS1_COLORIZED:-}" ]]; then
+    if [[ -f /run/.containerenv || -f /run/.toolboxenv ]]; then
+        PS1='\[\e[0;31m\]'"${PS1}"'\[\e[0m\]'
     else
-        PS1='\[\e[0;32m\][\u@\h \W]\$\[\e[0m\] '
+        PS1='\[\e[0;32m\]'"${PS1}"'\[\e[0m\]'
     fi
+    export DOTFILES_PS1_COLORIZED=1
 fi
 
 # Uncomment the following line if you don't like systemctl's auto-paging feature:
