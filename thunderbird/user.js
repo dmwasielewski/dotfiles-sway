@@ -9,3 +9,6 @@ user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
 
 // Use 24-hour time format
 user_pref("intl.regional_prefs.use_os_locales", true);
+
+// Force 24-hour time in message list
+user_pref("mail.ui.display.dateformat.today", 2);
