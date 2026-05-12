@@ -18,12 +18,12 @@ if command -v dircolors >/dev/null 2>&1; then
     eval "$(dircolors -b)"
 fi
 
-if [[ $- == *i* ]] && [[ -z "${DOTFILES_PS1_COLORIZED:-}" ]]; then
-    __dotfiles_colorize_ps1() {
-        local raw="$PS1"
+if [[ $- == *i* ]]; then
+    __dotfiles_strip_prompt_color() {
+        local raw="$1"
         local prefix suffix code
 
-        for code in 31 32 36; do
+        for code in 31 32 35 36; do
             prefix="\\[\\e[0;${code}m\\]"
             suffix="\\[\\e[0m\\]"
             if [[ "$raw" == "$prefix"*"$suffix" ]]; then
@@ -33,24 +33,18 @@ if [[ $- == *i* ]] && [[ -z "${DOTFILES_PS1_COLORIZED:-}" ]]; then
             fi
         done
 
-        DOTFILES_PS1_RAW="$raw"
-
-        if [[ -f /run/.containerenv ]]; then
-            PS1='\[\e[0;31m\]'"${DOTFILES_PS1_RAW}"'\[\e[0m\]'
-        elif [[ -f /run/.toolboxenv ]]; then
-            PS1='\[\e[0;36m\]'"${DOTFILES_PS1_RAW}"'\[\e[0m\]'
-        else
-            PS1='\[\e[0;32m\]'"${DOTFILES_PS1_RAW}"'\[\e[0m\]'
-        fi
+        printf '%s' "$raw"
     }
 
-    if declare -p PROMPT_COMMAND 2>/dev/null | grep -Fq 'declare -a'; then
-        PROMPT_COMMAND=(__dotfiles_colorize_ps1 "${PROMPT_COMMAND[@]}")
+    if [[ -f /run/.toolboxenv ]]; then
+        PS1='\[\e[0;36m\]⬢ [\u@\h \W]\$ \[\e[0m\]'
+    elif [[ -f /run/.containerenv ]]; then
+        PS1='\[\e[0;31m\]'"$(__dotfiles_strip_prompt_color "$PS1")"'\[\e[0m\]'
     else
-        PROMPT_COMMAND="__dotfiles_colorize_ps1${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
+        PS1='\[\e[0;32m\]'"$(__dotfiles_strip_prompt_color "$PS1")"'\[\e[0m\]'
     fi
 
-    export DOTFILES_PS1_COLORIZED=1
+    unset -f __dotfiles_strip_prompt_color
 fi
 
 # Uncomment the following line if you don't like systemctl's auto-paging feature:
