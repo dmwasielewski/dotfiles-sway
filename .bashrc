@@ -19,13 +19,37 @@ if command -v dircolors >/dev/null 2>&1; then
 fi
 
 if [[ $- == *i* ]] && [[ -z "${DOTFILES_PS1_COLORIZED:-}" ]]; then
-    if [[ -f /run/.containerenv ]]; then
-        PS1='\[\e[0;31m\]'"${PS1}"'\[\e[0m\]'
-    elif [[ -f /run/.toolboxenv ]]; then
-        PS1='\[\e[0;36m\]'"${PS1}"'\[\e[0m\]'
+    __dotfiles_colorize_ps1() {
+        local raw="$PS1"
+        local prefix suffix code
+
+        for code in 31 32 36; do
+            prefix="\\[\\e[0;${code}m\\]"
+            suffix="\\[\\e[0m\\]"
+            if [[ "$raw" == "$prefix"*"$suffix" ]]; then
+                raw="${raw#"$prefix"}"
+                raw="${raw%"$suffix"}"
+                break
+            fi
+        done
+
+        DOTFILES_PS1_RAW="$raw"
+
+        if [[ -f /run/.containerenv ]]; then
+            PS1='\[\e[0;31m\]'"${DOTFILES_PS1_RAW}"'\[\e[0m\]'
+        elif [[ -f /run/.toolboxenv ]]; then
+            PS1='\[\e[0;36m\]'"${DOTFILES_PS1_RAW}"'\[\e[0m\]'
+        else
+            PS1='\[\e[0;32m\]'"${DOTFILES_PS1_RAW}"'\[\e[0m\]'
+        fi
+    }
+
+    if declare -p PROMPT_COMMAND 2>/dev/null | grep -q 'declare \-a'; then
+        PROMPT_COMMAND=(__dotfiles_colorize_ps1 "${PROMPT_COMMAND[@]}")
     else
-        PS1='\[\e[0;32m\]'"${PS1}"'\[\e[0m\]'
+        PROMPT_COMMAND="__dotfiles_colorize_ps1${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
     fi
+
     export DOTFILES_PS1_COLORIZED=1
 fi
 
