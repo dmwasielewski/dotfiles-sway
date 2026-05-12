@@ -209,6 +209,28 @@ DISABLE_STREAMING=true
 so `sgpt` prints only the final response instead of live-streaming tokens. Do not turn
 streaming back on by default unless this stack is re-validated.
 
+### Toolbox prompt color: do NOT try to wrap it with generic `PROMPT_COMMAND` logic
+**Problem:** Fedora Toolbox already sets its own prompt in `/etc/profile.d/toolbox.sh`:
+```bash
+PS1=$(printf "\[\033[35m\]⬢ \[\033[0m\]%s" "[\u@\h \W]\\$ ")
+```
+Generic `.bashrc` code that tries to recolor the current prompt through `PROMPT_COMMAND`
+or by blindly wrapping the existing `PS1` is unreliable here. It can silently fail to
+change the visible color, fight with Fedora's own prompt scripts, or break the expected
+Toolbox/Distrobox formatting.
+**Fix:** Use a direct interactive-shell override in `~/.bashrc`:
+- if `/run/.toolboxenv` exists, set the exact Toolbox prompt text with the desired color
+- if `/run/.containerenv` exists without Toolbox, preserve the existing prompt text and
+  only recolor it
+- on the host, recolor the normal prompt separately
+
+For this repo, the working Toolbox override is:
+```bash
+PS1='\[\e[0;36m\]⬢ [\u@\h \W]\$ \[\e[0m\]'
+```
+Do not reintroduce the old `PROMPT_COMMAND` recoloring approach unless it is re-tested
+interactively in a real Toolbox shell.
+
 ---
 
 ## 6. File Creation vs Symlinks in setup.sh

@@ -29,6 +29,7 @@ The system belongs to **Damian** (dmwasielewski). Communicate in **Polish** unle
 - Bash commands from these CLIs run **inside the toolbox**, not on the host.
 - To run a command **on the host** from inside the toolbox: `flatpak-spawn --host <command>`
 - The home directory (`~`) is **shared** between host and toolbox — files written to `~` are visible on both sides.
+- Fedora's Toolbox prompt is set by `/etc/profile.d/toolbox.sh`. If only the prompt colour should change, preserve the `⬢ [user@host dir]$` format and override the Toolbox `PS1` directly in `.bashrc`; do not use a generic `PROMPT_COMMAND` recolouring wrapper unless re-tested interactively.
 
 ### Install diagnostics
 
