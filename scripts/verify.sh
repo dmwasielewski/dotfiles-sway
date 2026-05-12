@@ -103,6 +103,29 @@ check_symlink "chatgpt.desktop"      "$HOME/.local/share/applications/chatgpt.de
 check_symlink "whatsapp.desktop"     "$HOME/.local/share/applications/whatsapp.desktop"
 check_symlink "nvim Chris Titus Tech config" "$HOME/.config/nvim"
 check_symlink "power-menu"                 "$HOME/.local/bin/power-menu"
+check_symlink "environment.d/locale.conf"  "$HOME/.config/environment.d/locale.conf"
+
+
+# ── 1a. Locale & 24h time format ───────────────────────────────────────────
+section "1a. Locale & 24h time format"
+
+if grep -q "import-environment LC_TIME" "$HOME/.config/sway/config" 2>/dev/null; then
+    pass "sway config imports LC_TIME"
+else
+    fail "sway config missing LC_TIME import" "echo 'exec_always systemctl --user import-environment LC_TIME' >> ~/.config/sway/config"
+fi
+
+if host flatpak override --user --show org.mozilla.Thunderbird 2>/dev/null | grep -q "LC_TIME"; then
+    pass "Thunderbird flatpak override LC_TIME"
+else
+    warn "Thunderbird flatpak override LC_TIME not set"
+fi
+
+if [[ -f "$HOME/.config/environment.d/locale.conf" ]] && grep -q "LC_TIME=en_GB.UTF-8" "$HOME/.config/environment.d/locale.conf" 2>/dev/null; then
+    pass "LC_TIME=en_GB.UTF-8 in environment.d/locale.conf"
+else
+    fail "LC_TIME not set in environment.d/locale.conf" "mkdir -p ~/.config/environment.d && echo LC_TIME=en_GB.UTF-8 > ~/.config/environment.d/locale.conf"
+fi
 
 # ── 2. System packages (rpm-ostree) ──────────────────────────────────────
 section "2. System packages (rpm-ostree)"
