@@ -750,6 +750,8 @@ mail.dark-reader.enabled = false        → Disable Dark Reader (use light mode)
 layout.css.prefers-color-scheme.content-override = 1 → Force light scheme
 intl.regional_prefs.use_os_locales = true        → Use OS locale for time/date format
 mail.ui.display.dateformat.today = 2             → 24-hour time in message list
+app.donation.eoy.version.viewed = 999999       → Suppress donation popup
+messenger.startup.action = 1                   → Skip start page, open Inbox
 ```
 
 ### Extensions (install manually from Thunderbird Add-ons)
