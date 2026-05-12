@@ -290,15 +290,17 @@ set $ws4 4
 # ── Workspace bootstrap ──
 
 exec foot
-exec flatpak run md.obsidian.Obsidian
+exec flatpak run org.mozilla.Thunderbird
 exec flatpak run com.vivaldi.Vivaldi
+exec flatpak run md.obsidian.Obsidian
 bindsym $mod+Shift+s exec ~/dotfiles-sway/scripts/autostart.sh
 
 # ── Routing rules ──
 assign [app_id="foot"] workspace number 1
-for_window [app_id="vivaldi-chatgpt.com__-Claude"] move to workspace number 4
-for_window [app_id="vivaldi-claude.ai__-Claude"] move to workspace number 4
-assign [title=".*Obsidian.*"] workspace number 3
+assign [app_id="org.mozilla.Thunderbird"] workspace number 3
+for_window [app_id="vivaldi-chatgpt.com__-Claude"] move to workspace number 5
+for_window [app_id="vivaldi-claude.ai__-Claude"] move to workspace number 5
+assign [title=".*Obsidian.*"] workspace number 4
 assign [app_id="Vivaldi-flatpak"] workspace number 2
 
 # ── Other apps ──
