@@ -16,11 +16,11 @@ user_pref("mail.ui.display.dateformat.today", 2);
 // Suppress donation popup — Thunderbird 134+ uses in-app notifications
 user_pref("mail.inappnotifications.enabled", false);
 
-// Permanently suppress start page (which shows donation content)
+// Permanently suppress version-triggered start page (donation content)
 user_pref("mailnews.start_page_override.mstone", "ignore");
 
-// Disable the start page entirely (empty message pane shows donation by default)
-user_pref("mailnews.start_page.enabled", false);
+// Replace start page with calendar instead of donation content
+user_pref("mailnews.start_page.url", "about:calendar");
 
 // Skip start page — open Inbox with first email selected
 user_pref("messenger.startup.action", 1);
