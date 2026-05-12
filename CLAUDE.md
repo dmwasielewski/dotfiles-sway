@@ -750,9 +750,18 @@ mail.dark-reader.enabled = false        → Disable Dark Reader (use light mode)
 layout.css.prefers-color-scheme.content-override = 1 → Force light scheme
 intl.regional_prefs.use_os_locales = true        → Use OS locale for time/date format
 mail.ui.display.dateformat.today = 2             → 24-hour time in message list
-mail.inappnotifications.enabled = false          → Suppress donation popup (TB 134+)
-app.donation.eoy.version.viewed = "140.10.2"  → Mark donation version as seen
-mail.provider.donation_url = ""              → Clear donation URL
+mail.inappnotifications.enabled = false          → Suppress in-app notifications (TB 134+)
+mailnews.start_page_override.mstone = "ignore"   → Permanently suppress start page
+mailnews.start_page.enabled = false              → Disable start page (empty pane)
+messenger.startup.action = 1                     → Open Inbox directly on startup
+
+### Donation page — lessons learned
+- `app.donation.eoy.version.viewed` and `mail.provider.donation_url` do NOT work in TB 134+
+- `mail.inappnotifications.enabled = false` blocks the notification system that fires donation popups
+- `mailnews.start_page_override.mstone = "ignore"` permanently suppresses the version-triggered start page
+- `mailnews.start_page.enabled = false` disables the start page entirely (message pane stays empty until a message is clicked)
+- `mailnews.start_page.url` only accepts web URLs (http/https), NOT `about:` pages
+- Auto-selecting the first email requires a Thunderbird extension — not possible via prefs or userChrome.js (Flatpak install dir is read-only)
 messenger.startup.action = 1                   → Skip start page, open Inbox
 ```
 

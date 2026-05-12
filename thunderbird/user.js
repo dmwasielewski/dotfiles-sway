@@ -13,14 +13,12 @@ user_pref("intl.regional_prefs.use_os_locales", true);
 // Force 24-hour time in message list
 user_pref("mail.ui.display.dateformat.today", 2);
 
-// Suppress donation popup — Thunderbird 134+ uses in-app notifications
+// Suppress donation popup
 user_pref("mail.inappnotifications.enabled", false);
-
-// Permanently suppress version-triggered start page (donation content)
 user_pref("mailnews.start_page_override.mstone", "ignore");
 
-// Replace start page with calendar instead of donation content
-user_pref("mailnews.start_page.url", "about:calendar");
+// Disable start page — empty until first email clicked
+user_pref("mailnews.start_page.enabled", false);
 
-// Skip start page — open Inbox with first email selected
+// Open Inbox on startup (no start page)
 user_pref("messenger.startup.action", 1);
