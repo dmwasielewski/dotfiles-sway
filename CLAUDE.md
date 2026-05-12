@@ -568,6 +568,8 @@ Preferred source, shared with voice typing:
 
 With that key, the generated config uses `USE_LITELLM=true` and `DEFAULT_MODEL=gemini/gemini-3.1-flash-lite`, writes `~/.bashrc.d/shellgpt-gemini.bash` to export `GEMINI_API_KEY` in toolbox shells, and installs `~/.local/bin/sgpt` as a fallback wrapper. The original ShellGPT launcher is preserved as `~/.local/bin/sgpt-cli` when the existing launcher is already repo-managed; if Damian already has a custom unmanaged `sgpt`, the script leaves it untouched and prints a warning instead of overwriting it. The wrapper retries `gemini/gemini-2.5-flash` if the primary model fails with temporary availability errors such as `503`, `UNAVAILABLE`, high demand, overload, or rate limits. If both models fail, it prints a short "could not connect to the AI service" diagnostic.
 
+For this environment, `scripts/configure-shellgpt.sh` also writes `DISABLE_STREAMING=true` into the private ShellGPT config by default. This is intentional: the current `shell-gpt` + LiteLLM + Gemini combination can produce duplicated partial output and a `CustomStreamWrapper` / `KeyboardInterrupt` traceback during streamed responses.
+
 Other supported private sources:
 
 - `OPENAI_API_KEY`

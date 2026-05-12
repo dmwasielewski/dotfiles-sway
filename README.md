@@ -705,6 +705,8 @@ sgpt: could not connect to the AI service.
 Check your network, API key, and model availability.
 ```
 
+For the current `shell-gpt` + LiteLLM + Gemini stack in this setup, streaming is disabled by default in `~/.config/shell_gpt/.sgptrc`. This avoids duplicated partial output and a known `CustomStreamWrapper` / `KeyboardInterrupt` traceback path seen during streamed responses.
+
 Other supported private sources:
 
 - `OPENAI_API_KEY`

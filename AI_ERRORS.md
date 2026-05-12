@@ -194,6 +194,21 @@ even when `GEMINI_API_KEY` is exported correctly in the shell.
 Do not rely on a marker placeholder for this ShellGPT version. The same rule applies to
 Anthropic via LiteLLM if ShellGPT still passes only `OPENAI_API_KEY`.
 
+### ShellGPT + LiteLLM + Gemini: streamed output is unstable here
+**Problem:** With the current local stack, streamed ShellGPT responses can show duplicated
+partial text and then crash through a traceback path ending in:
+```text
+AttributeError: 'CustomStreamWrapper' object has no attribute 'close'
+```
+This is typically reached after a `KeyboardInterrupt` during streamed Gemini output, and the
+overall user experience is noisy even when the underlying answer is fine.
+**Fix:** Generate the private ShellGPT config with:
+```text
+DISABLE_STREAMING=true
+```
+so `sgpt` prints only the final response instead of live-streaming tokens. Do not turn
+streaming back on by default unless this stack is re-validated.
+
 ---
 
 ## 6. File Creation vs Symlinks in setup.sh
