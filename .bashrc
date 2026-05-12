@@ -44,7 +44,7 @@ if [[ $- == *i* ]] && [[ -z "${DOTFILES_PS1_COLORIZED:-}" ]]; then
         fi
     }
 
-    if declare -p PROMPT_COMMAND 2>/dev/null | grep -q 'declare \-a'; then
+    if declare -p PROMPT_COMMAND 2>/dev/null | grep -Fq 'declare -a'; then
         PROMPT_COMMAND=(__dotfiles_colorize_ps1 "${PROMPT_COMMAND[@]}")
     else
         PROMPT_COMMAND="__dotfiles_colorize_ps1${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
