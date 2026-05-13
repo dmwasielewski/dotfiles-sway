@@ -36,7 +36,9 @@ if [[ $- == *i* ]]; then
         printf '%s' "$raw"
     }
 
-    if [[ -f /run/.toolboxenv ]]; then
+    if [[ -n "${DISTROBOX_ENTER_PATH:-}" ]]; then
+        PS1='\[\e[0;31m\]📦[\u@'"${CONTAINER_ID:-container}"' \W]\$ \[\e[0m\]'
+    elif [[ -n "${TOOLBOX_PATH:-}" ]]; then
         PS1='\[\e[0;36m\]⬢ [\u@\h \W]\$ \[\e[0m\]'
     elif [[ -f /run/.containerenv ]]; then
         PS1='\[\e[0;31m\]'"$(__dotfiles_strip_prompt_color "$PS1")"'\[\e[0m\]'
