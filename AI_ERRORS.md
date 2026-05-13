@@ -231,6 +231,20 @@ PS1='\[\e[0;36m\]⬢ [\u@\h \W]\$ \[\e[0m\]'
 Do not reintroduce the old `PROMPT_COMMAND` recoloring approach unless it is re-tested
 interactively in a real Toolbox shell.
 
+### Toolbox vs Distrobox prompt detection: do NOT rely only on `/run/.containerenv`
+**Problem:** Both Toolbox and Distrobox can look like generic containers if detection is based
+only on `/run/.containerenv` or on the already-rendered prompt text. That makes both prompts
+end up with the same format or the same colour.
+**Fix:** Split them by environment variables first:
+- Toolbox: detect `TOOLBOX_PATH`
+- Distrobox: detect `DISTROBOX_ENTER_PATH`
+
+For this repo, the working behaviour is:
+- Toolbox `damian`: cyan `⬢ [user@host dir]$`
+- Distrobox `security`: red `📦[user@security dir]$`
+
+Do not treat `security` as a generic Toolbox-like container when setting `PS1`.
+
 ---
 
 ## 6. File Creation vs Symlinks in setup.sh
@@ -256,6 +270,18 @@ or environment variables. These files are in `.gitignore` (or outside the repo e
 **Problem:** Pushing secrets is blocked by `.githooks/pre-push` running gitleaks.
 **Fix:** This is intentional. If gitleaks blocks a push, the commit contains a secret — fix it.
 Do NOT bypass the hook.
+
+### Do not push before the whole requested change set is finished
+**Problem:** Pushing too early creates unnecessary intermediate GitHub states where the code
+change is uploaded before the matching docs and `AI_ERRORS.md` update are included.
+**Fix:** For user-facing fix work in this repo, the expected order is:
+1. make the code/config change
+2. verify that it works
+3. update documentation if needed
+4. update `AI_ERRORS.md` if a real lesson/workaround was discovered
+5. only then commit and push the final combined state
+
+Do not push partial progress unless the user explicitly asks for an intermediate push.
 
 ---
 

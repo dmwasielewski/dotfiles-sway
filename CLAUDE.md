@@ -4,6 +4,8 @@ This file is for AI assistants (Claude, Gemini, Copilot, etc.). Read it fully be
 
 **ALSO READ `AI_ERRORS.md`** — it records known mistakes, tool limitations, and verified workarounds. Do not repeat errors already documented there.
 
+Before pushing, finish the full requested change set first: implementation, verification, required documentation updates, and any new `AI_ERRORS.md` entry. Do not push partial progress unless Damian explicitly asks for an intermediate push.
+
 ---
 
 ## Project goal
