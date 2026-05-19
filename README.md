@@ -9,7 +9,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Waybar status bar (bottom, muted dark theme, colour thresholds for CPU/RAM/temp/battery, Claude Code status, NordVPN toggle, AdGuard toggle, power menu)
 - Autostart layout: terminal on ws1, Vivaldi on ws2, Thunderbird on ws3, Obsidian on ws4, Claude/ChatGPT PWA on ws5
 - Foot terminal config
-- Shared Bash prompt/aliases: host prompt in green, Toolbox prompt in cyan, generic container prompt in red, plus coloured `ls`/`ll`/`la` aliases
+- Shared Bash prompt/aliases: host prompt in green, Toolbox prompt in cyan, named Distrobox prompts for `ubuntu-dev` and `security` in red, plus coloured `ls`/`ll`/`la` aliases
 - Mako notification daemon (5s auto-dismiss)
 - Clipboard history manager (clipman + rofi)
 - JetBrainsMono Nerd Font + Font Awesome (terminal + Waybar)
@@ -120,6 +120,7 @@ Use this when you want an Ubuntu userland instead of Fedora Toolbox for terminal
 ```bash
 distrobox enter ubuntu-dev
 ```
+Dev container parity is intentional: any user-facing CLI/dev tool added to Fedora toolbox `damian` must also be added to Ubuntu distrobox `ubuntu-dev` in the same change, then covered by `scripts/verify.sh`.
 Voice typing still uses toolbox `damian` by default.
 
 9. Install NordVPN CLI and the Waybar helper:
@@ -549,7 +550,9 @@ The Fedora `neovim` rpm remains installed as a fallback, but the active editor s
 bash ~/dotfiles-sway/scripts/setup-neovim-config.sh
 ```
 
-During setup, Neovim downloads plugins declared by Chris Titus Tech's config and synchronizes them to the config's `nvim-pack-lock.json`. The required CLI dependencies are layered by `packages.sh`: `ripgrep`, `fd-find`, `fzf`, `wl-clipboard`, `python3-virtualenv`, `ShellCheck`, `libwebp-tools`, `nodejs`, `npm`, and `make`. `markdownlint-cli2` is installed into the shared `~/.npm-global` prefix by `setup-damian-container.sh`.
+During setup, Neovim downloads plugins declared by Chris Titus Tech's config and synchronizes them to the config's `nvim-pack-lock.json`. The required CLI dependencies are layered by `packages.sh`: `ripgrep`, `fd-find`, `fzf`, `wl-clipboard`, `python3-virtualenv`, `ShellCheck`, `libwebp-tools`, `nodejs`, `npm`, and `make`. `markdownlint-cli2` is installed into the shared `~/.npm-global` prefix by both dev container setup scripts.
+
+Because `~` is shared into both dev containers, the same `~/.local/bin/nvim` and `~/.config/nvim` are available inside Fedora toolbox `damian` and Ubuntu distrobox `ubuntu-dev`.
 
 **Open a file:**
 ```bash
@@ -615,7 +618,8 @@ Host (rpm-ostree immutable)
 │   ├─ deepseek (DeepSeek TUI)
 │   ├─ sgpt (ShellGPT terminal assistant)
 │   ├─ ccstatusline (Claude Code Waybar integration)
-│   └─ faster-whisper (local Whisper AI for voice typing)
+│   ├─ faster-whisper (local Whisper AI for voice typing)
+│   └─ nvim (shared user-local Neovim + Chris Titus Tech config)
 │
 ├─ distrobox: ubuntu-dev (Ubuntu 26.04) — Ubuntu userland with AI/dev CLI parity
 │   ├─ node 22
@@ -627,7 +631,8 @@ Host (rpm-ostree immutable)
 │   ├─ deepseek (DeepSeek TUI)
 │   ├─ sgpt (ShellGPT terminal assistant)
 │   ├─ markdownlint-cli2
-│   └─ faster-whisper
+│   ├─ faster-whisper
+│   └─ nvim (shared user-local Neovim + Chris Titus Tech config)
 │
 └─ distrobox: security (Ubuntu 26.04) — pentesting & security research
     ├─ Network:    nmap, masscan, wireshark, tcpdump, netcat, socat

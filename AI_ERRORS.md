@@ -263,9 +263,24 @@ end up with the same format or the same colour.
 
 For this repo, the working behaviour is:
 - Toolbox `damian`: cyan `⬢ [user@host dir]$`
-- Distrobox `security`: red `📦[user@security dir]$`
+- Distrobox `ubuntu-dev`: red `⬢ [user@distrobx ubuntu]$`
+- Distrobox `security`: red `📦[user@distrobx security]$`
 
-Do not treat `security` as a generic Toolbox-like container when setting `PS1`.
+Do not treat `ubuntu-dev` or `security` as generic Toolbox-like containers when setting `PS1`.
+Keep their explicit prompt labels in `.bashrc` so the user can distinguish Fedora Toolbox
+from Ubuntu Distrobox sessions quickly.
+
+### Dev container parity: do not add tools only to Fedora toolbox
+**Problem:** Damian uses both Fedora toolbox `damian` and Ubuntu distrobox `ubuntu-dev`
+to learn both distributions. If a user-facing CLI/dev tool is installed only in
+`setup-damian-container.sh`, the two learning environments drift and the documentation becomes
+misleading.
+
+**Fix:** Any new CLI/dev tool added to Fedora toolbox `damian` must also be added to Ubuntu
+distrobox `ubuntu-dev` in the same change unless it is truly distro-specific. Update
+`scripts/setup-damian-container.sh`, `scripts/setup-ubuntu-dev-container.sh`, `scripts/verify.sh`,
+`README.md`, and `CLAUDE.md` together. If package names differ between Fedora and Ubuntu, document
+the mapping explicitly in the setup scripts.
 
 ---
 

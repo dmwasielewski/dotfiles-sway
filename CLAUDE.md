@@ -33,6 +33,8 @@ The system belongs to **Damian** (dmwasielewski). Communicate in **Polish** unle
 - To run a command **on the host** from inside the toolbox: `flatpak-spawn --host <command>`
 - The home directory (`~`) is **shared** between host and toolbox — files written to `~` are visible on both sides.
 - Fedora's Toolbox prompt is set by `/etc/profile.d/toolbox.sh`. If only the prompt colour should change, preserve the `⬢ [user@host dir]$` format and override the Toolbox `PS1` directly in `.bashrc`; do not use a generic `PROMPT_COMMAND` recolouring wrapper unless re-tested interactively.
+- Dev container parity rule: any new user-facing CLI/dev tool added to Fedora toolbox `damian` must also be added to Ubuntu distrobox `ubuntu-dev` in the same change, with equivalent `verify.sh` checks and documentation. If package names differ, map them explicitly in both setup scripts.
+- Prompt rule: `ubuntu-dev` intentionally displays as `⬢ [user@distrobx ubuntu]$`, and `security` intentionally displays as `📦[user@distrobx security]$`; do not collapse them back to the generic Distrobox prompt.
 
 ### Install diagnostics
 
@@ -441,7 +443,7 @@ Do not run Chris's `lin-depend.sh` on the Fedora Atomic host because it uses mut
 
 - host dependencies in `packages.sh`
 - symlink, upstream Neovim binary, and plugin lockfile sync in `scripts/setup-neovim-config.sh`
-- `markdownlint-cli2` in `scripts/setup-damian-container.sh` via the shared `~/.npm-global` prefix
+- `markdownlint-cli2` in both dev container setup scripts via the shared `~/.npm-global` prefix
 - checks in `scripts/verify.sh`
 
 Known caveat: Chris's config includes WakaTime and an `img-clip.nvim` default path under `/home/titus/...`. Keep this documented; patch only if Damian asks to customise the upstream config.

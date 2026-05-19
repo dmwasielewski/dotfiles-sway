@@ -256,6 +256,7 @@ if host toolbox list 2>/dev/null | grep -qw "$TOOLBOX_CONTAINER"; then
     check_toolbox_tool "deepseek" "deepseek (DeepSeek TUI)"
     check_toolbox_tool "sgpt"   "sgpt (ShellGPT)"
     check_toolbox_tool "git"    "git"
+    check_toolbox_tool "nvim"   "nvim (Neovim user-local binary)"
 
     if host toolbox run --container "$TOOLBOX_CONTAINER" bash -c \
         'expected="$(readlink -f "$HOME/dotfiles-sway/scripts/deepseek-wrapper.sh")" && test "$(readlink -f ~/.local/bin/deepseek 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.local/bin/deepseek-tui 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.npm-global/bin/deepseek 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.npm-global/bin/deepseek-tui 2>/dev/null)" = "$expected"' &>/dev/null 2>&1; then
@@ -347,6 +348,7 @@ if host podman container exists "$UBUNTU_DEV_CONTAINER" 2>/dev/null; then
     check_ubuntu_dev_tool "deepseek" "deepseek (DeepSeek TUI)"
     check_ubuntu_dev_tool "sgpt"   "sgpt (ShellGPT)"
     check_ubuntu_dev_tool "git"    "git"
+    check_ubuntu_dev_tool "nvim"   "nvim (Neovim user-local binary)"
 
     if host distrobox enter --name "$UBUNTU_DEV_CONTAINER" -- bash -lc \
         'expected="$(readlink -f "$HOME/dotfiles-sway/scripts/deepseek-wrapper.sh")" && test "$(readlink -f ~/.local/bin/deepseek 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.local/bin/deepseek-tui 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.npm-global/bin/deepseek 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.npm-global/bin/deepseek-tui 2>/dev/null)" = "$expected"' &>/dev/null 2>&1; then
