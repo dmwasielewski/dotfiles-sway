@@ -28,7 +28,8 @@ The system belongs to **Damian** (dmwasielewski). Communicate in **Polish** unle
 ### AI coding CLIs run inside a Toolbox container
 
 - Claude Code, OpenAI Codex CLI, DeepSeek TUI, and ShellGPT are installed **inside the dev toolbox container** (`damian` by default), not as host rpm-ostree packages.
-- Bash commands from these CLIs run **inside the toolbox**, not on the host.
+- The same CLI stack can also be installed in the Ubuntu 26.04 Distrobox `ubuntu-dev` when Ubuntu userland is needed.
+- Bash commands from these CLIs run **inside their container** (`damian` toolbox or `ubuntu-dev` distrobox), not on the host.
 - To run a command **on the host** from inside the toolbox: `flatpak-spawn --host <command>`
 - The home directory (`~`) is **shared** between host and toolbox — files written to `~` are visible on both sides.
 - Fedora's Toolbox prompt is set by `/etc/profile.d/toolbox.sh`. If only the prompt colour should change, preserve the `⬢ [user@host dir]$` format and override the Toolbox `PS1` directly in `.bashrc`; do not use a generic `PROMPT_COMMAND` recolouring wrapper unless re-tested interactively.
@@ -83,6 +84,7 @@ dotfiles-sway/
     ├── setup-nordvpn.sh               ← NordVPN CLI install + nordvpnd enable/start + group setup — writes state
     ├── setup-adguard.sh               ← AdGuard for Linux CLI install — writes state
     ├── setup-damian-container.sh      ← Toolbox damian: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
+    ├── setup-ubuntu-dev-container.sh  ← Distrobox ubuntu-dev: Ubuntu 26.04 dev/AI CLI parity — writes state
     ├── configure-shellgpt.sh          ← Non-interactive ShellGPT config from private env/API files
     ├── adguard-waybar.sh              ← AdGuard Waybar status helper (AG + click toggle)
     ├── nordvpn-waybar.sh              ← NordVPN Waybar status helper (VPN + click toggle)
@@ -119,7 +121,7 @@ cat ~/.ssh/id_ed25519.pub
 
 An SSH key is only needed if you want to use SSH remotes or private forks. `bootstrap.sh` clones this repo over HTTPS by default.
 
-If ShellGPT should be ready immediately after the dev toolbox setup, restore `~/.config/voice-type/gemini-api-key` before `setup-damian-container.sh` runs. ShellGPT reuses that same Gemini key through LiteLLM by default. ShellGPT prefers `gemini-3.1-flash-lite` and the installed `sgpt` wrapper retries `gemini-2.5-flash` when the primary model is temporarily unavailable. Other supported private sources are `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SHELLGPT_API_KEY`, `ANTHROPIC_API_KEY`, `~/.config/ai/api.env`, `~/.config/shell_gpt/credentials.env`, and `~/.bashrc.d/ai-keys.bash`. These files are private and must not be committed to this repo.
+If ShellGPT should be ready immediately after the dev container setup, restore `~/.config/voice-type/gemini-api-key` before `setup-damian-container.sh` or `setup-ubuntu-dev-container.sh` runs. ShellGPT reuses that same Gemini key through LiteLLM by default. ShellGPT prefers `gemini-3.1-flash-lite` and the installed `sgpt` wrapper retries `gemini-2.5-flash` when the primary model is temporarily unavailable. Other supported private sources are `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SHELLGPT_API_KEY`, `ANTHROPIC_API_KEY`, `~/.config/ai/api.env`, `~/.config/shell_gpt/credentials.env`, and `~/.bashrc.d/ai-keys.bash`. These files are private and must not be committed to this repo.
 
 ### Step 1 — Bootstrap
 
@@ -162,6 +164,7 @@ bash ~/dotfiles-sway/scripts/check-hardware.sh       # verify GPU/VA-API/KVM
 bash ~/dotfiles-sway/scripts/setup-kvm.sh            # enable libvirtd, add user to groups
 # Log out and back in for group changes to take effect
 bash ~/dotfiles-sway/scripts/setup-damian-container.sh   # dev toolbox
+bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh # Ubuntu dev distrobox
 bash ~/dotfiles-sway/scripts/setup-security-container.sh # security distrobox
 ```
 
@@ -265,7 +268,29 @@ npm prefix is set to `~/.npm-global` — global npm packages visible from host t
 
 ShellGPT config is generated non-interactively by `scripts/configure-shellgpt.sh` into `~/.config/shell_gpt/.sgptrc`. The preferred provider is Gemini via LiteLLM, using the same private key file as voice typing: `~/.config/voice-type/gemini-api-key`. It sets `gemini/gemini-3.1-flash-lite` as the primary ShellGPT model and installs `~/.local/bin/sgpt` as an executable wrapper around `~/.local/bin/sgpt-cli`; the wrapper retries `gemini/gemini-2.5-flash` on temporary availability errors and prints a clear diagnostic if both models fail. If Damian already has a custom unmanaged `sgpt`, the script leaves it untouched instead of overwriting it. If no private API key source exists, the config uses the placeholder `OPENAI_API_KEY=missing-shellgpt-api-key` so `sgpt` never blocks setup with an interactive prompt. Do not commit API keys to this repo.
 
-### Layer 4: distrobox `security` (Ubuntu 26.04 pentesting)
+### Layer 4: distrobox `ubuntu-dev` (Ubuntu 26.04 dev/CLI parity)
+
+Managed by `scripts/setup-ubuntu-dev-container.sh`. Use `distrobox enter ubuntu-dev` to enter.
+
+This is the Ubuntu userland equivalent of the Fedora toolbox. It intentionally mirrors the main AI/dev CLI stack from `damian`:
+
+| Tool | Purpose |
+|---|---|
+| `node 22` | Node.js runtime |
+| `npm` | Package manager |
+| `gh` | GitHub CLI |
+| `claude` (`@anthropic-ai/claude-code`) | Claude Code CLI |
+| `codex` (`@openai/codex`) | OpenAI Codex CLI |
+| `deepseek` (`deepseek-tui`) | DeepSeek TUI |
+| `sgpt` (`shell-gpt`) | ShellGPT terminal assistant |
+| `faster-whisper` | Local Whisper AI speech recognition library |
+| `markdownlint-cli2` | Markdown linting used by Chris Titus Tech's Neovim config |
+
+It also reuses the same shared private API-key sources and ShellGPT wrapper logic as the toolbox setup.
+
+Voice typing still runs through toolbox `damian` by default; do not assume `ubuntu-dev` replaces that path unless the voice-typing scripts are explicitly updated too.
+
+### Layer 5: distrobox `security` (Ubuntu 26.04 pentesting)
 
 Managed by `scripts/setup-security-container.sh`. Use `distrobox enter security` to enter.
 
@@ -280,7 +305,7 @@ Managed by `scripts/setup-security-container.sh`. Use `distrobox enter security`
 | Wordlists | SecLists at `/opt/SecLists` |
 | Utilities | `tmux`, `vim`, `jq`, `htop`, `btop`, `curl`, `wget`, `python3`, `git` |
 
-### Layer 5: KVM Virtual Machines
+### Layer 6: KVM Virtual Machines
 
 Host hardware: **Ryzen 5 5600H** (6c/12t), **38 GB RAM**, **1.8 TB NVMe**. All three VMs can run simultaneously.
 

@@ -9,6 +9,7 @@ STATE_FILE="$HOME/.dotfiles-install-state"
 LOG_FILE="${DOTFILES_LOG_FILE:-$HOME/.dotfiles-install.log}"
 DOTFILES="${DOTFILES:-$HOME/dotfiles-sway}"
 TOOLBOX_CONTAINER="${TOOLBOX_CONTAINER:-damian}"
+UBUNTU_DEV_CONTAINER="${UBUNTU_DEV_CONTAINER:-ubuntu-dev}"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -310,8 +311,74 @@ else
     fail "Toolbox '$TOOLBOX_CONTAINER'  NOT FOUND" "bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
 fi
 
-# ── 5a. NordVPN ──────────────────────────────────────────────────────────
-section "5a. NordVPN"
+# ── 5a. Distrobox 'ubuntu-dev' ───────────────────────────────────────────
+section "5a. Distrobox '$UBUNTU_DEV_CONTAINER' (Ubuntu dev CLI parity)"
+
+if host podman container exists "$UBUNTU_DEV_CONTAINER" 2>/dev/null; then
+    pass "Distrobox '$UBUNTU_DEV_CONTAINER' exists"
+
+    UBUNTU_DEV_VERSION=$(host distrobox enter --name "$UBUNTU_DEV_CONTAINER" -- bash -lc \
+        '. /etc/os-release && printf "%s" "$VERSION_ID"' 2>/dev/null || echo "unknown")
+    if [[ "$UBUNTU_DEV_VERSION" == "26.04" ]]; then
+        pass "Ubuntu 26.04 in $UBUNTU_DEV_CONTAINER container"
+    else
+        fail "$UBUNTU_DEV_CONTAINER container is Ubuntu $UBUNTU_DEV_VERSION, expected 26.04" \
+             "distrobox stop $UBUNTU_DEV_CONTAINER --yes && distrobox rm $UBUNTU_DEV_CONTAINER --force && bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh"
+    fi
+
+    check_ubuntu_dev_tool() {
+        local tool="$1" label="${2:-$1}"
+        if host distrobox enter --name "$UBUNTU_DEV_CONTAINER" -- which "$tool" &>/dev/null 2>&1; then
+            pass "$label"
+        else
+            fail "$label  MISSING in $UBUNTU_DEV_CONTAINER container" \
+                 "bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh"
+        fi
+    }
+
+    check_ubuntu_dev_tool "node"   "node (Node.js)"
+    check_ubuntu_dev_tool "npm"    "npm"
+    check_ubuntu_dev_tool "gh"     "gh (GitHub CLI)"
+    check_ubuntu_dev_tool "claude" "claude (Claude Code)"
+    check_ubuntu_dev_tool "codex"  "codex (OpenAI Codex CLI)"
+    check_ubuntu_dev_tool "deepseek" "deepseek (DeepSeek TUI)"
+    check_ubuntu_dev_tool "sgpt"   "sgpt (ShellGPT)"
+    check_ubuntu_dev_tool "git"    "git"
+
+    if host distrobox enter --name "$UBUNTU_DEV_CONTAINER" -- bash -lc \
+        'expected="$(readlink -f "$HOME/dotfiles-sway/scripts/deepseek-wrapper.sh")" && test "$(readlink -f ~/.local/bin/deepseek 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.local/bin/deepseek-tui 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.npm-global/bin/deepseek 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.npm-global/bin/deepseek-tui 2>/dev/null)" = "$expected"' &>/dev/null 2>&1; then
+        pass "DeepSeek TUI low-motion wrapper installed in $UBUNTU_DEV_CONTAINER"
+    else
+        warn "DeepSeek TUI low-motion wrapper missing in $UBUNTU_DEV_CONTAINER — rerun bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh"
+    fi
+
+    if host distrobox enter --name "$UBUNTU_DEV_CONTAINER" -- bash -lc \
+        'PATH="$HOME/.npm-global/bin:$PATH" command -v markdownlint-cli2' &>/dev/null 2>&1; then
+        pass "markdownlint-cli2 in $UBUNTU_DEV_CONTAINER"
+    else
+        fail "markdownlint-cli2  MISSING in $UBUNTU_DEV_CONTAINER/global npm prefix" \
+             "bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh"
+    fi
+
+    if host distrobox enter --name "$UBUNTU_DEV_CONTAINER" -- python3 -c "import faster_whisper" &>/dev/null 2>&1; then
+        pass "faster-whisper in $UBUNTU_DEV_CONTAINER"
+    else
+        fail "faster-whisper  MISSING in $UBUNTU_DEV_CONTAINER" \
+             "bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh"
+    fi
+
+    if host distrobox enter --name "$UBUNTU_DEV_CONTAINER" -- bash -lc \
+        'test -s ~/.config/shell_gpt/.sgptrc && ! grep -q "^OPENAI_API_KEY=missing-shellgpt-api-key$" ~/.config/shell_gpt/.sgptrc || [[ -n "${OPENAI_API_KEY:-}" ]] || [[ -n "${SHELLGPT_API_KEY:-}" ]] || [[ -n "${GEMINI_API_KEY:-}" ]] || test -s ~/.config/voice-type/gemini-api-key' &>/dev/null 2>&1; then
+        pass "ShellGPT API config present in $UBUNTU_DEV_CONTAINER"
+    else
+        warn "ShellGPT API config placeholder in $UBUNTU_DEV_CONTAINER — provide a private key source and rerun bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh"
+    fi
+else
+    fail "Distrobox '$UBUNTU_DEV_CONTAINER'  NOT FOUND" "bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh"
+fi
+
+# ── 5b. NordVPN ──────────────────────────────────────────────────────────
+section "5b. NordVPN"
 
 if host which nordvpn &>/dev/null 2>&1; then
     pass "NordVPN CLI"

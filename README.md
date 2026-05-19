@@ -33,6 +33,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 
 ### System
 - `damian` toolbox container (Fedora dev environment, versioned with the host unless overridden)
+- `ubuntu-dev` Ubuntu 26.04 distrobox container — Ubuntu dev/CLI environment with the same AI tools as `damian`
 - `security` Ubuntu 26.04 distrobox container — full security/pentesting toolkit
 - KVM/QEMU virtualisation — virt-manager, virt-install, Windows 11 / Windows Server capable
 - distrobox — for Ubuntu containers
@@ -42,7 +43,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Gitleaks secret scanner with a repo `pre-push` hook
 - Voice typing — push-to-talk (`Mod+T`) with local Whisper AI + Gemini UK English correction
 - Neovim 0.12.1 — user-local latest pinned binary with Chris Titus Tech `titus-kickstart` config
-- AI terminal tools in toolbox: Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT (`sgpt`)
+- AI terminal tools in `damian` toolbox and `ubuntu-dev` distrobox: Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT (`sgpt`)
 - NordVPN CLI with Waybar status/toggle helper (click to connect/disconnect)
 - AdGuard for Linux CLI with Waybar toggle helper (click to enable/disable)
 - LibreOffice — open source office suite (Writer, Calc, Impress)
@@ -70,7 +71,7 @@ printf '%s\n' 'your-gemini-api-key-here' > ~/.config/voice-type/gemini-api-key
 chmod 600 ~/.config/voice-type/gemini-api-key
 ```
 
-This file is private, outside git, and is shared with the active dev toolbox through the home directory. Voice typing uses it directly, and `scripts/configure-shellgpt.sh` uses the same key by default through LiteLLM. ShellGPT prefers `gemini-3.1-flash-lite` and its installed `sgpt` wrapper retries `gemini-2.5-flash` if the primary model is temporarily unavailable. On a fresh machine the key should be restored from your private backup or secret manager before `setup-damian-container.sh` runs.
+This file is private, outside git, and is shared with the active dev containers through the home directory. Voice typing uses it directly, and `scripts/configure-shellgpt.sh` uses the same key by default through LiteLLM. ShellGPT prefers `gemini-3.1-flash-lite` and its installed `sgpt` wrapper retries `gemini-2.5-flash` if the primary model is temporarily unavailable. On a fresh machine the key should be restored from your private backup or secret manager before `setup-damian-container.sh` or `setup-ubuntu-dev-container.sh` runs.
 
 ShellGPT also accepts `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SHELLGPT_API_KEY`, `ANTHROPIC_API_KEY`, `~/.config/ai/api.env`, `~/.config/shell_gpt/credentials.env`, and `~/.bashrc.d/ai-keys.bash`. Use `SHELLGPT_PROVIDER=openai`, `gemini`, or `anthropic` only when you need to override the automatic choice.
 
@@ -111,7 +112,17 @@ By default the script targets the host Fedora version and the toolbox name `dami
 TOOLBOX_CONTAINER=damian44 TOOLBOX_VERSION=44 bash ~/dotfiles-sway/scripts/setup-damian-container.sh
 ```
 
-8. Install NordVPN CLI and the Waybar helper:
+8. Set up the Ubuntu dev distrobox (same AI/dev CLI stack as `damian`, but on Ubuntu 26.04):
+```bash
+bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh
+```
+Use this when you want an Ubuntu userland instead of Fedora Toolbox for terminal work:
+```bash
+distrobox enter ubuntu-dev
+```
+Voice typing still uses toolbox `damian` by default.
+
+9. Install NordVPN CLI and the Waybar helper:
 ```bash
 bash ~/dotfiles-sway/scripts/setup-nordvpn.sh
 ```
@@ -151,7 +162,7 @@ Use `nordvpn connect <country>` for a specific country, for example:
 nordvpn connect Poland
 ```
 
-9. Install AdGuard for Linux:
+10. Install AdGuard for Linux:
 ```bash
 bash ~/dotfiles-sway/scripts/setup-adguard.sh
 ```
@@ -173,17 +184,17 @@ adguard-cli start
 adguard-cli stop
 ```
 
-10. Create the security container:
+11. Create the security container:
 ```bash
 bash ~/dotfiles-sway/scripts/setup-security-container.sh
 ```
 
-11. Run full verification:
+12. Run full verification:
 ```bash
 bash ~/dotfiles-sway/scripts/verify.sh
 ```
 
-12. Optional: validate the fresh-install flow in a disposable Fedora Sway Atomic VM:
+13. Optional: validate the fresh-install flow in a disposable Fedora Sway Atomic VM:
 ```bash
 bash ~/dotfiles-sway/scripts/create-fedora-sway-vm.sh
 ```
@@ -399,6 +410,9 @@ pair <MAC_ADDRESS>
 - 24-hour time format: `LC_TIME=en_GB.UTF-8` via `~/.config/environment.d/locale.conf`, imported into Sway session and overridden for Thunderbird Flatpak
 - NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start
 - AdGuard for Linux: official CLI install via `bash ~/dotfiles-sway/scripts/setup-adguard.sh`; first-time `activate/configure/start` stays manual
+- Ubuntu dev container must be created after first reboot (distrobox installed via packages.sh)
+- Rebuild Ubuntu dev container manually: `bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh`
+- Enter Ubuntu dev container: `distrobox enter ubuntu-dev`
 - Security container must be created after first reboot (distrobox installed via packages.sh)
 - Rebuild security container manually: `bash ~/dotfiles-sway/scripts/setup-security-container.sh`
 - Enter security container: `distrobox enter security`
@@ -432,6 +446,7 @@ dotfiles-sway/
 │   ├── setup-nordvpn.sh               # NordVPN CLI install + nordvpnd enable/start + group setup — writes state
 │   ├── setup-adguard.sh               # AdGuard for Linux CLI install — writes state
 │   ├── setup-damian-container.sh      # Toolbox damian: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
+│   ├── setup-ubuntu-dev-container.sh  # Distrobox ubuntu-dev: Ubuntu 26.04 dev/AI CLI parity — writes state
 │   ├── configure-shellgpt.sh          # Non-interactive ShellGPT config from private env/API files
 │   ├── adguard-waybar.sh              # AdGuard Waybar toggle helper (AG — click to start/stop)
 │   ├── nordvpn-waybar.sh              # NordVPN Waybar toggle helper (VPN — click to connect/disconnect)
@@ -602,6 +617,18 @@ Host (rpm-ostree immutable)
 │   ├─ ccstatusline (Claude Code Waybar integration)
 │   └─ faster-whisper (local Whisper AI for voice typing)
 │
+├─ distrobox: ubuntu-dev (Ubuntu 26.04) — Ubuntu userland with AI/dev CLI parity
+│   ├─ node 22
+│   ├─ npm
+│   ├─ git
+│   ├─ gh (GitHub CLI)
+│   ├─ claude (Claude Code)
+│   ├─ codex (OpenAI Codex CLI)
+│   ├─ deepseek (DeepSeek TUI)
+│   ├─ sgpt (ShellGPT terminal assistant)
+│   ├─ markdownlint-cli2
+│   └─ faster-whisper
+│
 └─ distrobox: security (Ubuntu 26.04) — pentesting & security research
     ├─ Network:    nmap, masscan, wireshark, tcpdump, netcat, socat
     ├─ Web:        nikto, sqlmap, gobuster, ffuf, dirb, wfuzz, burpsuite
@@ -618,9 +645,19 @@ Host (rpm-ostree immutable)
 bash ~/dotfiles-sway/scripts/setup-damian-container.sh
 ```
 
+### Setup Ubuntu dev distrobox
+```bash
+bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh
+```
+
 ### Enter current toolbox
 ```bash
 toolbox enter damian
+```
+
+### Enter Ubuntu dev distrobox
+```bash
+distrobox enter ubuntu-dev
 ```
 
 ### Run Claude Code

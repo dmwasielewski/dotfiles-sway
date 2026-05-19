@@ -152,8 +152,18 @@ or is called by `bootstrap.sh` which prints the summary.
 ### Ubuntu 26.04 distrobox: apt HTTP pipelining 400 errors
 **Problem:** Fresh Distrobox setup from `ubuntu:26.04` gets HTTP 400 from apt archives
 with pipelining enabled.
-**Fix:** `scripts/setup-security-container.sh` disables pipelining via
+**Fix:** `scripts/setup-security-container.sh` and `scripts/setup-ubuntu-dev-container.sh` disable pipelining via
 `Acquire::http::Pipeline-Depth "0";` during image build.
+
+### Ubuntu 26.04 dev userland: use a parallel Distrobox, not a Toolbox replacement
+**Problem:** On Fedora Atomic, Ubuntu userland workflows should not be forced into Toolbox.
+Toolbox is Fedora-oriented, while Ubuntu dev environments fit Distrobox better. At the same
+time, this repo still has automation that assumes the Fedora toolbox `damian` exists, most
+notably the current voice-typing path.
+**Fix:** Keep the Fedora toolbox `damian` for the existing Fedora-native and voice-typing path,
+and add Ubuntu userland as a parallel Distrobox container (`ubuntu-dev`) via
+`scripts/setup-ubuntu-dev-container.sh`. Do not silently replace `damian` with Ubuntu unless
+all dependent scripts are explicitly migrated too.
 
 ### ShellGPT: never block on missing API key
 **Problem:** `sgpt` prompts interactively for an API key, blocking unattended setup.
