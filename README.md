@@ -410,6 +410,8 @@ pair <MAC_ADDRESS>
 - Thunderbird is installed as the verified Flathub Flatpak `org.mozilla.Thunderbird`
 - 24-hour time format: `LC_TIME=en_GB.UTF-8` via `~/.config/environment.d/locale.conf`, imported into Sway session and overridden for Thunderbird Flatpak
 - Thunderbird custom CSS lives in `thunderbird/userChrome.css` and `thunderbird/userContent.css`; `scripts/setup-thunderbird.sh` creates one-time `_old` backups in the active profile before applying repo-managed files
+- Thunderbird message list (`#threadTree`, Thread Pane) uses a Tokyo Night-inspired style: `Noto Sans` at `1rem`, `#1a1b26` background, `#c0caf5` text, cyan unread indicator/subject (`#7dcfff`), and `font-weight: 400` for read mail vs `600` for unread mail. Folder list (`#folderTree`, Folder Pane) uses the same base font and size.
+- Thunderbird message reader dark mode keeps the built-in Light/Dark toggle, but overrides the dark message background to match the Thread Pane (`#1a1b26`). This needs both `userContent.css` (`--color-gray-90`) and `userChrome.css` (`#messagepanebox`, `#singleMessage`, `#messagepane`).
 - NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start
 - AdGuard for Linux: official CLI install via `bash ~/dotfiles-sway/scripts/setup-adguard.sh`; first-time `activate/configure/start` stays manual
 - Ubuntu dev container must be created after first reboot (distrobox installed via packages.sh)

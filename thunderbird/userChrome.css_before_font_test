@@ -17,12 +17,6 @@
     color: var(--tb-terminal-text) !important;
 }
 
-#folderTree,
-#threadTree {
-    font-family: "Noto Sans", sans-serif !important;
-    font-size: 1rem !important;
-}
-
 #threadTree,
 #threadTree table,
 #threadTree tbody,
@@ -91,30 +85,17 @@
 
 #threadTree .card-container :is(.sender, .subject, .date),
 #threadTree .table-layout :is(td, .subject-line) {
-    font-size: 1rem !important;
-    font-weight: 400 !important;
+    font-size: 0.92rem !important;
 }
 
-#threadTree .card-layout[data-properties~="unread"] .card-container,
-#threadTree .card-layout[data-properties~="unread"] .card-container :is(.sender, .subject, .date),
-#threadTree tr[data-properties~="unread"],
-#threadTree tr[data-properties~="unread"] td,
-#threadTree tr[data-properties~="unread"] .subject-line {
-    font-weight: 600 !important;
+#threadTree .card-layout[data-properties~="unread"] .card-container :is(.sender, .subject),
+#threadTree tbody [data-properties~="unread"] {
+    font-weight: 500 !important;
 }
 
 #threadTree .card-layout[data-properties~="unread"] .subject,
 #threadTree tr[data-properties~="unread"] .subject-line {
     color: #7dcfff !important;
-}
-
-/* Message pane dark reader background - remove this block to restore Thunderbird default. */
-@media (prefers-color-scheme: dark) and -moz-pref("mail.dark-reader.enabled") {
-    #messagepanebox,
-    #singleMessage,
-    #messagepane {
-        background-color: var(--tb-terminal-bg) !important;
-    }
 }
 
 /* Manual Thunderbird colors disabled temporarily while testing Thunderbird themes. */

@@ -399,6 +399,40 @@ files and the active profile files. `scripts/setup-thunderbird.sh` must keep usi
 one-time `_old` backups before copying `user.js`, `userChrome.css`, or `userContent.css`.
 Do not overwrite an existing `_old` file.
 
+### Thunderbird message list selectors are specific
+**Problem:** The message list has different DOM/CSS paths for cards view and table view.
+Generic selectors such as `.status`, `.sender`, or broad `background-color` rules can
+change the wrong thing, for example turning the unread dot into a square.
+**Fix:** Check Thunderbird's `omni.ja` first. For the current Flatpak build, cards view
+uses `#threadTree .card-layout[data-properties~="unread"]`, `.read-status`, `.sender`,
+and `.subject`; table view uses `tr[data-properties~="unread"]`, `.tree-view-row-unread`,
+and `.subject-line`. The unread dot color should be changed with `--read-status-fill`,
+`--read-status-stroke`, or `fill/stroke` only — do not set `background-color` on the dot.
+
+### Thunderbird dark message reader background: `html/body` alone does not work
+**Problem:** The built-in message reader dark mode uses Thunderbird's own `messageBody.css`.
+Trying only this kind of `userContent.css` rule did not change the visible black background:
+```css
+@media -moz-pref("mail.dark-reader.enabled") {
+  html,
+  body {
+    background-color: #1a1b26 !important;
+  }
+}
+```
+It also failed when guarded with `(prefers-color-scheme: dark)` only, because the profile has
+`layout.css.prefers-color-scheme.content-override = 1`, which can make the message content
+report a different scheme than expected.
+**Fix:** Override both layers:
+- in `userContent.css`, override Thunderbird's message-body token `--color-gray-90` to
+  `#1a1b26` and keep `html` on the same color
+- in `userChrome.css`, set `#messagepanebox`, `#singleMessage`, and `#messagepane` to the
+  same background
+
+The working blocks are labelled `Message body dark reader override` and
+`Message pane dark reader background`. Do not replace them with a simpler `html, body`
+background-only rule unless it is re-tested in the active Thunderbird Flatpak profile.
+
 ---
 
 ## 10. Approval Prompt Behavior

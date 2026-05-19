@@ -802,6 +802,22 @@ messenger.startup.action = 1                     → Open Inbox directly on star
 messenger.startup.action = 1                   → Skip start page, open Inbox
 ```
 
+### Appearance CSS
+
+`thunderbird/userChrome.css` is intentionally focused on the message list and folder list:
+
+- Left folder list: `#folderTree` / **Folder Pane**.
+- Middle message list: `#threadTree` / **Thread Pane**.
+- Message reading area: `#messagePane` / **Message Pane**.
+- `#folderTree` and `#threadTree` share `Noto Sans` at `1rem`.
+- `#threadTree` uses Tokyo Night-inspired colors: background `#1a1b26`, hover `#24283b`, selected row `#283457`, normal text `#c0caf5`.
+- Read messages use `font-weight: 400`; unread messages use `font-weight: 600`.
+- Unread subject and unread dot use cyan `#7dcfff`; the Thunderbird "new mail" sparkle is deliberately preserved.
+- Thunderbird's built-in dark message reader is still used. Its black message background is overridden to `#1a1b26` by changing `--color-gray-90` in `userContent.css` and setting the Message Pane containers (`#messagepanebox`, `#singleMessage`, `#messagepane`) in `userChrome.css`.
+- The dark reader override blocks are intentionally labelled `Message body dark reader override` and `Message pane dark reader background`; remove only those blocks to restore Thunderbird defaults.
+- `userContent.css` keeps old terminal-inspired rules disabled inside `@media not all` while testing Thunderbird themes.
+- Before changing Thunderbird appearance again, keep a rollback copy. Current font-test snapshots are `thunderbird/userChrome.css_before_font_test` and `thunderbird/userContent.css_before_font_test`.
+
 ### Extensions (install manually from Thunderbird Add-ons)
 | Extension | ID | Purpose |
 |---|---|---|

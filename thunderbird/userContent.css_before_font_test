@@ -29,16 +29,3 @@
         color: var(--tb-terminal-muted) !important;
     }
 }
-
-/* Message body dark reader override - remove this block to restore Thunderbird default. */
-@media (prefers-color-scheme: dark) and -moz-pref("mail.dark-reader.enabled") {
-    :root {
-        --color-gray-90: #1a1b26 !important;
-        --color-white: #c0caf5 !important;
-    }
-
-    html {
-        background-color: #1a1b26 !important;
-        color: #c0caf5 !important;
-    }
-}
