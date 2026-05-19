@@ -35,7 +35,7 @@ The system belongs to **Damian** (dmwasielewski). Communicate in **Polish** unle
 - Fedora's Toolbox prompt is set by `/etc/profile.d/toolbox.sh`. If only the prompt colour should change, preserve the `⬢ [user@host dir]$` format and override the Toolbox `PS1` directly in `.bashrc`; do not use a generic `PROMPT_COMMAND` recolouring wrapper unless re-tested interactively.
 - Dev container parity rule: any new user-facing CLI/dev tool added to Fedora toolbox `damianf` must also be added to Ubuntu distrobox `damianu` in the same change, with equivalent `verify.sh` checks and documentation. If package names differ, map them explicitly in both setup scripts.
 - Entry shortcut rule: `damianf` enters Fedora Toolbox, and `damianu` enters Ubuntu Distrobox. Keep these `.bashrc` functions working so the user does not need to remember `toolbox enter` or `distrobox enter`.
-- Prompt rule: Toolbox `damianf` intentionally displays as `⬢ [user@toolbx damianf]$`, `damianu` intentionally displays as `⬢ [user@distrobx damianu]$`, and `security` intentionally displays as `📦[user@distrobx security]$`; do not collapse them back to generic container prompts.
+- Prompt rule: Toolbox `damianf` intentionally displays as `⬢ [user@toolbx damianf]$`, `damianu` intentionally displays as `📦[user@distrobx damianu]$`, and `security` intentionally displays as `📦[user@distrobx security]$`; do not collapse them back to generic container prompts.
 
 ### Install diagnostics
 
