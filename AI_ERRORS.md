@@ -165,6 +165,18 @@ and add Ubuntu userland as a parallel Distrobox container (`ubuntu-dev`) via
 `scripts/setup-ubuntu-dev-container.sh`. Do not silently replace `damian` with Ubuntu unless
 all dependent scripts are explicitly migrated too.
 
+### Distrobox setup: prepare `~/.cache/distrobox` and auto-recover broken containers
+**Problem:** On this laptop, `distrobox enter` can fail during first setup with:
+```text
+/usr/bin/distrobox-enter: ... /home/damian/.cache/distrobox/.<name>.fifo: No such file or directory
+```
+If that happens after `distrobox create`, the next rerun can mis-detect the existing container
+as `Ubuntu unknown` and stop instead of recovering automatically.
+**Fix:** Any setup or verification script that relies on `distrobox enter` should create
+`"${XDG_CACHE_HOME:-$HOME/.cache}/distrobox"` first. For container-creation scripts, if an
+existing container cannot be entered and the detected Ubuntu version is empty, treat it as a
+broken partial create, remove it automatically, and recreate it unattended.
+
 ### ShellGPT: never block on missing API key
 **Problem:** `sgpt` prompts interactively for an API key, blocking unattended setup.
 **Fix:** `scripts/configure-shellgpt.sh` always writes a config file with

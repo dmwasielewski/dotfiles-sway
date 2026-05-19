@@ -10,6 +10,7 @@ LOG_FILE="${DOTFILES_LOG_FILE:-$HOME/.dotfiles-install.log}"
 DOTFILES="${DOTFILES:-$HOME/dotfiles-sway}"
 TOOLBOX_CONTAINER="${TOOLBOX_CONTAINER:-damian}"
 UBUNTU_DEV_CONTAINER="${UBUNTU_DEV_CONTAINER:-ubuntu-dev}"
+DISTROBOX_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/distrobox"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -45,6 +46,8 @@ host() {
 rpm_installed()    { host rpm -q "$1" &>/dev/null; }
 flatpak_installed(){ host flatpak list --app 2>/dev/null | grep -q "$1"; }
 symlink_ok()       { [[ -L "$1" ]] && [[ -e "$1" ]]; }
+
+mkdir -p "$DISTROBOX_CACHE_DIR"
 
 # ─────────────────────────────────────────────────────────────────────────
 echo ""

@@ -12,6 +12,7 @@ UBUNTU_DEV_VERSION="${UBUNTU_DEV_VERSION:-26.04}"
 CONTAINER="${UBUNTU_DEV_CONTAINER:-ubuntu-dev}"
 BASE_IMAGE="${UBUNTU_DEV_IMAGE:-docker.io/library/ubuntu:${UBUNTU_DEV_VERSION}}"
 FIXED_IMAGE="localhost/${CONTAINER}:${UBUNTU_DEV_VERSION}"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/distrobox"
 
 # Helper: run command inside the Ubuntu dev container
 ubox() { distrobox enter --name "$CONTAINER" -- bash -lc "set -euo pipefail; $*"; }
@@ -23,6 +24,7 @@ echo -e "${BOLD}${CYAN}╚══════════════════
 echo ""
 
 require_sudo_session
+mkdir -p "$CACHE_DIR"
 
 # ── Build image with apt HTTP pipeline disabled ──────────────────────────
 if ! podman image exists "$FIXED_IMAGE" 2>/dev/null; then
@@ -35,7 +37,13 @@ fi
 # ── Create container if missing ──────────────────────────────────────────
 if podman container exists "$CONTAINER" 2>/dev/null; then
     CURRENT_VERSION="$(distrobox enter --name "$CONTAINER" -- bash -lc '. /etc/os-release && printf "%s" "$VERSION_ID"' 2>/dev/null || true)"
-    if [[ "$CURRENT_VERSION" != "$UBUNTU_DEV_VERSION" ]]; then
+    if [[ -z "$CURRENT_VERSION" ]]; then
+        echo -e "${YELLOW}==> Existing container '$CONTAINER' is not enterable yet — recreating it automatically.${NC}"
+        distrobox stop "$CONTAINER" --yes >/dev/null 2>&1 || true
+        distrobox rm "$CONTAINER" --force >/dev/null 2>&1 || true
+        run_step "UBUNTU_DEV_CREATED" "Recreating Ubuntu dev container ($CONTAINER, Ubuntu ${UBUNTU_DEV_VERSION})" \
+            distrobox create --name "$CONTAINER" --image "$FIXED_IMAGE"
+    elif [[ "$CURRENT_VERSION" != "$UBUNTU_DEV_VERSION" ]]; then
         echo -e "${RED}✗ Container '$CONTAINER' exists, but is Ubuntu ${CURRENT_VERSION:-unknown}; expected ${UBUNTU_DEV_VERSION}.${NC}"
         echo -e "${YELLOW}  Recreate it manually if you want to upgrade:${NC}"
         echo -e "${YELLOW}  distrobox stop $CONTAINER --yes && distrobox rm $CONTAINER --force${NC}"

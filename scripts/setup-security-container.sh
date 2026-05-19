@@ -11,6 +11,7 @@ setup_logging "scripts/setup-security-container.sh"
 SECURITY_VERSION="26.04"
 BASE_IMAGE="docker.io/library/ubuntu:${SECURITY_VERSION}"
 FIXED_IMAGE="localhost/ubuntu-security:${SECURITY_VERSION}"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/distrobox"
 
 # Helper: run command inside the security container
 dbox() { distrobox enter --name security -- bash -lc "set -euo pipefail; $*"; }
@@ -22,6 +23,7 @@ echo -e "${BOLD}${CYAN}╚══════════════════
 echo ""
 
 require_sudo_session
+mkdir -p "$CACHE_DIR"
 
 # ── Build image with apt HTTP pipeline disabled ──────────────────────────
 if ! podman image exists "$FIXED_IMAGE" 2>/dev/null; then
@@ -34,7 +36,13 @@ fi
 # ── Create container if missing ──────────────────────────────────────────
 if podman container exists security 2>/dev/null; then
     CURRENT_VERSION="$(distrobox enter --name security -- bash -lc '. /etc/os-release && printf "%s" "$VERSION_ID"' 2>/dev/null || true)"
-    if [[ "$CURRENT_VERSION" != "$SECURITY_VERSION" ]]; then
+    if [[ -z "$CURRENT_VERSION" ]]; then
+        echo -e "${YELLOW}==> Existing container 'security' is not enterable yet — recreating it automatically.${NC}"
+        distrobox stop security --yes >/dev/null 2>&1 || true
+        distrobox rm security --force >/dev/null 2>&1 || true
+        run_step "SECURITY_CREATED" "Recreating security container (Ubuntu ${SECURITY_VERSION})" \
+            distrobox create --name security --image "$FIXED_IMAGE"
+    elif [[ "$CURRENT_VERSION" != "$SECURITY_VERSION" ]]; then
         echo -e "${RED}✗ Container 'security' exists, but is Ubuntu ${CURRENT_VERSION:-unknown}; expected ${SECURITY_VERSION}.${NC}"
         echo -e "${YELLOW}  Recreate it manually if you want to upgrade:${NC}"
         echo -e "${YELLOW}  distrobox stop security --yes && distrobox rm security --force${NC}"
