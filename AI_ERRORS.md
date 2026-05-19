@@ -263,7 +263,7 @@ end up with the same format or the same colour.
 
 For this repo, the working behaviour is:
 - Toolbox `damianf`: cyan `⬢ [user@toolbx damianf]$`
-- Distrobox `damianu`: red `⬢ [user@distrobx damianu]$`
+- Distrobox `damianu`: cyan `⬢ [user@distrobx damianu]$`
 - Distrobox `security`: red `📦[user@distrobx security]$`
 
 Do not treat `damianu` or `security` as generic

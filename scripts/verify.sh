@@ -111,6 +111,8 @@ check_symlink "deepseek"                   "$HOME/.local/bin/deepseek"
 check_symlink "deepseek-tui"               "$HOME/.local/bin/deepseek-tui"
 check_symlink "adguard-waybar"             "$HOME/.local/bin/adguard-waybar"
 check_symlink "nordvpn-waybar"             "$HOME/.local/bin/nordvpn-waybar"
+check_symlink "damianf entry shortcut"     "$HOME/.local/bin/damianf"
+check_symlink "damianu entry shortcut"     "$HOME/.local/bin/damianu"
 check_symlink "environment.d/locale.conf"  "$HOME/.config/environment.d/locale.conf"
 
 

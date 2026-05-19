@@ -38,7 +38,7 @@ if [[ $- == *i* ]]; then
 
     if [[ -n "${DISTROBOX_ENTER_PATH:-}" ]]; then
         if [[ "${CONTAINER_ID:-}" == "damianu" || "${CONTAINER_ID:-}" == "ubuntu-dev" ]]; then
-            PS1='\[\e[0;31m\]⬢ [\u@distrobx damianu]\$ \[\e[0m\]'
+            PS1='\[\e[0;36m\]⬢ [\u@distrobx damianu]\$ \[\e[0m\]'
         elif [[ "${CONTAINER_ID:-}" == "security" ]]; then
             PS1='\[\e[0;31m\]📦[\u@distrobx security]\$ \[\e[0m\]'
         elif [[ "${CONTAINER_ID:-}" == "damianf" || "${CONTAINER_ID:-}" == "damian" ]]; then
@@ -83,11 +83,11 @@ ai() {
 }
 
 damianf() {
-    toolbox enter damianf
+    command damianf "$@"
 }
 
 damianu() {
-    distrobox enter damianu
+    command damianu "$@"
 }
 
 unset rc
