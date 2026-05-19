@@ -8,8 +8,8 @@ set -euo pipefail
 STATE_FILE="$HOME/.dotfiles-install-state"
 LOG_FILE="${DOTFILES_LOG_FILE:-$HOME/.dotfiles-install.log}"
 DOTFILES="${DOTFILES:-$HOME/dotfiles-sway}"
-TOOLBOX_CONTAINER="${TOOLBOX_CONTAINER:-damian}"
-UBUNTU_DEV_CONTAINER="${UBUNTU_DEV_CONTAINER:-ubuntu-dev}"
+TOOLBOX_CONTAINER="${TOOLBOX_CONTAINER:-damianf}"
+UBUNTU_DEV_CONTAINER="${UBUNTU_DEV_CONTAINER:-damianu}"
 DISTROBOX_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/distrobox"
 
 GREEN='\033[0;32m'
@@ -315,7 +315,7 @@ else
     fail "Toolbox '$TOOLBOX_CONTAINER'  NOT FOUND" "bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
 fi
 
-# ── 5a. Distrobox 'ubuntu-dev' ───────────────────────────────────────────
+# ── 5a. Ubuntu dev Distrobox ─────────────────────────────────────────────
 section "5a. Distrobox '$UBUNTU_DEV_CONTAINER' (Ubuntu dev CLI parity)"
 
 if host podman container exists "$UBUNTU_DEV_CONTAINER" 2>/dev/null; then

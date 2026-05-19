@@ -158,11 +158,11 @@ with pipelining enabled.
 ### Ubuntu 26.04 dev userland: use a parallel Distrobox, not a Toolbox replacement
 **Problem:** On Fedora Atomic, Ubuntu userland workflows should not be forced into Toolbox.
 Toolbox is Fedora-oriented, while Ubuntu dev environments fit Distrobox better. At the same
-time, this repo still has automation that assumes the Fedora toolbox `damian` exists, most
+time, this repo still has automation that assumes the Fedora toolbox `damianf` exists, most
 notably the current voice-typing path.
-**Fix:** Keep the Fedora toolbox `damian` for the existing Fedora-native and voice-typing path,
-and add Ubuntu userland as a parallel Distrobox container (`ubuntu-dev`) via
-`scripts/setup-ubuntu-dev-container.sh`. Do not silently replace `damian` with Ubuntu unless
+**Fix:** Keep the Fedora toolbox `damianf` for the existing Fedora-native and voice-typing path,
+and add Ubuntu userland as a parallel Distrobox container (`damianu`) via
+`scripts/setup-ubuntu-dev-container.sh`. Do not silently replace `damianf` with Ubuntu unless
 all dependent scripts are explicitly migrated too.
 
 ### Distrobox setup: prepare `~/.cache/distrobox` and auto-recover broken containers
@@ -262,27 +262,26 @@ end up with the same format or the same colour.
 - Distrobox: detect `DISTROBOX_ENTER_PATH`
 
 For this repo, the working behaviour is:
-- Toolbox `damian`: cyan `⬢ [user@host dir]$`
-- Distrobox `ubuntu-dev`: red `⬢ [user@distrobx ubuntu]$`
-- Distrobox `damian`, if created in the future: red `📦[user@distrobx fedora]$`
+- Toolbox `damianf`: cyan `⬢ [user@toolbx damianf]$`
+- Distrobox `damianu`: red `⬢ [user@distrobx damianu]$`
 - Distrobox `security`: red `📦[user@distrobx security]$`
 
-Do not treat `ubuntu-dev`, future Distrobox `damian`, or `security` as generic
+Do not treat `damianu` or `security` as generic
 Toolbox-like containers when setting `PS1`.
 Keep their explicit prompt labels in `.bashrc` so the user can distinguish Fedora Toolbox
 from Ubuntu Distrobox sessions quickly.
 
-Do not rename `ubuntu-dev` to `damian` while Toolbox `damian` exists. Toolbox and Distrobox
-both use Podman under the hood, so `damian` is already taken in the shared container namespace.
+Keep the `.bashrc` entry shortcuts `damianf` and `damianu` working. They intentionally hide
+the `toolbox enter` / `distrobox enter` prefixes because those are easy for the user to mix up.
 
 ### Dev container parity: do not add tools only to Fedora toolbox
-**Problem:** Damian uses both Fedora toolbox `damian` and Ubuntu distrobox `ubuntu-dev`
+**Problem:** Damian uses both Fedora toolbox `damianf` and Ubuntu distrobox `damianu`
 to learn both distributions. If a user-facing CLI/dev tool is installed only in
 `setup-damian-container.sh`, the two learning environments drift and the documentation becomes
 misleading.
 
-**Fix:** Any new CLI/dev tool added to Fedora toolbox `damian` must also be added to Ubuntu
-distrobox `ubuntu-dev` in the same change unless it is truly distro-specific. Update
+**Fix:** Any new CLI/dev tool added to Fedora toolbox `damianf` must also be added to Ubuntu
+distrobox `damianu` in the same change unless it is truly distro-specific. Update
 `scripts/setup-damian-container.sh`, `scripts/setup-ubuntu-dev-container.sh`, `scripts/verify.sh`,
 `README.md`, and `CLAUDE.md` together. If package names differ between Fedora and Ubuntu, document
 the mapping explicitly in the setup scripts.

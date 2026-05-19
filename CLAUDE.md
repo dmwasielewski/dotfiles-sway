@@ -27,15 +27,15 @@ The system belongs to **Damian** (dmwasielewski). Communicate in **Polish** unle
 
 ### AI coding CLIs run inside a Toolbox container
 
-- Claude Code, OpenAI Codex CLI, DeepSeek TUI, and ShellGPT are installed **inside the dev toolbox container** (`damian` by default), not as host rpm-ostree packages.
-- The same CLI stack can also be installed in the Ubuntu 26.04 Distrobox `ubuntu-dev` when Ubuntu userland is needed.
-- Bash commands from these CLIs run **inside their container** (`damian` toolbox or `ubuntu-dev` distrobox), not on the host.
+- Claude Code, OpenAI Codex CLI, DeepSeek TUI, and ShellGPT are installed **inside the dev toolbox container** (`damianf` by default), not as host rpm-ostree packages.
+- The same CLI stack can also be installed in the Ubuntu 26.04 Distrobox `damianu` when Ubuntu userland is needed.
+- Bash commands from these CLIs run **inside their container** (`damianf` toolbox or `damianu` distrobox), not on the host.
 - To run a command **on the host** from inside the toolbox: `flatpak-spawn --host <command>`
 - The home directory (`~`) is **shared** between host and toolbox — files written to `~` are visible on both sides.
 - Fedora's Toolbox prompt is set by `/etc/profile.d/toolbox.sh`. If only the prompt colour should change, preserve the `⬢ [user@host dir]$` format and override the Toolbox `PS1` directly in `.bashrc`; do not use a generic `PROMPT_COMMAND` recolouring wrapper unless re-tested interactively.
-- Dev container parity rule: any new user-facing CLI/dev tool added to Fedora toolbox `damian` must also be added to Ubuntu distrobox `ubuntu-dev` in the same change, with equivalent `verify.sh` checks and documentation. If package names differ, map them explicitly in both setup scripts.
-- Prompt rule: `ubuntu-dev` intentionally displays as `⬢ [user@distrobx ubuntu]$`, Distrobox `damian` displays as `📦[user@distrobx fedora]$` if it ever exists, and `security` intentionally displays as `📦[user@distrobx security]$`; do not collapse them back to the generic Distrobox prompt.
-- Container naming rule: do not rename `ubuntu-dev` to `damian` while Toolbox `damian` exists. Toolbox and Distrobox both use Podman containers, so container names must be unique.
+- Dev container parity rule: any new user-facing CLI/dev tool added to Fedora toolbox `damianf` must also be added to Ubuntu distrobox `damianu` in the same change, with equivalent `verify.sh` checks and documentation. If package names differ, map them explicitly in both setup scripts.
+- Entry shortcut rule: `damianf` enters Fedora Toolbox, and `damianu` enters Ubuntu Distrobox. Keep these `.bashrc` functions working so the user does not need to remember `toolbox enter` or `distrobox enter`.
+- Prompt rule: Toolbox `damianf` intentionally displays as `⬢ [user@toolbx damianf]$`, `damianu` intentionally displays as `⬢ [user@distrobx damianu]$`, and `security` intentionally displays as `📦[user@distrobx security]$`; do not collapse them back to generic container prompts.
 
 ### Install diagnostics
 
@@ -86,8 +86,8 @@ dotfiles-sway/
     ├── setup-neovim-config.sh         ← Neovim 0.12.1 user-local binary + Chris Titus Tech config symlink
     ├── setup-nordvpn.sh               ← NordVPN CLI install + nordvpnd enable/start + group setup — writes state
     ├── setup-adguard.sh               ← AdGuard for Linux CLI install — writes state
-    ├── setup-damian-container.sh      ← Toolbox damian: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
-    ├── setup-ubuntu-dev-container.sh  ← Distrobox ubuntu-dev: Ubuntu 26.04 dev/AI CLI parity — writes state
+    ├── setup-damian-container.sh      ← Toolbox damianf: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
+    ├── setup-ubuntu-dev-container.sh  ← Distrobox damianu: Ubuntu 26.04 dev/AI CLI parity — writes state
     ├── configure-shellgpt.sh          ← Non-interactive ShellGPT config from private env/API files
     ├── adguard-waybar.sh              ← AdGuard Waybar status helper (AG + click toggle)
     ├── nordvpn-waybar.sh              ← NordVPN Waybar status helper (VPN + click toggle)
@@ -101,7 +101,7 @@ dotfiles-sway/
     ├── setup-security-container.sh   ← Distrobox security: pentesting toolkit — writes state
     ├── voice-type-start.sh           ← Voice typing: start recording on Mod+T press
     ├── voice-type-stop.sh            ← Voice typing: stop, transcribe, inject text on Mod+T release
-    └── voice-transcribe.py          ← Whisper AI transcription (runs inside damian toolbox)
+    └── voice-transcribe.py          ← Whisper AI transcription (runs inside damianf toolbox)
 ```
 
 Runtime diagnostic files:
@@ -241,15 +241,15 @@ Notes:
 - NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start.
 - AdGuard for Linux: official CLI install via `bash ~/dotfiles-sway/scripts/setup-adguard.sh`; first-time activation/configuration remains manual.
 
-### Layer 3: toolbox `damian` (Fedora dev environment, versioned with the host unless overridden)
+### Layer 3: toolbox `damianf` (Fedora dev environment, versioned with the host unless overridden)
 
-Managed by `scripts/setup-damian-container.sh`. By default it targets the host Fedora release and the toolbox name `damian`. Override with `TOOLBOX_VERSION=<ver>` and `TOOLBOX_CONTAINER=<name>` for side-by-side migrations.
+Managed by `scripts/setup-damian-container.sh`. By default it targets the host Fedora release and the toolbox name `damianf`. Override with `TOOLBOX_VERSION=<ver>` and `TOOLBOX_CONTAINER=<name>` for side-by-side migrations.
 
 For toolbox cutovers across Fedora releases, use a parallel container first, verify it, then replace the old default name only at the end:
 1. `TOOLBOX_CONTAINER=damian44 TOOLBOX_VERSION=44 bash ~/dotfiles-sway/scripts/setup-damian-container.sh`
 2. `TOOLBOX_CONTAINER=damian44 bash ~/dotfiles-sway/scripts/verify.sh`
 3. compare old and new for anything ad-hoc outside this repo
-4. `podman stop damian damian44 >/dev/null 2>&1 || true && toolbox rm -f damian && podman rename damian44 damian`
+4. `podman stop damianf damian44 >/dev/null 2>&1 || true && toolbox rm -f damianf && podman rename damian44 damianf`
 5. `bash ~/dotfiles-sway/scripts/verify.sh`
 
 Normal version drift is expected during those migrations. Fedora 44, for example, uses `nodejs22` / `nodejs22-npm` instead of the older generic package names, and `mesa-dri-drivers` satisfies the old `mesa-va-drivers` capability.
@@ -271,11 +271,11 @@ npm prefix is set to `~/.npm-global` — global npm packages visible from host t
 
 ShellGPT config is generated non-interactively by `scripts/configure-shellgpt.sh` into `~/.config/shell_gpt/.sgptrc`. The preferred provider is Gemini via LiteLLM, using the same private key file as voice typing: `~/.config/voice-type/gemini-api-key`. It sets `gemini/gemini-3.1-flash-lite` as the primary ShellGPT model and installs `~/.local/bin/sgpt` as an executable wrapper around `~/.local/bin/sgpt-cli`; the wrapper retries `gemini/gemini-2.5-flash` on temporary availability errors and prints a clear diagnostic if both models fail. If Damian already has a custom unmanaged `sgpt`, the script leaves it untouched instead of overwriting it. If no private API key source exists, the config uses the placeholder `OPENAI_API_KEY=missing-shellgpt-api-key` so `sgpt` never blocks setup with an interactive prompt. Do not commit API keys to this repo.
 
-### Layer 4: distrobox `ubuntu-dev` (Ubuntu 26.04 dev/CLI parity)
+### Layer 4: distrobox `damianu` (Ubuntu 26.04 dev/CLI parity)
 
-Managed by `scripts/setup-ubuntu-dev-container.sh`. Use `distrobox enter ubuntu-dev` to enter.
+Managed by `scripts/setup-ubuntu-dev-container.sh`. Use `damianu` to enter.
 
-This is the Ubuntu userland equivalent of the Fedora toolbox. It intentionally mirrors the main AI/dev CLI stack from `damian`:
+This is the Ubuntu userland equivalent of the Fedora toolbox. It intentionally mirrors the main AI/dev CLI stack from `damianf`:
 
 | Tool | Purpose |
 |---|---|
@@ -291,7 +291,7 @@ This is the Ubuntu userland equivalent of the Fedora toolbox. It intentionally m
 
 It also reuses the same shared private API-key sources and ShellGPT wrapper logic as the toolbox setup.
 
-Voice typing still runs through toolbox `damian` by default; do not assume `ubuntu-dev` replaces that path unless the voice-typing scripts are explicitly updated too.
+Voice typing still runs through toolbox `damianf` by default; do not assume `damianu` replaces that path unless the voice-typing scripts are explicitly updated too.
 
 ### Layer 5: distrobox `security` (Ubuntu 26.04 pentesting)
 
@@ -499,7 +499,7 @@ These rules apply whenever an AI assists with this project:
 
 ## Claude Code configuration
 
-Claude Code is installed inside the `damian` toolbox container. Its configuration is stored in `~/.claude/` which is shared with the host.
+Claude Code is installed inside the `damianf` toolbox container. Its configuration is stored in `~/.claude/` which is shared with the host.
 
 ### settings.json
 
@@ -535,7 +535,7 @@ All three plugins are installed automatically by `setup-damian-container.sh`:
 
 Plugins are installed from the official marketplace: `anthropics/claude-plugins-official` on GitHub.
 
-Install command (run inside the `damian` container):
+Install command (run inside the `damianf` container):
 ```bash
 claude plugin install superpowers@claude-plugins-official --yes
 claude plugin install code-simplifier@claude-plugins-official --yes
@@ -561,9 +561,9 @@ To connect MCPs: open `claude.ai` → Settings → Integrations → connect each
 
 Codex CLI is installed automatically by `scripts/setup-damian-container.sh` via npm as `@openai/codex`.
 
-Run it inside the `damian` toolbox:
+Run it inside the `damianf` toolbox:
 ```bash
-toolbox enter damian
+damianf
 codex
 ```
 
@@ -582,9 +582,9 @@ DeepSeek TUI is launched through wrapper entries in `~/.local/bin` and `~/.npm-g
 
 ShellGPT is installed automatically by `scripts/setup-damian-container.sh` via `pip3 install --user "shell-gpt[litellm]"`.
 
-Run it inside the `damian` toolbox:
+Run it inside the `damianf` toolbox:
 ```bash
-toolbox enter damian
+damianf
 sgpt "summarise rpm-ostree status"
 sgpt --shell "find large files in the current directory"
 ```
@@ -635,13 +635,13 @@ ShellGPT API configuration is automated by `scripts/configure-shellgpt.sh` from 
 
 2. **Claude login** (OAuth):
    ```bash
-   toolbox enter damian
+   damianf
    claude login
    ```
 
 3. **Codex login**:
    ```bash
-   toolbox enter damian
+   damianf
    codex login
    ```
 
@@ -651,7 +651,7 @@ ShellGPT API configuration is automated by `scripts/configure-shellgpt.sh` from 
 
 ## ChatGPT
 
-ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Terminal access to OpenAI Codex is provided by the `codex` CLI in the `damian` toolbox.
+ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Terminal access to OpenAI Codex is provided by the `codex` CLI in the `damianf` toolbox.
 
 - **Shortcut:** `applications/chatgpt.desktop` — symlinked to `~/.local/share/applications/`
 - **Autostart:** opens on workspace 4 alongside Claude AI PWA
@@ -672,7 +672,7 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 - [x] All system packages via packages.sh (rpm-ostree)
 - [x] Neovim 0.12.1 user-local binary with Chris Titus Tech `titus-kickstart` config
 - [x] PWA shortcuts (Claude AI, ChatGPT, WhatsApp)
-- [x] toolbox `damian` with node, npm, gh, Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT
+- [x] toolbox `damianf` with node, npm, gh, Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT
 - [x] Claude Code settings.json symlinked from dotfiles
 - [x] Claude Code plugins auto-installed (superpowers, code-simplifier, context7)
 - [x] distrobox `security` with full pentesting toolkit
@@ -835,9 +835,9 @@ These require human interaction — document them so nothing is forgotten after 
 | Step | Command / Where |
 |---|---|
 | Set ANTHROPIC_API_KEY | `~/.bashrc.d/ai-keys.bash` with `export ANTHROPIC_API_KEY="key"` |
-| Claude login (OAuth) | `toolbox enter damian` → `claude login` |
-| Codex login | `toolbox enter damian` → `codex login` |
-| GitHub CLI login | `toolbox enter damian` → `gh auth login` |
+| Claude login (OAuth) | `damianf` → `claude login` |
+| Codex login | `damianf` → `codex login` |
+| GitHub CLI login | `damianf` → `gh auth login` |
 | MCP integrations (Gmail, Calendar, Drive, Slack) | `claude.ai` → Settings → Integrations |
 | Bluetooth pairing | `bluetoothctl` → `power on` → `scan on` → `pair <MAC>` |
 | NordVPN login | `nordvpn login` or, if browser callback fails, `nordvpn login --token <token>` |

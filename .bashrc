@@ -37,17 +37,17 @@ if [[ $- == *i* ]]; then
     }
 
     if [[ -n "${DISTROBOX_ENTER_PATH:-}" ]]; then
-        if [[ "${CONTAINER_ID:-}" == "ubuntu-dev" ]]; then
-            PS1='\[\e[0;31m\]⬢ [\u@distrobx ubuntu]\$ \[\e[0m\]'
+        if [[ "${CONTAINER_ID:-}" == "damianu" || "${CONTAINER_ID:-}" == "ubuntu-dev" ]]; then
+            PS1='\[\e[0;31m\]⬢ [\u@distrobx damianu]\$ \[\e[0m\]'
         elif [[ "${CONTAINER_ID:-}" == "security" ]]; then
             PS1='\[\e[0;31m\]📦[\u@distrobx security]\$ \[\e[0m\]'
-        elif [[ "${CONTAINER_ID:-}" == "damian" ]]; then
-            PS1='\[\e[0;31m\]📦[\u@distrobx fedora]\$ \[\e[0m\]'
+        elif [[ "${CONTAINER_ID:-}" == "damianf" || "${CONTAINER_ID:-}" == "damian" ]]; then
+            PS1='\[\e[0;31m\]📦[\u@distrobx damianf]\$ \[\e[0m\]'
         else
             PS1='\[\e[0;31m\]📦[\u@'"${CONTAINER_ID:-container}"' \W]\$ \[\e[0m\]'
         fi
     elif [[ -n "${TOOLBOX_PATH:-}" ]]; then
-        PS1='\[\e[0;36m\]⬢ [\u@\h fedora]\$ \[\e[0m\]'
+        PS1='\[\e[0;36m\]⬢ [\u@toolbx damianf]\$ \[\e[0m\]'
     elif [[ -f /run/.containerenv ]]; then
         PS1='\[\e[0;31m\]'"$(__dotfiles_strip_prompt_color "$PS1")"'\[\e[0m\]'
     else
@@ -80,6 +80,14 @@ ai() {
         return 1
     fi
     sgpt "$*"
+}
+
+damianf() {
+    toolbox enter damianf
+}
+
+damianu() {
+    distrobox enter damianu
 }
 
 unset rc

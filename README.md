@@ -9,7 +9,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Waybar status bar (bottom, muted dark theme, colour thresholds for CPU/RAM/temp/battery, Claude Code status, NordVPN toggle, AdGuard toggle, power menu)
 - Autostart layout: terminal on ws1, Vivaldi on ws2, Thunderbird on ws3, Obsidian on ws4, Claude/ChatGPT PWA on ws5
 - Foot terminal config
-- Shared Bash prompt/aliases: host prompt in green, Toolbox prompt in cyan, named Distrobox prompts for `ubuntu-dev` and `security` in red, plus coloured `ls`/`ll`/`la` aliases
+- Shared Bash prompt/aliases: host prompt in green, Toolbox prompt in cyan, named Distrobox prompts for `damianu` and `security` in red, `damianf`/`damianu` entry shortcuts, plus coloured `ls`/`ll`/`la` aliases
 - Mako notification daemon (5s auto-dismiss)
 - Clipboard history manager (clipman + rofi)
 - JetBrainsMono Nerd Font + Font Awesome (terminal + Waybar)
@@ -32,8 +32,8 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - WhatsApp — opens as minimal window without browser UI
 
 ### System
-- `damian` toolbox container (Fedora dev environment, versioned with the host unless overridden)
-- `ubuntu-dev` Ubuntu 26.04 distrobox container — Ubuntu dev/CLI environment with the same AI tools as `damian`
+- `damianf` toolbox container (Fedora dev environment, versioned with the host unless overridden)
+- `damianu` Ubuntu 26.04 distrobox container — Ubuntu dev/CLI environment with the same AI tools as `damianf`
 - `security` Ubuntu 26.04 distrobox container — full security/pentesting toolkit
 - KVM/QEMU virtualisation — virt-manager, virt-install, Windows 11 / Windows Server capable
 - distrobox — for Ubuntu containers
@@ -43,7 +43,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Gitleaks secret scanner with a repo `pre-push` hook
 - Voice typing — push-to-talk (`Mod+T`) with local Whisper AI + Gemini UK English correction
 - Neovim 0.12.1 — user-local latest pinned binary with Chris Titus Tech `titus-kickstart` config
-- AI terminal tools in `damian` toolbox and `ubuntu-dev` distrobox: Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT (`sgpt`)
+- AI terminal tools in `damianf` toolbox and `damianu` distrobox: Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT (`sgpt`)
 - NordVPN CLI with Waybar status/toggle helper (click to connect/disconnect)
 - AdGuard for Linux CLI with Waybar toggle helper (click to enable/disable)
 - LibreOffice — open source office suite (Writer, Calc, Impress)
@@ -107,22 +107,21 @@ bash ~/dotfiles-sway/scripts/setup-kvm.sh
 ```bash
 bash ~/dotfiles-sway/scripts/setup-damian-container.sh
 ```
-By default the script targets the host Fedora version and the toolbox name `damian`. You can override both for migrations:
+By default the script targets the host Fedora version and the toolbox name `damianf`. You can override both for migrations:
 ```bash
 TOOLBOX_CONTAINER=damian44 TOOLBOX_VERSION=44 bash ~/dotfiles-sway/scripts/setup-damian-container.sh
 ```
 
-8. Set up the Ubuntu dev distrobox (same AI/dev CLI stack as `damian`, but on Ubuntu 26.04):
+8. Set up the Ubuntu dev distrobox (same AI/dev CLI stack as `damianf`, but on Ubuntu 26.04):
 ```bash
 bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh
 ```
 Use this when you want an Ubuntu userland instead of Fedora Toolbox for terminal work:
 ```bash
-distrobox enter ubuntu-dev
+damianu
 ```
-Dev container parity is intentional: any user-facing CLI/dev tool added to Fedora toolbox `damian` must also be added to Ubuntu distrobox `ubuntu-dev` in the same change, then covered by `scripts/verify.sh`.
-Do not rename `ubuntu-dev` to `damian` while Toolbox `damian` exists; Toolbox and Distrobox both use Podman, so container names must be unique.
-Voice typing still uses toolbox `damian` by default.
+Dev container parity is intentional: any user-facing CLI/dev tool added to Fedora toolbox `damianf` must also be added to Ubuntu distrobox `damianu` in the same change, then covered by `scripts/verify.sh`.
+Voice typing still uses toolbox `damianf` by default.
 
 9. Install NordVPN CLI and the Waybar helper:
 ```bash
@@ -414,7 +413,7 @@ pair <MAC_ADDRESS>
 - AdGuard for Linux: official CLI install via `bash ~/dotfiles-sway/scripts/setup-adguard.sh`; first-time `activate/configure/start` stays manual
 - Ubuntu dev container must be created after first reboot (distrobox installed via packages.sh)
 - Rebuild Ubuntu dev container manually: `bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh`
-- Enter Ubuntu dev container: `distrobox enter ubuntu-dev`
+- Enter Ubuntu dev container: `damianu`
 - Security container must be created after first reboot (distrobox installed via packages.sh)
 - Rebuild security container manually: `bash ~/dotfiles-sway/scripts/setup-security-container.sh`
 - Enter security container: `distrobox enter security`
@@ -447,8 +446,8 @@ dotfiles-sway/
 │   ├── setup-neovim-config.sh         # Neovim 0.12.1 + Chris Titus Tech config symlink
 │   ├── setup-nordvpn.sh               # NordVPN CLI install + nordvpnd enable/start + group setup — writes state
 │   ├── setup-adguard.sh               # AdGuard for Linux CLI install — writes state
-│   ├── setup-damian-container.sh      # Toolbox damian: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
-│   ├── setup-ubuntu-dev-container.sh  # Distrobox ubuntu-dev: Ubuntu 26.04 dev/AI CLI parity — writes state
+│   ├── setup-damian-container.sh      # Toolbox damianf: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
+│   ├── setup-ubuntu-dev-container.sh  # Distrobox damianu: Ubuntu 26.04 dev/AI CLI parity — writes state
 │   ├── configure-shellgpt.sh          # Non-interactive ShellGPT config from private env/API files
 │   ├── adguard-waybar.sh              # AdGuard Waybar toggle helper (AG — click to start/stop)
 │   ├── nordvpn-waybar.sh              # NordVPN Waybar toggle helper (VPN — click to connect/disconnect)
@@ -462,7 +461,7 @@ dotfiles-sway/
 │   ├── setup-security-container.sh   # Distrobox security: pentesting toolkit — writes state
 │   ├── voice-type-start.sh           # Voice typing: start recording (Mod+T press)
 │   ├── voice-type-stop.sh            # Voice typing: stop recording, transcribe, inject text (Mod+T release)
-│   └── voice-transcribe.py          # Whisper AI transcription (runs inside damian toolbox)
+│   └── voice-transcribe.py          # Whisper AI transcription (runs inside damianf toolbox)
 ├── setup.sh                 # Symlinks, Flatpaks, toolbox, fonts, Claude settings
 ├── packages.sh              # rpm-ostree system packages
 └── bootstrap.sh             # Fresh install entry point
@@ -553,7 +552,7 @@ bash ~/dotfiles-sway/scripts/setup-neovim-config.sh
 
 During setup, Neovim downloads plugins declared by Chris Titus Tech's config and synchronizes them to the config's `nvim-pack-lock.json`. The required CLI dependencies are layered by `packages.sh`: `ripgrep`, `fd-find`, `fzf`, `wl-clipboard`, `python3-virtualenv`, `ShellCheck`, `libwebp-tools`, `nodejs`, `npm`, and `make`. `markdownlint-cli2` is installed into the shared `~/.npm-global` prefix by both dev container setup scripts.
 
-Because `~` is shared into both dev containers, the same `~/.local/bin/nvim` and `~/.config/nvim` are available inside Fedora toolbox `damian` and Ubuntu distrobox `ubuntu-dev`.
+Because `~` is shared into both dev containers, the same `~/.local/bin/nvim` and `~/.config/nvim` are available inside Fedora toolbox `damianf` and Ubuntu distrobox `damianu`.
 
 **Open a file:**
 ```bash
@@ -609,7 +608,7 @@ Host (rpm-ostree immutable)
 ├─ Flatpak apps
 │   └─ User Flatpaks from Flathub: Obsidian, Vivaldi, Thunderbird, VSCode, Bitwarden, Spotify, OBS, mpv, JDownloader
 │
-├─ toolbox: damian (Fedora version follows the host by default) — dev/DevOps
+├─ toolbox: damianf (Fedora version follows the host by default) — dev/DevOps
 │   ├─ node 22
 │   ├─ npm
 │   ├─ git
@@ -622,7 +621,7 @@ Host (rpm-ostree immutable)
 │   ├─ faster-whisper (local Whisper AI for voice typing)
 │   └─ nvim (shared user-local Neovim + Chris Titus Tech config)
 │
-├─ distrobox: ubuntu-dev (Ubuntu 26.04) — Ubuntu userland with AI/dev CLI parity
+├─ distrobox: damianu (Ubuntu 26.04) — Ubuntu userland with AI/dev CLI parity
 │   ├─ node 22
 │   ├─ npm
 │   ├─ git
@@ -658,29 +657,29 @@ bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh
 
 ### Enter current toolbox
 ```bash
-toolbox enter damian
+damianf
 ```
 
 ### Enter Ubuntu dev distrobox
 ```bash
-distrobox enter ubuntu-dev
+damianu
 ```
 
 ### Run Claude Code
 ```bash
-# Inside damian container
+# Inside damianf container
 claude
 ```
 
 ### Run OpenAI Codex CLI
 ```bash
-# Inside damian container
+# Inside damianf container
 codex
 ```
 
 ### Run DeepSeek TUI
 ```bash
-# Inside damian container
+# Inside damianf container
 deepseek
 ```
 
@@ -703,11 +702,11 @@ TOOLBOX_CONTAINER=damian44 bash ~/dotfiles-sway/scripts/verify.sh
 3. Compare old and new manually for anything ad-hoc you installed outside the script.
 4. Point any custom helpers that depend on a toolbox name at the new container. `scripts/voice-type-stop.sh` and `scripts/verify.sh` both respect `TOOLBOX_CONTAINER`.
 5. Keep the old toolbox until you have finished a full work session inside the new one.
-6. When you are satisfied, remove the old toolbox and rename the validated replacement back to `damian` so the default automation keeps working:
+6. When you are satisfied, remove the old toolbox and rename the validated replacement back to `damianf` so the default automation keeps working:
 ```bash
-podman stop damian damian44 >/dev/null 2>&1 || true
-toolbox rm -f damian
-podman rename damian44 damian
+podman stop damianf damian44 >/dev/null 2>&1 || true
+toolbox rm -f damianf
+podman rename damian44 damianf
 ```
 7. Re-run verification against the restored default name:
 ```bash
@@ -720,7 +719,7 @@ bash ~/dotfiles-sway/scripts/verify.sh
 
 ### Run ShellGPT
 ```bash
-# Inside damian container
+# Inside damianf container
 sgpt "explain rpm-ostree status"
 sgpt --shell "show listening ports"
 ```

@@ -8,8 +8,8 @@ run_gitleaks() {
     fi
 
     if command -v toolbox >/dev/null 2>&1 &&
-       toolbox run --container damian bash -lc 'command -v gitleaks >/dev/null'; then
-        toolbox run --container damian bash -lc 'gitleaks detect --source "$1" --redact --verbose' _ "$PWD"
+       toolbox run --container damianf bash -lc 'command -v gitleaks >/dev/null'; then
+        toolbox run --container damianf bash -lc 'gitleaks detect --source "$1" --redact --verbose' _ "$PWD"
         return
     fi
 
@@ -21,7 +21,7 @@ Install it with:
   systemctl reboot
 
 Temporary fallback:
-  toolbox run --container damian sudo dnf install -y gitleaks
+  toolbox run --container damianf sudo dnf install -y gitleaks
 
 Or, on a non-Atomic Fedora system:
   sudo dnf install gitleaks

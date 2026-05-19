@@ -4,7 +4,7 @@
 
 PID_FILE="$HOME/.cache/voice-type/record.pid"
 AUDIO_FILE="$HOME/.cache/voice-type/voice-input.wav"
-TOOLBOX_CONTAINER="${TOOLBOX_CONTAINER:-damian}"
+TOOLBOX_CONTAINER="${TOOLBOX_CONTAINER:-damianf}"
 
 # Stop recording
 if [ -f "$PID_FILE" ]; then

@@ -1,5 +1,5 @@
 #!/bin/bash
-# setup-ubuntu-dev-container.sh — Ubuntu 26.04 distrobox with the same AI/dev CLI stack as toolbox 'damian'
+# setup-ubuntu-dev-container.sh — Ubuntu 26.04 distrobox with the same AI/dev CLI stack as toolbox 'damianf'
 # Run after first reboot: bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh
 
 set -euo pipefail
@@ -9,7 +9,7 @@ source "$DOTFILES/scripts/lib-install.sh"
 setup_logging "scripts/setup-ubuntu-dev-container.sh"
 
 UBUNTU_DEV_VERSION="${UBUNTU_DEV_VERSION:-26.04}"
-CONTAINER="${UBUNTU_DEV_CONTAINER:-ubuntu-dev}"
+CONTAINER="${UBUNTU_DEV_CONTAINER:-damianu}"
 BASE_IMAGE="${UBUNTU_DEV_IMAGE:-docker.io/library/ubuntu:${UBUNTU_DEV_VERSION}}"
 FIXED_IMAGE="localhost/${CONTAINER}:${UBUNTU_DEV_VERSION}"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/distrobox"
@@ -187,8 +187,8 @@ echo -e " Run Codex CLI:   ${CYAN}codex${NC}"
 echo -e " Run ShellGPT:    ${CYAN}sgpt${NC}"
 echo ""
 echo -e " ${YELLOW}Notes:${NC}"
-echo -e "  - This Ubuntu distrobox mirrors the main AI/dev CLI stack from toolbox '${CYAN}damian${NC}'."
-echo -e "  - Voice typing still uses toolbox '${CYAN}damian${NC}' by default through scripts/voice-type-stop.sh."
+echo -e "  - This Ubuntu distrobox mirrors the main AI/dev CLI stack from toolbox '${CYAN}damianf${NC}'."
+echo -e "  - Voice typing still uses toolbox '${CYAN}damianf${NC}' by default through scripts/voice-type-stop.sh."
 echo -e "  - Log in manually after entering the container:"
 echo -e "      ${CYAN}claude login${NC}"
 echo -e "      ${CYAN}gh auth login${NC}"

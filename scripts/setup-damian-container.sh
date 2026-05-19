@@ -10,7 +10,7 @@ setup_logging "scripts/setup-damian-container.sh"
 
 HOST_FEDORA_VERSION="$(. /etc/os-release && printf '%s' "${VERSION_ID:-44}")"
 TOOLBOX_VERSION="${TOOLBOX_VERSION:-$HOST_FEDORA_VERSION}"
-CONTAINER="${TOOLBOX_CONTAINER:-damian}"
+CONTAINER="${TOOLBOX_CONTAINER:-damianf}"
 TOOLBOX_IMAGE="${TOOLBOX_IMAGE:-registry.fedoraproject.org/fedora-toolbox:${TOOLBOX_VERSION}}"
 
 echo ""
