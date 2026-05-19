@@ -10,7 +10,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Autostart layout: terminal on ws1, Vivaldi on ws2, Thunderbird on ws3, Obsidian on ws4, Claude/ChatGPT PWA on ws5
 - Foot terminal config
 - Shared Bash prompt/aliases: host prompt in green, `damianf` prompt in cyan, `damianu` Distrobox prompt in cyan with package icon, `security` Distrobox prompt in red, `damianf`/`damianu` entry shortcuts, plus coloured `ls`/`ll`/`la` aliases
-- Mako notification daemon (5s auto-dismiss)
+- Mako notification daemon (11s auto-dismiss)
 - Clipboard history manager (clipman + rofi)
 - JetBrainsMono Nerd Font + Font Awesome (terminal + Waybar)
 - Black solid wallpaper
@@ -412,6 +412,7 @@ pair <MAC_ADDRESS>
 - Thunderbird custom CSS lives in `thunderbird/userChrome.css` and `thunderbird/userContent.css`; `scripts/setup-thunderbird.sh` creates one-time `_old` backups in the active profile before applying repo-managed files
 - Thunderbird message list (`#threadTree`, Thread Pane) uses a Tokyo Night-inspired style: `Noto Sans` at `1rem`, `#1a1b26` background, `#c0caf5` text, cyan unread indicator/subject (`#7dcfff`), and `font-weight: 400` for read mail vs `600` for unread mail. Folder list (`#folderTree`, Folder Pane) uses the same base font and size.
 - Thunderbird message reader dark mode keeps the built-in Light/Dark toggle, but overrides the dark message background to match the Thread Pane (`#1a1b26`). This needs both `userContent.css` (`--color-gray-90`) and `userChrome.css` (`#messagepanebox`, `#singleMessage`, `#messagepane`).
+- Mako displays notifications but does not play notification sounds itself. Mail sounds should be handled by Thunderbird/PipeWire; if Thunderbird's default system sound stays silent, set a concrete custom sound in Thunderbird rather than debugging Mako first.
 - NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start
 - AdGuard for Linux: official CLI install via `bash ~/dotfiles-sway/scripts/setup-adguard.sh`; first-time `activate/configure/start` stays manual
 - Ubuntu dev container must be created after first reboot (distrobox installed via packages.sh)

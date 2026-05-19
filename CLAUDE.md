@@ -669,7 +669,7 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 - [x] Sway config (borders, keybindings, idle/lock, touchpad, autostart)
 - [x] Waybar (dark theme, CPU/RAM/temp/battery thresholds, Claude Code status, NordVPN/AdGuard toggles, power menu)
 - [x] Foot terminal config
-- [x] Mako notifications (5s auto-dismiss)
+- [x] Mako notifications (11s auto-dismiss)
 - [x] Clipboard manager (clipman + rofi)
 - [x] Fonts (JetBrainsMono Nerd Font, Font Awesome)
 - [x] All Flatpak apps installed via setup.sh (Vivaldi, mpv, VSCode, Obsidian, Bitwarden, Thunderbird, LibreOffice, Spotify, OBS, JDownloader, Sticky)
@@ -779,6 +779,11 @@ Snapshot before running malware/attacks — restore in seconds.
 
 Thunderbird is installed as Flatpak. Account setup is manual (OAuth to Gmail).
 Profile: `~/.var/app/org.mozilla.Thunderbird/.thunderbird/<profile>.default-esr/`
+
+Mako only displays notifications and does not provide notification sounds. If Thunderbird
+new-mail sound is enabled but silent, check PipeWire/PulseAudio and Thunderbird sound prefs
+first. The Flatpak has `pulseaudio` socket access; a practical workaround is to configure a
+specific custom sound in Thunderbird instead of relying on the default system event sound.
 
 ### user.js preferences (apply automatically on start)
 ```
