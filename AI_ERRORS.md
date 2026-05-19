@@ -286,6 +286,42 @@ distrobox `damianu` in the same change unless it is truly distro-specific. Updat
 `README.md`, and `CLAUDE.md` together. If package names differ between Fedora and Ubuntu, document
 the mapping explicitly in the setup scripts.
 
+For command names that differ across distros, keep repo-managed wrappers in `~/.local/bin`.
+Current examples:
+- `bat` wrapper uses `/usr/bin/bat` or Ubuntu's `/usr/bin/batcat`
+- `fd` wrapper uses `/usr/bin/fd` or Ubuntu's `/usr/bin/fdfind`
+- `rg` wrapper prefers distro `/usr/bin/rg` over vendored ripgrep copies from other tools
+
+fzf Bash integration may be loaded from either `/usr/share/fzf/shell/*.bash` or
+`/usr/share/doc/fzf/examples/*.bash`. Source it only for interactive shells. This repo does not
+bind `Ctrl-R`, `Ctrl-T`, or `Alt-C` elsewhere in Bash, so the default fzf bindings are acceptable.
+
+### Ubuntu dev setup: do not require host sudo when no TTY is available
+**Problem:** Running `scripts/setup-ubuntu-dev-container.sh` from a non-interactive automation
+context failed at the host sudo keepalive step:
+
+```text
+sudo: a terminal is required to read the password
+sudo: a password is required
+```
+
+This happened before the script reached the actual Distrobox package installation, even though
+container-level `sudo apt-get ...` worked in the existing `damianu` container.
+
+**Fix:** Do not call `require_sudo_session` unconditionally in the Ubuntu Distrobox setup. First
+check for an interactive stdin or an already-valid non-interactive sudo session:
+
+```bash
+if [[ -t 0 ]] || sudo -n -v >/dev/null 2>&1; then
+    require_sudo_session
+else
+    echo "No interactive sudo session available on the host — continuing with container-level sudo checks."
+fi
+```
+
+Avoid reintroducing an unconditional host `sudo -v` in Distrobox setup scripts unless the script
+really needs host root privileges at that point.
+
 ---
 
 ## 6. File Creation vs Symlinks in setup.sh

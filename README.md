@@ -619,6 +619,7 @@ Host (rpm-ostree immutable)
 │   ├─ sgpt (ShellGPT terminal assistant)
 │   ├─ ccstatusline (Claude Code Waybar integration)
 │   ├─ faster-whisper (local Whisper AI for voice typing)
+│   ├─ terminal tools: btop, duf, bat, ncdu, rg, fzf, fd
 │   └─ nvim (shared user-local Neovim + Chris Titus Tech config)
 │
 ├─ distrobox: damianu (Ubuntu 26.04) — Ubuntu userland with AI/dev CLI parity
@@ -632,6 +633,7 @@ Host (rpm-ostree immutable)
 │   ├─ sgpt (ShellGPT terminal assistant)
 │   ├─ markdownlint-cli2
 │   ├─ faster-whisper
+│   ├─ terminal tools: btop, duf, bat, ncdu, rg, fzf, fd
 │   └─ nvim (shared user-local Neovim + Chris Titus Tech config)
 │
 └─ distrobox: security (Ubuntu 26.04) — pentesting & security research
@@ -686,6 +688,22 @@ deepseek
 `~/.local/bin/deepseek`, `~/.local/bin/deepseek-tui`, and the matching `~/.npm-global/bin/*` entries wrap the npm-installed binaries with `NO_ANIMATIONS=1` and `--no-mouse-capture` to avoid foot/Sway repaint flicker.
 
 `foot/foot.ini` also enables `damage-whole-window=yes`, which reduces rare full-window DeepSeek TUI repaint flicker when the terminal is maximized.
+
+### Terminal utility tools
+
+Both dev containers install the same terminal inspection/search tools:
+
+| Tool | Purpose |
+|---|---|
+| `btop` | interactive process/resource monitor |
+| `duf` | readable disk/filesystem usage overview |
+| `bat` | syntax-highlighted pager; wrapper handles Ubuntu `batcat` |
+| `ncdu` | interactive disk usage browser |
+| `rg` | ripgrep text search; wrapper prefers distro `/usr/bin/rg` |
+| `fzf` | fuzzy finder with Bash key bindings loaded from `.bashrc` |
+| `fd` | fast file finder; wrapper handles Ubuntu `fdfind` |
+
+The fzf Bash integration is loaded only for interactive shells and uses the upstream default bindings: `Ctrl-R`, `Ctrl-T`, and `Alt-C`. This repo does not bind those key sequences elsewhere in Bash.
 
 ### Toolbox migration
 

@@ -66,6 +66,31 @@ alias ll='ls -lah'
 alias la='ls -A'
 alias l='ls -CF'
 
+if [[ $- == *i* ]]; then
+    # fzf uses Ctrl-R, Ctrl-T, and Alt-C. This repo does not bind those keys elsewhere.
+    for fzf_key_bindings in \
+        /usr/share/fzf/shell/key-bindings.bash \
+        /usr/share/doc/fzf/examples/key-bindings.bash; do
+        if [[ -r "$fzf_key_bindings" ]]; then
+            # shellcheck source=/dev/null
+            source "$fzf_key_bindings"
+            break
+        fi
+    done
+
+    for fzf_completion in \
+        /usr/share/fzf/shell/completion.bash \
+        /usr/share/doc/fzf/examples/completion.bash; do
+        if [[ -r "$fzf_completion" ]]; then
+            # shellcheck source=/dev/null
+            source "$fzf_completion"
+            break
+        fi
+    done
+
+    unset fzf_key_bindings fzf_completion
+fi
+
 if [ -d ~/.bashrc.d ]; then
     for rc in ~/.bashrc.d/*; do
         if [ -f "$rc" ]; then

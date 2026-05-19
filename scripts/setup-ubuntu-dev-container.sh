@@ -23,7 +23,11 @@ echo -e "${BOLD}${CYAN}║   Distrobox '$CONTAINER' — Ubuntu dev setup   ║${
 echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════════╝${NC}"
 echo ""
 
-require_sudo_session
+if [[ -t 0 ]] || sudo -n -v >/dev/null 2>&1; then
+    require_sudo_session
+else
+    echo -e "${YELLOW}==> No interactive sudo session available on the host — continuing with container-level sudo checks.${NC}"
+fi
 mkdir -p "$CACHE_DIR"
 
 # ── Build image with apt HTTP pipeline disabled ──────────────────────────
@@ -64,6 +68,10 @@ run_step "UBUNTU_DEV_BASE_PKGS" "Installing Ubuntu dev base packages" \
         sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
             ca-certificates curl gnupg git python3 python3-pip python3-venv \
             build-essential jq xdg-utils ffmpeg"
+
+run_step "UBUNTU_DEV_TERMINAL_TOOLS" "Installing terminal inspection/search tools" \
+    ubox "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            btop duf bat ncdu ripgrep fzf fd-find"
 
 # ── Node.js 22 + GitHub CLI ──────────────────────────────────────────────
 run_step "UBUNTU_DEV_NODEJS" "Installing Node.js 22 and GitHub CLI" \
@@ -144,7 +152,7 @@ run_step "UBUNTU_DEV_VOICE_WHISPER" "Installing faster-whisper + google-genai" \
 # ── Verify ───────────────────────────────────────────────────────────────
 echo -e "\n${CYAN}==> Verifying distrobox '$CONTAINER'...${NC}"
 VERIFY_FAIL=0
-for tool in node npm gh claude codex deepseek sgpt git; do
+for tool in node npm gh claude codex deepseek sgpt git btop duf bat ncdu rg fzf fd; do
     if distrobox enter --name "$CONTAINER" -- which "$tool" &>/dev/null 2>&1; then
         echo -e "  ${GREEN}✓${NC} $tool"
     else

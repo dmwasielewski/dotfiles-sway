@@ -53,6 +53,9 @@ ln -sf "$DOTFILES/scripts/nordvpn-waybar.sh"                   ~/.local/bin/nord
 ln -sf "$DOTFILES/scripts/power-menu.sh"                       ~/.local/bin/power-menu
 ln -sf "$DOTFILES/scripts/enter-damianf.sh"                    ~/.local/bin/damianf
 ln -sf "$DOTFILES/scripts/enter-damianu.sh"                    ~/.local/bin/damianu
+ln -sf "$DOTFILES/scripts/bat-wrapper.sh"                      ~/.local/bin/bat
+ln -sf "$DOTFILES/scripts/fd-wrapper.sh"                       ~/.local/bin/fd
+ln -sf "$DOTFILES/scripts/rg-wrapper.sh"                       ~/.local/bin/rg
 mkdir -p ~/.npm-global/bin
 ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.npm-global/bin/deepseek
 ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.npm-global/bin/deepseek-tui

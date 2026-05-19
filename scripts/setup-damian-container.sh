@@ -32,6 +32,9 @@ fi
 run_step "TOOLBOX_PACKAGES" "Installing node, npm, gh, git, pip inside toolbox" \
     toolbox run --container "$CONTAINER" sudo dnf install -y nodejs npm gh git python3-pip
 
+run_step "TOOLBOX_TERMINAL_TOOLS" "Installing terminal inspection/search tools inside toolbox" \
+    toolbox run --container "$CONTAINER" sudo dnf install -y btop duf bat ncdu ripgrep fzf fd-find
+
 # ── Configure npm prefix ─────────────────────────────────────────────────
 run_step "TOOLBOX_NPM_PREFIX" "Configuring npm prefix (~/.npm-global)" \
     toolbox run --container "$CONTAINER" bash -c '
@@ -122,7 +125,7 @@ run_step "VOICE_WHISPER" "Installing faster-whisper + google-genai (voice typing
 # ── Verify ───────────────────────────────────────────────────────────────
 echo -e "\n${CYAN}==> Verifying toolbox '$CONTAINER'...${NC}"
 VERIFY_FAIL=0
-for tool in node npm gh claude codex deepseek sgpt git; do
+for tool in node npm gh claude codex deepseek sgpt git btop duf bat ncdu rg fzf fd; do
     if toolbox run --container "$CONTAINER" which "$tool" &>/dev/null 2>&1; then
         echo -e "  ${GREEN}✓${NC} $tool"
     else

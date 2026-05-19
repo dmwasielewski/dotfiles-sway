@@ -113,6 +113,9 @@ check_symlink "adguard-waybar"             "$HOME/.local/bin/adguard-waybar"
 check_symlink "nordvpn-waybar"             "$HOME/.local/bin/nordvpn-waybar"
 check_symlink "damianf entry shortcut"     "$HOME/.local/bin/damianf"
 check_symlink "damianu entry shortcut"     "$HOME/.local/bin/damianu"
+check_symlink "bat cross-distro wrapper"   "$HOME/.local/bin/bat"
+check_symlink "fd cross-distro wrapper"    "$HOME/.local/bin/fd"
+check_symlink "rg system wrapper"          "$HOME/.local/bin/rg"
 check_symlink "environment.d/locale.conf"  "$HOME/.config/environment.d/locale.conf"
 
 
@@ -259,6 +262,13 @@ if host toolbox list 2>/dev/null | grep -qw "$TOOLBOX_CONTAINER"; then
     check_toolbox_tool "sgpt"   "sgpt (ShellGPT)"
     check_toolbox_tool "git"    "git"
     check_toolbox_tool "nvim"   "nvim (Neovim user-local binary)"
+    check_toolbox_tool "btop"   "btop (process monitor)"
+    check_toolbox_tool "duf"    "duf (disk usage overview)"
+    check_toolbox_tool "bat"    "bat (pager with syntax highlighting)"
+    check_toolbox_tool "ncdu"   "ncdu (interactive disk usage)"
+    check_toolbox_tool "rg"     "rg (ripgrep search)"
+    check_toolbox_tool "fzf"    "fzf (fuzzy finder)"
+    check_toolbox_tool "fd"     "fd (file finder)"
 
     if host toolbox run --container "$TOOLBOX_CONTAINER" bash -c \
         'expected="$(readlink -f "$HOME/dotfiles-sway/scripts/deepseek-wrapper.sh")" && test "$(readlink -f ~/.local/bin/deepseek 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.local/bin/deepseek-tui 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.npm-global/bin/deepseek 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.npm-global/bin/deepseek-tui 2>/dev/null)" = "$expected"' &>/dev/null 2>&1; then
@@ -351,6 +361,13 @@ if host podman container exists "$UBUNTU_DEV_CONTAINER" 2>/dev/null; then
     check_ubuntu_dev_tool "sgpt"   "sgpt (ShellGPT)"
     check_ubuntu_dev_tool "git"    "git"
     check_ubuntu_dev_tool "nvim"   "nvim (Neovim user-local binary)"
+    check_ubuntu_dev_tool "btop"   "btop (process monitor)"
+    check_ubuntu_dev_tool "duf"    "duf (disk usage overview)"
+    check_ubuntu_dev_tool "bat"    "bat (pager with syntax highlighting)"
+    check_ubuntu_dev_tool "ncdu"   "ncdu (interactive disk usage)"
+    check_ubuntu_dev_tool "rg"     "rg (ripgrep search)"
+    check_ubuntu_dev_tool "fzf"    "fzf (fuzzy finder)"
+    check_ubuntu_dev_tool "fd"     "fd (file finder)"
 
     if host distrobox enter --name "$UBUNTU_DEV_CONTAINER" -- bash -lc \
         'expected="$(readlink -f "$HOME/dotfiles-sway/scripts/deepseek-wrapper.sh")" && test "$(readlink -f ~/.local/bin/deepseek 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.local/bin/deepseek-tui 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.npm-global/bin/deepseek 2>/dev/null)" = "$expected" && test "$(readlink -f ~/.npm-global/bin/deepseek-tui 2>/dev/null)" = "$expected"' &>/dev/null 2>&1; then

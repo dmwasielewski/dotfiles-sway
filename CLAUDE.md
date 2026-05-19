@@ -266,6 +266,7 @@ Normal version drift is expected during those migrations. Fedora 44, for example
 | `ccstatusline` | Claude Code Waybar status (bundled with claude-code) |
 | `faster-whisper` | Local Whisper AI speech recognition (voice typing) |
 | `markdownlint-cli2` | Markdown linting used by Chris Titus Tech's Neovim config |
+| `btop`, `duf`, `bat`, `ncdu`, `rg`, `fzf`, `fd` | Terminal inspection/search tools kept in parity with `damianu` |
 
 npm prefix is set to `~/.npm-global` — global npm packages visible from host too.
 
@@ -288,8 +289,11 @@ This is the Ubuntu userland equivalent of the Fedora toolbox. It intentionally m
 | `sgpt` (`shell-gpt`) | ShellGPT terminal assistant |
 | `faster-whisper` | Local Whisper AI speech recognition library |
 | `markdownlint-cli2` | Markdown linting used by Chris Titus Tech's Neovim config |
+| `btop`, `duf`, `bat`, `ncdu`, `rg`, `fzf`, `fd` | Terminal inspection/search tools kept in parity with `damianf` |
 
 It also reuses the same shared private API-key sources and ShellGPT wrapper logic as the toolbox setup.
+
+`bat`, `fd`, and `rg` are exposed through repo-managed wrappers in `~/.local/bin` so Fedora and Ubuntu use the same command names even when Ubuntu packages provide `batcat` or `fdfind`, and so `rg` prefers the distro package over vendored copies. fzf Bash key bindings are loaded in `.bashrc` only for interactive shells; there were no existing Bash key bindings for `Ctrl-R`, `Ctrl-T`, or `Alt-C` in this repo.
 
 Voice typing still runs through toolbox `damianf` by default; do not assume `damianu` replaces that path unless the voice-typing scripts are explicitly updated too.
 
