@@ -34,7 +34,8 @@ The system belongs to **Damian** (dmwasielewski). Communicate in **Polish** unle
 - The home directory (`~`) is **shared** between host and toolbox — files written to `~` are visible on both sides.
 - Fedora's Toolbox prompt is set by `/etc/profile.d/toolbox.sh`. If only the prompt colour should change, preserve the `⬢ [user@host dir]$` format and override the Toolbox `PS1` directly in `.bashrc`; do not use a generic `PROMPT_COMMAND` recolouring wrapper unless re-tested interactively.
 - Dev container parity rule: any new user-facing CLI/dev tool added to Fedora toolbox `damian` must also be added to Ubuntu distrobox `ubuntu-dev` in the same change, with equivalent `verify.sh` checks and documentation. If package names differ, map them explicitly in both setup scripts.
-- Prompt rule: `ubuntu-dev` intentionally displays as `⬢ [user@distrobx ubuntu]$`, and `security` intentionally displays as `📦[user@distrobx security]$`; do not collapse them back to the generic Distrobox prompt.
+- Prompt rule: `ubuntu-dev` intentionally displays as `⬢ [user@distrobx ubuntu]$`, Distrobox `damian` displays as `📦[user@distrobx fedora]$` if it ever exists, and `security` intentionally displays as `📦[user@distrobx security]$`; do not collapse them back to the generic Distrobox prompt.
+- Container naming rule: do not rename `ubuntu-dev` to `damian` while Toolbox `damian` exists. Toolbox and Distrobox both use Podman containers, so container names must be unique.
 
 ### Install diagnostics
 

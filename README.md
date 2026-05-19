@@ -121,6 +121,7 @@ Use this when you want an Ubuntu userland instead of Fedora Toolbox for terminal
 distrobox enter ubuntu-dev
 ```
 Dev container parity is intentional: any user-facing CLI/dev tool added to Fedora toolbox `damian` must also be added to Ubuntu distrobox `ubuntu-dev` in the same change, then covered by `scripts/verify.sh`.
+Do not rename `ubuntu-dev` to `damian` while Toolbox `damian` exists; Toolbox and Distrobox both use Podman, so container names must be unique.
 Voice typing still uses toolbox `damian` by default.
 
 9. Install NordVPN CLI and the Waybar helper:

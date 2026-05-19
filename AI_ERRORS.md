@@ -264,11 +264,16 @@ end up with the same format or the same colour.
 For this repo, the working behaviour is:
 - Toolbox `damian`: cyan `⬢ [user@host dir]$`
 - Distrobox `ubuntu-dev`: red `⬢ [user@distrobx ubuntu]$`
+- Distrobox `damian`, if created in the future: red `📦[user@distrobx fedora]$`
 - Distrobox `security`: red `📦[user@distrobx security]$`
 
-Do not treat `ubuntu-dev` or `security` as generic Toolbox-like containers when setting `PS1`.
+Do not treat `ubuntu-dev`, future Distrobox `damian`, or `security` as generic
+Toolbox-like containers when setting `PS1`.
 Keep their explicit prompt labels in `.bashrc` so the user can distinguish Fedora Toolbox
 from Ubuntu Distrobox sessions quickly.
+
+Do not rename `ubuntu-dev` to `damian` while Toolbox `damian` exists. Toolbox and Distrobox
+both use Podman under the hood, so `damian` is already taken in the shared container namespace.
 
 ### Dev container parity: do not add tools only to Fedora toolbox
 **Problem:** Damian uses both Fedora toolbox `damian` and Ubuntu distrobox `ubuntu-dev`

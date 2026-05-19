@@ -41,6 +41,8 @@ if [[ $- == *i* ]]; then
             PS1='\[\e[0;31m\]⬢ [\u@distrobx ubuntu]\$ \[\e[0m\]'
         elif [[ "${CONTAINER_ID:-}" == "security" ]]; then
             PS1='\[\e[0;31m\]📦[\u@distrobx security]\$ \[\e[0m\]'
+        elif [[ "${CONTAINER_ID:-}" == "damian" ]]; then
+            PS1='\[\e[0;31m\]📦[\u@distrobx fedora]\$ \[\e[0m\]'
         else
             PS1='\[\e[0;31m\]📦[\u@'"${CONTAINER_ID:-container}"' \W]\$ \[\e[0m\]'
         fi
