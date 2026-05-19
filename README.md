@@ -409,6 +409,7 @@ pair <MAC_ADDRESS>
 - `pavucontrol` is already included in Fedora Atomic base — no separate install needed
 - Thunderbird is installed as the verified Flathub Flatpak `org.mozilla.Thunderbird`
 - 24-hour time format: `LC_TIME=en_GB.UTF-8` via `~/.config/environment.d/locale.conf`, imported into Sway session and overridden for Thunderbird Flatpak
+- Thunderbird custom CSS lives in `thunderbird/userChrome.css` and `thunderbird/userContent.css`; `scripts/setup-thunderbird.sh` creates one-time `_old` backups in the active profile before applying repo-managed files
 - NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start
 - AdGuard for Linux: official CLI install via `bash ~/dotfiles-sway/scripts/setup-adguard.sh`; first-time `activate/configure/start` stays manual
 - Ubuntu dev container must be created after first reboot (distrobox installed via packages.sh)

@@ -389,6 +389,16 @@ you don't know this.
 **Fix:** Document in CLAUDE.md that `user.js` is copied ONCE during setup and enforces
 prefs on every start. For one-time settings, use `about:config` directly.
 
+### Thunderbird appearance changes need `_old` backups first
+**Problem:** Thunderbird CSS changes are easy to dislike after testing, and
+`scripts/setup-thunderbird.sh` copies repo CSS into the active Flatpak profile.
+Changing `thunderbird/userChrome.css` or `thunderbird/userContent.css` without preserving
+the old files removes the quick rollback path.
+**Fix:** Before changing Thunderbird appearance files, create `_old` backups for the repo
+files and the active profile files. `scripts/setup-thunderbird.sh` must keep using
+one-time `_old` backups before copying `user.js`, `userChrome.css`, or `userContent.css`.
+Do not overwrite an existing `_old` file.
+
 ---
 
 ## 10. Approval Prompt Behavior

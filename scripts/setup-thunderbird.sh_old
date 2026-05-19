@@ -19,27 +19,17 @@ fi
 
 echo "==> Thunderbird profile: $(basename "$PROFILE")"
 
-backup_once() {
-    local file="$1"
-    if [[ -f "$file" && ! -f "${file}_old" ]]; then
-        cp "$file" "${file}_old"
-    fi
-}
-
 # Copy user.js
 echo "==> Applying user.js..."
-backup_once "$PROFILE/user.js"
 cp "$TB_CONFIG/user.js" "$PROFILE/user.js"
 echo "    Preferences: read receipts, light mode, custom CSS"
 
 # Copy CSS files
 echo "==> Applying custom CSS..."
 mkdir -p "$PROFILE/chrome"
-backup_once "$PROFILE/chrome/userChrome.css"
-backup_once "$PROFILE/chrome/userContent.css"
 cp "$TB_CONFIG/userChrome.css" "$PROFILE/chrome/userChrome.css"
 cp "$TB_CONFIG/userContent.css" "$PROFILE/chrome/userContent.css"
-echo "    Unread messages: terminal blue, folders: calm bold"
+echo "    Unread messages: cyan, folders: bold"
 
 echo ""
 echo "==> Done. Restart Thunderbird to apply."

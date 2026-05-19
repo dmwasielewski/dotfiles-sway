@@ -1,0 +1,16 @@
+/* Thunderbird interface — Roboto font */
+:root {
+    font-family: Roboto, Arial, sans-serif !important;
+}
+
+/* UNREAD — cyan text (matching Inbox badge) */
+#threadTree [data-properties~="unread"] {
+  color: rgb(0, 198, 251) !important;
+  font-weight: normal !important;
+}
+ 
+/* Folders with new/unread messages — bold */
+#folderTree .unread > .container > .name,
+#folderTree .new-messages > .container > .name {
+    font-weight: bold !important;
+}

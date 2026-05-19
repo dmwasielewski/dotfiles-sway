@@ -1,16 +1,28 @@
-/* Thunderbird interface — Roboto font */
+/* Thunderbird content - terminal-inspired calm colors */
 :root {
     font-family: Roboto, Arial, sans-serif !important;
+    --tb-terminal-bg: #1a1b26;
+    --tb-terminal-surface: #1e2230;
+    --tb-terminal-text: #c0caf5;
+    --tb-terminal-muted: #8a9bb5;
+    --tb-terminal-accent: #7aa2f7;
 }
 
-/* UNREAD — cyan text (matching Inbox badge) */
+/* Unread messages - calmer than the previous bright cyan. */
 #threadTree [data-properties~="unread"] {
-  color: rgb(0, 198, 251) !important;
-  font-weight: normal !important;
+    color: var(--tb-terminal-accent) !important;
+    font-weight: normal !important;
 }
  
-/* Folders with new/unread messages — bold */
+/* Folders with new/unread messages. */
 #folderTree .unread > .container > .name,
 #folderTree .new-messages > .container > .name {
     font-weight: bold !important;
+    color: var(--tb-terminal-text) !important;
+}
+
+/* Keep folder counters visible without the old neon look. */
+#folderTree .unread > .container > .unread-count,
+#folderTree .new-messages > .container > .unread-count {
+    color: var(--tb-terminal-muted) !important;
 }
