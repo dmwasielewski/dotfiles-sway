@@ -212,6 +212,7 @@ declare -A FLATPAKS=(
     ["io.mpv.Mpv"]="mpv"
     ["org.jdownloader.JDownloader"]="JDownloader"
     ["com.vixalien.sticky"]="Sticky"
+    ["org.kde.kdenlive"]="Kdenlive"
 )
 
 for id in "${!FLATPAKS[@]}"; do

@@ -229,6 +229,7 @@ Managed by `setup.sh`. Installed from Flathub as user Flatpaks (`--user`) to avo
 | Bitwarden | `com.bitwarden.desktop` | Password manager |
 | Spotify | `com.spotify.Client` | Music |
 | OBS Studio | `com.obsproject.Studio` | Screen recording |
+| Kdenlive | `org.kde.kdenlive` | Video editor |
 | mpv | `io.mpv.Mpv` | Video player |
 | JDownloader | `org.jdownloader.JDownloader` | Download manager |
 | Sticky | `com.vixalien.sticky` | Desktop sticky notes |
@@ -672,7 +673,7 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 - [x] Mako notifications (11s auto-dismiss)
 - [x] Clipboard manager (clipman + rofi)
 - [x] Fonts (JetBrainsMono Nerd Font, Font Awesome)
-- [x] All Flatpak apps installed via setup.sh (Vivaldi, mpv, VSCode, Obsidian, Bitwarden, Thunderbird, LibreOffice, Spotify, OBS, JDownloader, Sticky)
+- [x] All Flatpak apps installed via setup.sh (Vivaldi, mpv, VSCode, Obsidian, Bitwarden, Thunderbird, LibreOffice, Spotify, OBS, Kdenlive, JDownloader, Sticky)
 - [x] All system packages via packages.sh (rpm-ostree)
 - [x] Neovim 0.12.1 user-local binary with Chris Titus Tech `titus-kickstart` config
 - [x] PWA shortcuts (Claude AI, ChatGPT, WhatsApp)
@@ -822,6 +823,21 @@ messenger.startup.action = 1                   → Skip start page, open Inbox
 - The dark reader override blocks are intentionally labelled `Message body dark reader override` and `Message pane dark reader background`; remove only those blocks to restore Thunderbird defaults.
 - `userContent.css` keeps old terminal-inspired rules disabled inside `@media not all` while testing Thunderbird themes.
 - Before changing Thunderbird appearance again, keep a rollback copy. Current font-test snapshots are `thunderbird/userChrome.css_before_font_test` and `thunderbird/userContent.css_before_font_test`.
+
+### Message filters TODO
+
+After Damian recreates and tests Thunderbird message filters manually, add the relevant
+`msgFilterRules.dat` files to repo automation. They should be symlinked from profile account
+directories to repo-managed files so manual Thunderbird edits update the repo target, with
+one-time backups before replacing any existing profile files.
+
+## Kdenlive configuration
+
+Kdenlive is installed as the Flathub Flatpak `org.kde.kdenlive`. Keep it in the Flatpak layer,
+not rpm-ostree, because it is a GUI application and Flathub pulls matching runtime/plugin
+extensions. Kdenlive effects come from MLT/frei0r/avfilter and Flatpak-provided audio plugin
+extensions such as TAP/SWH when required. Do not add host-level video-effect plugin packages
+unless a specific missing effect is verified inside the Flatpak build.
 
 ### Extensions (install manually from Thunderbird Add-ons)
 | Extension | ID | Purpose |

@@ -22,6 +22,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Bitwarden — password manager
 - Spotify
 - OBS Studio — screen recording
+- Kdenlive — video editor
 - mpv — video player
 - JDownloader — download manager
 - Sticky — desktop sticky notes (com.vixalien.sticky)
@@ -48,6 +49,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - AdGuard for Linux CLI with Waybar toggle helper (click to enable/disable)
 - LibreOffice — open source office suite (Writer, Calc, Impress)
 - Thunderbird email client (Flatpak)
+- Kdenlive video editor (Flatpak)
 
 ---
 
@@ -413,6 +415,8 @@ pair <MAC_ADDRESS>
 - Thunderbird message list (`#threadTree`, Thread Pane) uses a Tokyo Night-inspired style: `Noto Sans` at `1rem`, `#1a1b26` background, `#c0caf5` text, cyan unread indicator/subject (`#7dcfff`), and `font-weight: 400` for read mail vs `600` for unread mail. Folder list (`#folderTree`, Folder Pane) uses the same base font and size.
 - Thunderbird message reader dark mode keeps the built-in Light/Dark toggle, but overrides the dark message background to match the Thread Pane (`#1a1b26`). This needs both `userContent.css` (`--color-gray-90`) and `userChrome.css` (`#messagepanebox`, `#singleMessage`, `#messagepane`).
 - Mako displays notifications but does not play notification sounds itself. Mail sounds should be handled by Thunderbird/PipeWire; if Thunderbird's default system sound stays silent, set a concrete custom sound in Thunderbird rather than debugging Mako first.
+- Kdenlive is installed as the Flathub Flatpak `org.kde.kdenlive`. Its effects/filters come from the Kdenlive/MLT stack, including bundled `frei0r`/`avfilter` support and Flatpak audio plugin extensions pulled in by Flathub; do not layer host video-effect packages unless a specific missing effect is verified.
+- TODO: after Thunderbird filters are recreated manually and tested, add `msgFilterRules.dat` files to repo automation as symlinked profile files with backups.
 - NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start
 - AdGuard for Linux: official CLI install via `bash ~/dotfiles-sway/scripts/setup-adguard.sh`; first-time `activate/configure/start` stays manual
 - Ubuntu dev container must be created after first reboot (distrobox installed via packages.sh)
@@ -610,7 +614,7 @@ bash ~/dotfiles-sway/scripts/fix-vivaldi-profiles.sh
 Host (rpm-ostree immutable)
 │
 ├─ Flatpak apps
-│   └─ User Flatpaks from Flathub: Obsidian, Vivaldi, Thunderbird, VSCode, Bitwarden, Spotify, OBS, mpv, JDownloader
+│   └─ User Flatpaks from Flathub: Obsidian, Vivaldi, Thunderbird, VSCode, Bitwarden, Spotify, OBS, Kdenlive, mpv, JDownloader
 │
 ├─ toolbox: damianf (Fedora version follows the host by default) — dev/DevOps
 │   ├─ node 22
