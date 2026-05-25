@@ -105,6 +105,7 @@ check_symlink "claude/settings.json" "$HOME/.claude/settings.json"
 check_symlink "claude-ai.desktop"    "$HOME/.local/share/applications/claude-ai.desktop"
 check_symlink "chatgpt.desktop"      "$HOME/.local/share/applications/chatgpt.desktop"
 check_symlink "whatsapp.desktop"     "$HOME/.local/share/applications/whatsapp.desktop"
+check_symlink "whispering-open.desktop" "$HOME/.local/share/applications/whispering-open.desktop"
 check_symlink "nvim Chris Titus Tech config" "$HOME/.config/nvim"
 check_symlink "power-menu"                 "$HOME/.local/bin/power-menu"
 check_symlink "deepseek"                   "$HOME/.local/bin/deepseek"
@@ -117,6 +118,21 @@ check_symlink "bat cross-distro wrapper"   "$HOME/.local/bin/bat"
 check_symlink "fd cross-distro wrapper"    "$HOME/.local/bin/fd"
 check_symlink "rg system wrapper"          "$HOME/.local/bin/rg"
 check_symlink "environment.d/locale.conf"  "$HOME/.config/environment.d/locale.conf"
+
+# ── 1b. Whispering Open ───────────────────────────────────────────────────
+section "1b. Whispering Open"
+
+if [[ -x "$HOME/.local/bin/whispering-open" ]]; then
+    pass "Whispering Open launcher binary"
+else
+    warn "Whispering Open not installed yet — run: bash ~/dotfiles-sway/scripts/setup-whispering-open.sh"
+fi
+
+if [[ -f "$HOME/.local/opt/whispering-open/current-binary" ]]; then
+    pass "Whispering Open install metadata"
+else
+    warn "Whispering Open install metadata missing — GitHub release may not have been downloaded yet"
+fi
 
 
 # ── 1a. Locale & 24h time format ───────────────────────────────────────────

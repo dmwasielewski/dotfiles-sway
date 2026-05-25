@@ -44,6 +44,7 @@ ln -sf "$DOTFILES/.bashrc"                                    ~/.bashrc
 ln -sf "$DOTFILES/applications/claude-ai.desktop"             ~/.local/share/applications/claude-ai.desktop
 ln -sf "$DOTFILES/applications/chatgpt.desktop"               ~/.local/share/applications/chatgpt.desktop
 ln -sf "$DOTFILES/applications/whatsapp.desktop"              ~/.local/share/applications/whatsapp.desktop
+ln -sf "$DOTFILES/applications/whispering-open.desktop"       ~/.local/share/applications/whispering-open.desktop
 ln -sf "$DOTFILES/claude/settings.json"                        ~/.claude/settings.json
 mkdir -p ~/.local/bin
 ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.local/bin/deepseek
@@ -112,6 +113,10 @@ install_flatpak_app org.jdownloader.JDownloader
 install_flatpak_app com.vixalien.sticky
 install_flatpak_app org.libreoffice.LibreOffice
 install_flatpak_app org.kde.kdenlive
+
+echo "==> Installing Whispering Open from GitHub release..."
+run_step_warn "WHISPERING_OPEN_SETUP" "Installing Whispering Open from GitHub release" \
+    bash "$DOTFILES/scripts/setup-whispering-open.sh"
 
 # Fonts
 echo "==> Installing JetBrainsMono Nerd Font..."

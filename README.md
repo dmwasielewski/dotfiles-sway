@@ -50,6 +50,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - LibreOffice — open source office suite (Writer, Calc, Impress)
 - Thunderbird email client (Flatpak)
 - Kdenlive video editor (Flatpak)
+- Whispering Open — downloaded from the latest GitHub release when available
 
 ---
 
@@ -439,7 +440,7 @@ dotfiles-sway/
 ├── mako/                    # Mako notification config
 ├── claude/
 │   └── settings.json        # Claude Code settings (plugins, statusline) → symlinked to ~/.claude/settings.json
-├── applications/            # PWA desktop shortcuts (Claude AI, ChatGPT, WhatsApp)
+├── applications/            # Desktop shortcuts (Claude AI, ChatGPT, WhatsApp, Whispering Open)
 ├── nvim/
 │   └── christitustech       # Git submodule: ChrisTitusTech/neovim, config lives in titus-kickstart/
 ├── .githooks/
@@ -454,6 +455,7 @@ dotfiles-sway/
 │   ├── setup-neovim-config.sh         # Neovim 0.12.1 + Chris Titus Tech config symlink
 │   ├── setup-nordvpn.sh               # NordVPN CLI install + nordvpnd enable/start + group setup — writes state
 │   ├── setup-adguard.sh               # AdGuard for Linux CLI install — writes state
+│   ├── setup-whispering-open.sh       # Whispering Open GitHub release download — non-blocking
 │   ├── setup-damian-container.sh      # Toolbox damianf: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
 │   ├── setup-ubuntu-dev-container.sh  # Distrobox damianu: Ubuntu 26.04 dev/AI CLI parity — writes state
 │   ├── configure-shellgpt.sh          # Non-interactive ShellGPT config from private env/API files
@@ -493,6 +495,38 @@ If `gitleaks` is missing or detects a secret, the push is blocked. You can run t
 
 ```bash
 gitleaks detect --source ~/dotfiles-sway --redact --verbose
+```
+
+---
+
+## Whispering Open
+
+`setup.sh` attempts to install Whispering Open from the latest GitHub release:
+
+```bash
+bash ~/dotfiles-sway/scripts/setup-whispering-open.sh
+```
+
+By default it downloads from:
+
+```text
+dmwasielewski/whispering-open
+```
+
+The installer writes the app under `~/.local/opt/whispering-open`, creates
+`~/.local/bin/whispering-open`, and symlinks `applications/whispering-open.desktop` into
+`~/.local/share/applications/` so it appears in `Mod+D`.
+
+This step is intentionally non-blocking during `setup.sh`: if the GitHub release is missing,
+the network is unavailable, or the asset format is unsupported, the failure is recorded in
+`~/.dotfiles-install-state` and `~/.dotfiles-install.log`, then the rest of setup continues.
+
+Supported release asset formats are AppImage, tar archives, zip archives, and RPMs that can
+be unpacked locally. Override the source with:
+
+```bash
+WHISPERING_OPEN_REPO=owner/repo bash ~/dotfiles-sway/scripts/setup-whispering-open.sh
+WHISPERING_OPEN_ASSET_REGEX='linux|x86_64|appimage' bash ~/dotfiles-sway/scripts/setup-whispering-open.sh
 ```
 
 ---

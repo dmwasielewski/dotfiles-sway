@@ -86,6 +86,7 @@ dotfiles-sway/
     ├── setup-neovim-config.sh         ← Neovim 0.12.1 user-local binary + Chris Titus Tech config symlink
     ├── setup-nordvpn.sh               ← NordVPN CLI install + nordvpnd enable/start + group setup — writes state
     ├── setup-adguard.sh               ← AdGuard for Linux CLI install — writes state
+    ├── setup-whispering-open.sh       ← Whispering Open latest GitHub release download — non-blocking
     ├── setup-damian-container.sh      ← Toolbox damianf: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
     ├── setup-ubuntu-dev-container.sh  ← Distrobox damianu: Ubuntu 26.04 dev/AI CLI parity — writes state
     ├── configure-shellgpt.sh          ← Non-interactive ShellGPT config from private env/API files
@@ -241,6 +242,7 @@ Notes:
 - LibreOffice is installed as the verified Flathub Flatpak `org.libreoffice.LibreOffice` (Writer, Calc, Impress).
 - NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start.
 - AdGuard for Linux: official CLI install via `bash ~/dotfiles-sway/scripts/setup-adguard.sh`; first-time activation/configuration remains manual.
+- Whispering Open: `setup.sh` runs `scripts/setup-whispering-open.sh` as a non-blocking step. It downloads the latest GitHub release from `dmwasielewski/whispering-open` into `~/.local/opt/whispering-open`, creates `~/.local/bin/whispering-open`, and uses `applications/whispering-open.desktop` for the launcher. If the release is not ready or the network fails, setup must continue and the failure should be visible in state/log output.
 
 ### Layer 3: toolbox `damianf` (Fedora dev environment, versioned with the host unless overridden)
 
@@ -466,6 +468,15 @@ Three `.desktop` files that open web apps as minimal Vivaldi windows (no browser
 - WhatsApp → `web.whatsapp.com`
 
 Symlinked to `~/.local/share/applications/` by `setup.sh`.
+
+### Whispering Open launcher
+
+`applications/whispering-open.desktop` launches the locally installed `~/.local/bin/whispering-open`
+with the WebKit/Mesa environment workarounds documented in `AI_ERRORS.md`.
+
+Do not automate upstream Whispering AppImage/RPM downloads here. The documented stable path is
+Damian's own `whispering-open` GitHub release. Keep the install step non-blocking so a missing
+release does not break a fresh system install.
 
 ---
 
@@ -695,6 +706,7 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 - [x] AdGuard for Linux — CLI install, and Waybar toggle helper
 - [x] Power button — rofi power menu (shutdown/reboot/suspend/hibernate/logout)
 - [x] Voice typing — push-to-talk `Mod+T` with local Whisper AI (faster-whisper, no cloud)
+- [x] Whispering Open release installer — non-blocking GitHub download with desktop launcher
 
 ## What is planned / in progress
 
