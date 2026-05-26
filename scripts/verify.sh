@@ -117,6 +117,7 @@ check_symlink "damianu entry shortcut"     "$HOME/.local/bin/damianu"
 check_symlink "bat cross-distro wrapper"   "$HOME/.local/bin/bat"
 check_symlink "fd cross-distro wrapper"    "$HOME/.local/bin/fd"
 check_symlink "rg system wrapper"          "$HOME/.local/bin/rg"
+check_symlink "Whispering Open launcher wrapper" "$HOME/.local/bin/whispering-open-launcher"
 check_symlink "environment.d/locale.conf"  "$HOME/.config/environment.d/locale.conf"
 
 # ── 1b. Whispering Open ───────────────────────────────────────────────────
