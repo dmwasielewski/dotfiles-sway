@@ -57,7 +57,6 @@ ln -sf "$DOTFILES/scripts/enter-damianu.sh"                    ~/.local/bin/dami
 ln -sf "$DOTFILES/scripts/bat-wrapper.sh"                      ~/.local/bin/bat
 ln -sf "$DOTFILES/scripts/fd-wrapper.sh"                       ~/.local/bin/fd
 ln -sf "$DOTFILES/scripts/rg-wrapper.sh"                       ~/.local/bin/rg
-ln -sf "$DOTFILES/scripts/whispering-open-launcher.sh"          ~/.local/bin/whispering-open-launcher
 mkdir -p ~/.npm-global/bin
 ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.npm-global/bin/deepseek
 ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.npm-global/bin/deepseek-tui

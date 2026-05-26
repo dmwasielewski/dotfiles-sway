@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Whispering Open
 Comment=Speech-to-text dictation
-Exec=/var/home/damian/.local/bin/whispering-open-launcher
+Exec=/var/home/damian/.local/bin/whispering-open
 Icon=audio-input-microphone
 Type=Application
 Categories=AudioVideo;Audio;
