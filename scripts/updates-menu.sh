@@ -10,27 +10,13 @@ source "$SCRIPT_DIR/lib-updates.sh"
 
 bar() { printf '%s\n' "────────────────────────────────────────────────────"; }
 
-# The rpm-ostree check is slow and flaky (a third-party repo can be briefly
-# unreachable), so we run it ONCE per session and reuse the result everywhere.
-# This keeps the summary and the list view consistent. refresh_os_cache()
-# retries a few times so a transient repo hiccup doesn't show a false "0".
-OS_RAW_FILE="$(mktemp -t updates-osraw.XXXXXX)"
-trap 'rm -f "$OS_RAW_FILE"' EXIT
-
-refresh_os_cache() {
-    local try out
-    for try in 1 2 3; do
-        out="$(os_check_raw)"
-        # Accept the result if it clearly says pending or up-to-date;
-        # retry only when it failed because a repo was unreachable.
-        if [[ "$(os_parse_state "$out")" != "unknown" ]]; then
-            printf '%s' "$out" > "$OS_RAW_FILE"; return
-        fi
-        sleep 1
-    done
-    printf '%s' "$out" > "$OS_RAW_FILE"   # give up: store last (unknown) result
-}
-os_raw_cached() { cat "$OS_RAW_FILE" 2>/dev/null; }
+# OS check uses the shared "last known good" cache from lib-updates.sh:
+# os_refresh_cache() does a live check (with retries) and falls back to the
+# last successful result when a repo is unreachable. OS_FRESHNESS records
+# whether the data is fresh / stale / never-checked for this session.
+OS_FRESHNESS="fresh"
+refresh_os_cache() { OS_FRESHNESS="$(os_refresh_cache)"; }
+os_raw_cached()    { os_cached_raw; }
 
 # ── Summary screen (always shows every section) ──────────────────────────
 show_summary() {
@@ -70,15 +56,17 @@ show_summary() {
     if [[ "$OS_STAGED" -eq 1 ]]; then
         echo "    Available:  staged — reboot to apply"
         echo "    Packages:   (staged)"
+    elif [[ "$OS_FRESHNESS" == "none" ]]; then
+        echo "    Available:  not yet checked (repo unreachable)"
+        echo "    Packages:   ?"
     elif [[ "$OS_PENDING" -eq 1 ]]; then
         echo "    Available:  $(os_parse_version "$OS_RAW")"
         echo "    Packages:   $(os_parse_pkgcount "$OS_RAW")  (total to upgrade)"
-    elif [[ "$OS_STATE" == "unknown" ]]; then
-        echo "    Available:  check unavailable (a repo is unreachable)"
-        echo "    Packages:   ?"
+        [[ "$OS_FRESHNESS" == "stale" ]] && echo "    Checked:    $(os_cache_date)  (cached — repo offline now)"
     else
         echo "    Available:  up to date"
         echo "    Packages:   0"
+        [[ "$OS_FRESHNESS" == "stale" ]] && echo "    Checked:    $(os_cache_date)  (cached — repo offline now)"
     fi
     if [[ "$OS_PENDING" -eq 1 ]]; then
         local sec reg pc

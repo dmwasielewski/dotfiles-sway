@@ -57,26 +57,30 @@ if [[ "${#container_lines[@]}" -gt 0 ]]; then
     total=$(( total + container_warn ))
 fi
 
-# ── Fedora OS (last; check runs once) ─────────────────────
-os_raw="$(os_check_raw)"
+# ── Fedora OS (last-known-good cache; stale fallback when repo offline) ────
+os_fresh="$(os_refresh_cache)"
+os_raw="$(os_cached_raw)"
 os_state="$(os_parse_state "$os_raw")"
+stale_note=""
+[[ "$os_fresh" == "stale" ]] && stale_note=" (as of $(os_cache_date), repo offline)"
+
 if [[ "$(os_staged)" -eq 1 ]]; then
     os_is_pending=1
     lines+=("OS: staged update — reboot to apply")
     total=$(( total + 1 ))
+elif [[ "$os_fresh" == "none" ]]; then
+    lines+=("OS: not yet checked (repo unreachable)")
 elif [[ "$os_state" == "pending" ]]; then
     os_is_pending=1
     nv="$(os_parse_version "$os_raw")"; pc="$(os_parse_pkgcount "$os_raw")"
     sec_high="$(os_parse_sec_total "$os_raw")"          # all security-advisory packages
     reg=$(( ${pc:-0} - sec_high )); [[ "$reg" -lt 0 ]] && reg=0
-    lines+=("OS: ${pc:-?} packages → ${nv:-new version}")
+    lines+=("OS: ${pc:-?} packages → ${nv:-new version}$stale_note")
     lines+=("  Security: $sec_high")
     lines+=("  Regular:  $reg")
     total=$(( total + 1 ))
-elif [[ "$os_state" == "unknown" ]]; then
-    lines+=("OS: check unavailable (a repo is unreachable)")
 else
-    lines+=("OS: up to date (booted $(os_last_label))")
+    lines+=("OS: up to date (booted $(os_last_label))$stale_note")
 fi
 
 # ── Severity class ────────────────────────────────────────

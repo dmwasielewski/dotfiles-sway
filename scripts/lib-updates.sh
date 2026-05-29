@@ -60,6 +60,35 @@ flatpak_last_label() {
 os_check_raw()  { rpm-ostree upgrade --check 2>&1 || true; }   # call once, capture
 os_staged()     { rpm-ostree status 2>/dev/null | grep -q "(staged)" && echo 1 || echo 0; }
 
+# ── "Last known good" cache (professional stale-fallback pattern) ──────────
+# When a repo is unreachable the live check fails; rather than lie "up to
+# date", we keep the last SUCCESSFUL check and show its date. Like apt/dnf
+# serving cached metadata when offline.
+OS_CACHE_FILE="$CACHE_DIR/os-check.cache"
+OS_CACHE_TS_FILE="$CACHE_DIR/os-check.ts"
+
+# Refresh the cache from a live check (3 retries for transient repo hiccups).
+# Echoes freshness: "fresh" (just checked OK) | "stale" (using old cache) | "none".
+os_refresh_cache() {
+    local out try
+    for try in 1 2 3; do
+        out="$(os_check_raw)"
+        if [[ "$(os_parse_state "$out")" != "unknown" ]]; then
+            mkdir -p "$CACHE_DIR"
+            printf '%s' "$out" > "$OS_CACHE_FILE"
+            date +%s > "$OS_CACHE_TS_FILE"
+            echo "fresh"; return
+        fi
+        sleep 1
+    done
+    [[ -f "$OS_CACHE_FILE" ]] && echo "stale" || echo "none"
+}
+os_cached_raw() { cat "$OS_CACHE_FILE" 2>/dev/null; }
+os_cache_date() {                      # date label of the last successful check
+    [[ -f "$OS_CACHE_TS_FILE" ]] || { echo "never"; return; }
+    date -d "@$(cat "$OS_CACHE_TS_FILE")" '+%Y-%m-%d %H:%M' 2>/dev/null || echo "unknown"
+}
+
 os_parse_pending() {                   # $1 = raw check text
     printf '%s' "$1" | grep -q "AvailableUpdate:" && echo 1 || echo 0
 }
