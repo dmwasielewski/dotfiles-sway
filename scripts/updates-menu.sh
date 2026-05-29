@@ -57,7 +57,7 @@ show_summary() {
         echo "    Packages:   (staged)"
     elif [[ "$OS_PENDING" -eq 1 ]]; then
         echo "    Available:  $(os_parse_version "$OS_RAW")"
-        echo "    Packages:   $(os_parse_pkgcount "$OS_RAW")"
+        echo "    Packages:   $(os_parse_pkgcount "$OS_RAW")  (total to upgrade)"
     elif [[ "$OS_STATE" == "unknown" ]]; then
         echo "    Available:  check unavailable (a repo is unreachable)"
         echo "    Packages:   ?"
@@ -65,10 +65,17 @@ show_summary() {
         echo "    Available:  up to date"
         echo "    Packages:   0"
     fi
-    echo "      Important: $(os_parse_sec important "$OS_RAW")"
-    echo "      Moderate:  $(os_parse_sec moderate "$OS_RAW")"
-    echo "      Low:       $(os_parse_sec low "$OS_RAW")"
-    echo "      Unknown:   $(os_parse_sec unknown "$OS_RAW")"
+    if [[ "$OS_PENDING" -eq 1 ]]; then
+        local si sm sl su sa
+        si="$(os_parse_sec important "$OS_RAW")"; sm="$(os_parse_sec moderate "$OS_RAW")"
+        sl="$(os_parse_sec low "$OS_RAW")";       su="$(os_parse_sec unknown "$OS_RAW")"
+        sa=$(( si + sm + sl + su ))
+        echo "    Security advisories: $sa  (subset of the packages above)"
+        echo "      Important: $si"
+        echo "      Moderate:  $sm"
+        echo "      Low:       $sl"
+        echo "      Unknown:   $su"
+    fi
     echo ""
     bar
 }

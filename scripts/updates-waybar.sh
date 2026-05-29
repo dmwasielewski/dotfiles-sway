@@ -69,11 +69,14 @@ elif [[ "$os_state" == "pending" ]]; then
     nv="$(os_parse_version "$os_raw")"; pc="$(os_parse_pkgcount "$os_raw")"
     sec_imp="$(os_parse_sec important "$os_raw")"; sec_crit="$(os_parse_sec critical "$os_raw")"
     sec_high=$(( sec_imp + sec_crit ))
-    lines+=("OS: ${pc:-?} pkg(s) → ${nv:-new version}")
-    lines+=("  Important: $sec_imp")
-    lines+=("  Moderate:  $(os_parse_sec moderate "$os_raw")")
-    lines+=("  Low:       $(os_parse_sec low "$os_raw")")
-    lines+=("  Unknown:   $(os_parse_sec unknown "$os_raw")")
+    sec_mod="$(os_parse_sec moderate "$os_raw")"; sec_low="$(os_parse_sec low "$os_raw")"; sec_unk="$(os_parse_sec unknown "$os_raw")"
+    sec_all=$(( sec_imp + sec_mod + sec_low + sec_unk ))
+    lines+=("OS: ${pc:-?} packages → ${nv:-new version}")
+    lines+=("  Security advisories: $sec_all of $pc")
+    lines+=("    Important: $sec_imp")
+    lines+=("    Moderate:  $sec_mod")
+    lines+=("    Low:       $sec_low")
+    lines+=("    Unknown:   $sec_unk")
     total=$(( total + 1 ))
 elif [[ "$os_state" == "unknown" ]]; then
     lines+=("OS: check unavailable (a repo is unreachable)")
