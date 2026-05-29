@@ -129,46 +129,51 @@ show_list() {
         echo "║   Update List                                    ║"
         echo "╚══════════════════════════════════════════════════╝"
         echo ""
+        local NAME_W=44 VER_W=22
+
         # Flatpak — count here equals the menu count (same source)
         local fp; fp="$(flatpak_count)"
         echo "FLATPAK APPS ($fp)"
         if [[ "$fp" -gt 0 ]]; then
-            printf '  %-42s %-12s %-12s\n' "App" "Current" "Available"
-            printf '  %-42s %-12s %-12s\n' "───" "───────" "─────────"
+            printf '  %-*s  %-*s    %s\n' "$NAME_W" "Package" "$VER_W" "Current" "New"
+            printf '  %s\n' "$(printf '─%.0s' $(seq 1 $((NAME_W + VER_W + 18))))"
             while IFS=$'\t' read -r appid cur avail; do
                 [[ -z "$appid" ]] && continue
-                printf '  %-42s %-12s %-12s\n' "$appid" "$cur" "$avail"
+                printf '  %-*s  %-*s →  %s\n' "$NAME_W" "$appid" "$VER_W" "$cur" "$avail"
             done < <(flatpak_update_rows)
         else
             echo "  (up to date)"
         fi
         echo ""
-        # OS
+
+        # OS — table of package name | current → new
         echo "FEDORA OS"
         local os_raw; os_raw="$(os_check_raw)"
         if [[ "$(os_parse_pending "$os_raw")" -eq 1 ]]; then
-            printf '  Current:    %s\n' "$(os_current_version)"
-            printf '  Available:  %s\n' "$(os_parse_version "$os_raw")"
-            printf '  Packages:   %s\n' "$(os_parse_pkgcount "$os_raw")"
-            echo "  Security advisories:"
-            printf '    Important: %s   Moderate: %s   Low: %s   Unknown: %s\n' \
-                "$(os_parse_sec important "$os_raw")" "$(os_parse_sec moderate "$os_raw")" \
-                "$(os_parse_sec low "$os_raw")" "$(os_parse_sec unknown "$os_raw")"
-            echo ""
-            echo "  Advisory detail:"
+            local sec pc reg
+            sec="$(os_parse_sec_total "$os_raw")"; pc="$(os_parse_pkgcount "$os_raw")"
+            reg=$(( ${pc:-0} - sec )); [[ "$reg" -lt 0 ]] && reg=0
+            printf '  %s → %s   (Security: %s, Regular: %s)\n\n' \
+                "$(os_current_version)" "$(os_parse_version "$os_raw")" "$sec" "$reg"
+            printf '  %-*s  %-*s    %s\n' "$NAME_W" "Package" "$VER_W" "Current" "New"
+            printf '  %s\n' "$(printf '─%.0s' $(seq 1 $((NAME_W + VER_W + 18))))"
+            # Parse "name oldver -> newver" from the Upgraded: section
             rpm-ostree upgrade --preview 2>/dev/null \
-                | awk '/SecAdvisories:/{p=1} p' | sed 's/^/    /' | head -60
+                | awk '/Upgraded:/{p=1;next} /Removed:|Added:|Downgraded:/{p=0} p && NF>=3 {print}' \
+                | awk -v nw="$NAME_W" -v vw="$VER_W" \
+                    '{ name=$1; old=$2; new=$4; printf "  %-*s  %-*s →  %s\n", nw, name, vw, old, new }'
         else
             echo "  (up to date)"
         fi
         echo ""
+
         # Containers
         echo "CONTAINERS"
         local found=0 name
         while IFS= read -r name; do
             [[ -z "$name" ]] && continue
             found=1
-            printf '  %-22s last updated: %s\n' "$name" "$(upd_age_label "container-$name")"
+            printf '  %-*s  last updated: %s\n' "$NAME_W" "$name" "$(container_age_label "$name")"
         done < <(discover_distrobox; discover_toolbox)
         [[ "$found" -eq 0 ]] && echo "  (none found)"
         echo ""
