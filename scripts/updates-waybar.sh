@@ -26,6 +26,7 @@ fi
 
 total=0
 os_is_pending=0
+sec_high=0          # count of important/critical security advisories
 lines=()
 
 # ── Flatpak (first — most frequently updated) ─────────────
@@ -66,8 +67,10 @@ if [[ "$(os_staged)" -eq 1 ]]; then
 elif [[ "$os_state" == "pending" ]]; then
     os_is_pending=1
     nv="$(os_parse_version "$os_raw")"; pc="$(os_parse_pkgcount "$os_raw")"
+    sec_imp="$(os_parse_sec important "$os_raw")"; sec_crit="$(os_parse_sec critical "$os_raw")"
+    sec_high=$(( sec_imp + sec_crit ))
     lines+=("OS: ${pc:-?} pkg(s) → ${nv:-new version}")
-    lines+=("  Important: $(os_parse_sec important "$os_raw")  Moderate: $(os_parse_sec moderate "$os_raw")  Low: $(os_parse_sec low "$os_raw")")
+    lines+=("  Important: $sec_imp  Moderate: $(os_parse_sec moderate "$os_raw")  Low: $(os_parse_sec low "$os_raw")")
     total=$(( total + 1 ))
 elif [[ "$os_state" == "unknown" ]]; then
     lines+=("OS: check unavailable (a repo is unreachable)")
@@ -76,10 +79,13 @@ else
 fi
 
 # ── Severity class ────────────────────────────────────────
-# uptodate keeps a normal-coloured icon (NOT hidden), like other modules.
-if   [[ "$total" -eq 0 ]];          then klass="uptodate"
-elif [[ "$os_is_pending" -eq 1 ]];  then klass="critical"
-else                                     klass="warning"
+# Colour reflects importance of what is pending:
+#   uptodate  (neutral) — nothing to update (icon stays visible, normal colour)
+#   critical  (red)     — Fedora OS update pending OR high security advisories
+#   warning   (amber)   — only Flatpak apps / stale containers (no reboot, no OS)
+if   [[ "$total" -eq 0 ]];                              then klass="uptodate"
+elif [[ "$os_is_pending" -eq 1 || "$sec_high" -gt 0 ]]; then klass="critical"
+else                                                         klass="warning"
 fi
 
 tooltip="$(printf '%s\n' "${lines[@]}")"
