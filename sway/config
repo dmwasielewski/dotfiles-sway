@@ -125,9 +125,9 @@ input "type:touchpad" {
     bindsym --no-repeat $mod+t exec ~/dotfiles-sway/scripts/voice-type-start.sh
     bindsym --release    $mod+t exec ~/dotfiles-sway/scripts/voice-type-stop.sh
 
-    # Whispering Open push-to-talk — XGrabKey doesn't work on Wayland, use SIGUSR1/2 instead
-    bindsym --no-repeat Alt+Shift+d exec pkill -USR1 -x whispering-open
-    bindsym --release    Alt+Shift+d exec pkill -USR2 -x whispering-open
+    # Whispering Open push-to-talk — XGrabKey doesn't work on Wayland; SIGUSR1 reserved by WebKit
+    bindsym --no-repeat Alt+Shift+d exec kill -RTMIN+1 $(pgrep -x whispering-open)
+    bindsym --release    Alt+Shift+d exec kill -RTMIN+2 $(pgrep -x whispering-open)
 
     # Kill focused window
     bindsym $mod+Shift+q kill
