@@ -84,6 +84,13 @@ os_parse_sec() {                       # $1 = severity, $2 = raw check text
     local n; n="$(printf '%s' "$line" | grep -oiP "[0-9]+(?=[[:space:]]+$1)" | head -1)"
     echo "${n:-0}"
 }
+# Total security advisories (all severities summed) = the "Important" bucket.
+os_parse_sec_total() {                 # $1 = raw check text
+    local i m l u
+    i="$(os_parse_sec important "$1")"; m="$(os_parse_sec moderate "$1")"
+    l="$(os_parse_sec low "$1")";       u="$(os_parse_sec unknown "$1")"
+    echo $(( i + m + l + u ))
+}
 os_current_version() {
     rpm-ostree status --json 2>/dev/null \
         | python3 -c "import json,sys; print(json.load(sys.stdin)['deployments'][0].get('version',''))" 2>/dev/null

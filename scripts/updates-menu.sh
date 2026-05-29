@@ -66,15 +66,12 @@ show_summary() {
         echo "    Packages:   0"
     fi
     if [[ "$OS_PENDING" -eq 1 ]]; then
-        local si sm sl su sa
-        si="$(os_parse_sec important "$OS_RAW")"; sm="$(os_parse_sec moderate "$OS_RAW")"
-        sl="$(os_parse_sec low "$OS_RAW")";       su="$(os_parse_sec unknown "$OS_RAW")"
-        sa=$(( si + sm + sl + su ))
-        echo "    Security advisories: $sa  (subset of the packages above)"
-        echo "      Important: $si"
-        echo "      Moderate:  $sm"
-        echo "      Low:       $sl"
-        echo "      Unknown:   $su"
+        local sec reg pc
+        sec="$(os_parse_sec_total "$OS_RAW")"
+        pc="$(os_parse_pkgcount "$OS_RAW")"
+        reg=$(( ${pc:-0} - sec )); [[ "$reg" -lt 0 ]] && reg=0
+        echo "    Security:   $sec  (packages with a security advisory)"
+        echo "    Regular:    $reg  (all other updates)"
     fi
     echo ""
     bar
