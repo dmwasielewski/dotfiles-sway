@@ -3,6 +3,42 @@
 > **Read this before making any changes to this repository.**
 >
 > This file records things that **DO NOT WORK** and why, plus what **DOES WORK**
+
+## 0. Waybar — NEVER start or restart manually
+
+**Problem:** Running `waybar &` or `waybar -c ... &` from a script or shell creates a SECOND
+Waybar instance alongside the one Sway manages. Sway's `exec waybar` in `sway/config` starts
+Waybar at login and re-starts it on `swaymsg reload`. Any manually started instance duplicates
+the bar on screen.
+
+`pkill -SIGHUP waybar` kills Waybar (SIGHUP is not a reload signal for Waybar — it terminates
+the process). Sway then restarts it from `exec`, but if the AI also starts one manually,
+two instances run simultaneously.
+
+**Fix — reload Waybar config without restart:**
+```bash
+pkill -SIGUSR2 waybar    # sends USR2 = reload config in-place, NO restart
+```
+
+**Fix — if Waybar is dead (0 processes), let Sway restart it:**
+```bash
+swaymsg reload           # Sway re-runs exec commands including waybar
+```
+
+**NEVER do:**
+```bash
+pkill -SIGHUP waybar       # kills it (not a reload)
+waybar &                   # starts a duplicate
+waybar -c ... &            # starts a duplicate
+pkill waybar && waybar &   # race condition → duplicate
+```
+
+**Check instance count before any Waybar action:**
+```bash
+pgrep -x waybar | wc -l   # must be 1
+```
+
+If count is 2+, kill all extras: `pkill -x waybar; sleep 1; swaymsg reload`
 > instead. Every AI session starts here to avoid repeating known mistakes.
 >
 > Only **real logic/architecture issues** are recorded, NOT transient failures
@@ -443,3 +479,176 @@ NOT for `code_execution` (Python) or `task_shell_wait`. This can cause silent wa
 **Fix:** When the user needs to approve, use `request_user_input` to explicitly ask.
 When doing file writes via `code_execution`, note that no approval prompt will appear
 — confirm with the user verbally in chat first.
+
+---
+
+## 11. Whispering on Sway
+
+### AppImage does not automatically appear in `Super+D`
+**Problem:** Downloading and executing Whispering as an AppImage does not register it in
+the Sway `Super+D` rofi launcher. The app may run successfully, but searching for
+`Whispering` in the launcher shows nothing because no `.desktop` file exists.
+
+**Fix:** For testing, create a user desktop entry, then refresh the desktop database:
+```ini
+[Desktop Entry]
+Type=Application
+Name=Whispering
+Comment=Speech-to-text dictation
+Exec=/path/to/working/whispering
+Terminal=false
+Categories=Utility;
+StartupNotify=true
+StartupWMClass=Whispering
+```
+```bash
+update-desktop-database ~/.local/share/applications
+```
+
+**Real case:** During the first Whispering test on 2026-05-25, the AppImage was downloaded to:
+```text
+~/Downloads/whispering-test/Whispering_7.11.0_amd64.AppImage
+```
+and a temporary launcher was created at:
+```text
+~/.local/share/applications/whispering-test.desktop
+```
+
+If Whispering is accepted as the permanent replacement for the repo voice-typing flow, do
+not leave the launcher as an ad-hoc file in `~/.local/share/applications`. Move the
+`.desktop` file into `applications/`, symlink it from `setup.sh`, add `verify.sh` checks,
+document the install path/provider/model choices, and commit/push the full change set.
+
+### Codex sandbox is not a valid AppImage/Sway test environment
+**Problem:** Running the Whispering AppImage directly from the Codex sandbox failed with:
+```text
+Error: No suitable fusermount binary found on the $PATH
+fuse: device not found, try 'modprobe fuse' first
+Cannot mount AppImage, please check your FUSE setup.
+```
+The host had `fuse3` installed and `fusermount3` available, but the sandbox did not expose
+`/dev/fuse`, so the failure was a sandbox limitation rather than a reliable host diagnosis.
+
+**Fix:** Test GUI AppImages outside the Codex sandbox. On this Sway setup, use approved
+host execution through Sway:
+```bash
+swaymsg exec /var/home/damian/Downloads/whispering-test/Whispering_7.11.0_amd64.AppImage
+```
+
+### Direct GUI launch from Codex may fail with EGL
+**Problem:** Running the AppImage directly outside the sandbox but still from the Codex
+command context printed:
+```text
+Could not create default EGL display: EGL_BAD_PARAMETER. Aborting...
+```
+The same AppImage launched via `swaymsg exec` did create a `Whispering` window in the Sway
+tree and initialized app data under:
+```text
+~/.local/share/com.bradenwong.whispering
+```
+
+**Fix:** For GUI validation, prefer `swaymsg exec ...` and verify with:
+```bash
+swaymsg -t get_tree | rg -i 'whisper|epicenter|tauri'
+```
+
+### AppImage v7.11.0 opened but rendered a blank white window
+**Problem:** Whispering `v7.11.0` AppImage opened a Sway window, but Damian saw only a
+plain white/light background with no text, buttons, or usable UI. This still happened after:
+- moving the app/WebKit cache out of the way
+- launching with `WEBKIT_DISABLE_COMPOSITING_MODE=1`
+- launching with `WEBKIT_DISABLE_DMABUF_RENDERER=1`
+- launching with `GDK_BACKEND=x11`
+- launching with `LIBGL_ALWAYS_SOFTWARE=1`
+
+Whispering app logs under `~/.local/share/com.bradenwong.whispering/logs/` were empty, so
+the failure appeared to happen before the app's own logging layer.
+
+**Fix / working test:** Do not assume the AppImage works on this Fedora Sway Atomic setup.
+On 2026-05-25, the working test was the RPM build unpacked locally, not installed system-wide:
+```bash
+mkdir -p ~/Downloads/whispering-test/rpm-7.11.0
+cd ~/Downloads/whispering-test/rpm-7.11.0
+rpm2cpio ../Whispering-7.11.0-1.x86_64.rpm | cpio -idmv
+swaymsg exec 'env GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 LIBGL_ALWAYS_SOFTWARE=1 ~/Downloads/whispering-test/rpm-7.11.0/usr/bin/whispering'
+```
+
+The temporary launcher was updated to use the unpacked RPM binary:
+```ini
+Exec=env GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 LIBGL_ALWAYS_SOFTWARE=1 /var/home/damian/Downloads/whispering-test/rpm-7.11.0/usr/bin/whispering
+```
+
+That only made the UI render far enough to inspect it. It was not stable.
+
+### RPM binary rendered, then crashed/hung on interaction
+**Problem:** The unpacked RPM binary for Whispering `v7.11.0` could show the UI, but Damian
+reported that the app froze when clicking inside it. User journal and coredump output confirmed
+real crashes:
+```text
+Process ... (whispering) of user 1000 dumped core.
+Module libEGL_mesa.so.0 from rpm mesa-26.0.5-3.fc44.x86_64
+Module libwebkit2gtk-4.1.so.0 ...
+#0 WebKit::AcceleratedBackingStore::update(...)
+```
+and:
+```text
+Process ... (WebKitWebProces) of user 1000 dumped core.
+#0 WebCore::RenderLayerCompositor::updateOverflowControlsLayers(...)
+```
+
+`coredumpctl --since '15 minutes ago'` showed repeated `SIGSEGV` crashes for both:
+```text
+/var/home/damian/Downloads/whispering-test/rpm-7.11.0/usr/bin/whispering
+/usr/libexec/webkit2gtk-4.1/WebKitWebProcess
+```
+
+**Fix / decision, updated 2026-05-25:** Do not automate the upstream Whispering release
+as-is on this Fedora Sway Atomic setup. The downloaded AppImage did not render reliably, and
+the unpacked RPM binary was not stable after interaction.
+
+A local source build from `EpicenterHQ/epicenter` did become usable after patching the app:
+- remove the global SvelteKit `onNavigate(...)` hook from
+  `apps/whispering/src/routes/+layout.svelte`
+- specifically remove the `document.startViewTransition(...)` wrapper; on this
+  Fedora 44/Sway/WebKitGTK stack it matched the WebKit crash path
+- change the main sidebar navigation in
+  `apps/whispering/src/routes/(app)/_components/VerticalNav.svelte` from `<a href=...>`
+  links to `<button onclick={() => goto(item.href)}>` controls, matching the behavior of
+  the lower sidebar buttons that already worked
+
+The working local binary was built with:
+```bash
+toolbox run --container damianf bash -lc 'cd /var/home/damian/Downloads/whispering-test/epicenter-source && WHISPER_DONT_GENERATE_BINDINGS=1 bun run --cwd apps/whispering tauri build --no-bundle'
+```
+
+Launch it through Sway with the same WebKit/Mesa workarounds:
+```bash
+swaymsg exec "env GDK_BACKEND=x11 WEBKIT_DISABLE_COMPOSITING_MODE=1 WEBKIT_DISABLE_DMABUF_RENDERER=1 LIBGL_ALWAYS_SOFTWARE=1 /var/home/damian/Downloads/whispering-test/epicenter-source/apps/whispering/src-tauri/target/release/whispering"
+```
+
+Do not replace the repo voice typing automation yet. Speech-to-text, microphone access,
+Polish transcription, clipboard/paste behavior, global shortcuts, and packaging still need
+manual validation.
+
+Temporary test artifacts from the failed experiment:
+```text
+~/Downloads/whispering-test/
+~/.local/share/applications/whispering-test.desktop
+~/.cache/whispering-test-backups/
+```
+
+### Whispering local mode needs manual UI validation before automation
+**Problem:** Whispering has multiple transcription modes and providers. The existence of
+the binary and launcher does not prove that microphone recording, Sway/Wayland shortcut
+handling, clipboard/paste injection, Polish transcription, or local model download works.
+
+**Fix:** Before replacing the current `Mod+T` voice typing scripts, Damian must validate in
+the Whispering UI:
+- `Settings -> Transcription -> Whisper C++`
+- download a local model, starting with `Small`
+- confirm `ffmpeg` is available (`/usr/bin/ffmpeg` currently comes from Fedora `ffmpeg-free`)
+- test English and Polish dictation
+- test whether output reaches clipboard or active text field
+- test global shortcut behavior under Sway
+
+Only after that should the repo automation be changed.
