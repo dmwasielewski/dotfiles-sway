@@ -28,36 +28,20 @@ total=0
 os_is_pending=0
 lines=()
 
-# ── Flatpak ───────────────────────────────────────────────
+# ── Flatpak (first — most frequently updated) ─────────────
 fp=$(flatpak_count)
 if [[ "$fp" -gt 0 ]]; then
-    lines+=("Flatpak: $fp app(s) — updated $(flatpak_last_label)")
+    lines+=("Flatpak: $fp app(s) — last updated $(flatpak_last_label)")
     total=$(( total + fp ))
 else
-    lines+=("Flatpak: up to date")
+    lines+=("Flatpak: up to date — last updated $(flatpak_last_label)")
 fi
 
-# ── Fedora OS (check runs once) ───────────────────────────
-os_raw="$(os_check_raw)"
-if [[ "$(os_staged)" -eq 1 ]]; then
-    os_is_pending=1
-    lines+=("OS: staged update — reboot to apply")
-    total=$(( total + 1 ))
-elif [[ "$(os_parse_pending "$os_raw")" -eq 1 ]]; then
-    os_is_pending=1
-    nv="$(os_parse_version "$os_raw")"; pc="$(os_parse_pkgcount "$os_raw")"
-    lines+=("OS: ${pc:-?} pkg(s) → ${nv:-new version}")
-    lines+=("  Important: $(os_parse_sec important "$os_raw")  Moderate: $(os_parse_sec moderate "$os_raw")  Low: $(os_parse_sec low "$os_raw")")
-    total=$(( total + 1 ))
-else
-    lines+=("OS: up to date (booted $(os_last_label))")
-fi
-
-# ── Containers (dynamic) ──────────────────────────────────
+# ── Containers (second) ───────────────────────────────────
 container_lines=()
 container_warn=0
 add_container() {
-    local name="$1" label; label="$(upd_age_label "container-$1")"
+    local name="$1" label; label="$(container_age_label "$1")"
     if container_is_stale "$name"; then
         container_lines+=("  $name: $label ⚠"); container_warn=$(( container_warn + 1 ))
     else
@@ -66,22 +50,41 @@ add_container() {
 }
 while IFS= read -r c; do [[ -n "$c" ]] && add_container "$c"; done < <(discover_distrobox)
 while IFS= read -r c; do [[ -n "$c" ]] && add_container "$c"; done < <(discover_toolbox)
-
 if [[ "${#container_lines[@]}" -gt 0 ]]; then
     lines+=("Containers:")
     for cl in "${container_lines[@]}"; do lines+=("$cl"); done
     total=$(( total + container_warn ))
 fi
 
+# ── Fedora OS (last; check runs once) ─────────────────────
+os_raw="$(os_check_raw)"
+os_state="$(os_parse_state "$os_raw")"
+if [[ "$(os_staged)" -eq 1 ]]; then
+    os_is_pending=1
+    lines+=("OS: staged update — reboot to apply")
+    total=$(( total + 1 ))
+elif [[ "$os_state" == "pending" ]]; then
+    os_is_pending=1
+    nv="$(os_parse_version "$os_raw")"; pc="$(os_parse_pkgcount "$os_raw")"
+    lines+=("OS: ${pc:-?} pkg(s) → ${nv:-new version}")
+    lines+=("  Important: $(os_parse_sec important "$os_raw")  Moderate: $(os_parse_sec moderate "$os_raw")  Low: $(os_parse_sec low "$os_raw")")
+    total=$(( total + 1 ))
+elif [[ "$os_state" == "unknown" ]]; then
+    lines+=("OS: check unavailable (a repo is unreachable)")
+else
+    lines+=("OS: up to date (booted $(os_last_label))")
+fi
+
 # ── Severity class ────────────────────────────────────────
-if   [[ "$total" -eq 0 ]];      then klass="uptodate"
-elif [[ "$os_is_pending" -eq 1 ]]; then klass="critical"
-else                                klass="warning"
+# uptodate keeps a normal-coloured icon (NOT hidden), like other modules.
+if   [[ "$total" -eq 0 ]];          then klass="uptodate"
+elif [[ "$os_is_pending" -eq 1 ]];  then klass="critical"
+else                                     klass="warning"
 fi
 
 tooltip="$(printf '%s\n' "${lines[@]}")"
 if [[ "$total" -eq 0 ]]; then
-    result="$(emit "" "uptodate" "✔ Everything is up to date")"
+    result="$(emit "⬆" "uptodate" "$tooltip")"
 else
     result="$(emit "⬆" "$klass" "$tooltip")"
 fi

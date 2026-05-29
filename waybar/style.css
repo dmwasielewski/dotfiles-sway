@@ -223,20 +223,28 @@ button:hover {
 }
 
 /* ── Updates indicator ──────────────────────────────────── */
-/* uptodate: empty text hides module — no style needed */
+#custom-updates {
+    background-color: #1e2230;
+    color: #8a9bb5;
+    padding: 0 10px;
+}
+
+/* uptodate: same neutral colour as other icons (always visible) */
+#custom-updates.uptodate {
+    background-color: #1e2230;
+    color: #8a9bb5;
+}
 
 /* warning: Flatpak/container updates available, no reboot */
 #custom-updates.warning {
     background-color: #2a2010;
     color: #c8a060;
-    padding: 0 10px;
 }
 
 /* critical: OS update pending — reboot required */
 #custom-updates.critical {
     background-color: #2a0000;
     color: #ff4444;
-    padding: 0 10px;
 }
 
 /* ── Audio — muted olive ────────────────────────────────── */

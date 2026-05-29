@@ -44,7 +44,15 @@ flatpak_update_rows() {
         printf '%s\t%s\t%s\n' "$appid" "$cur" "$avail"
     done <<< "$updates"
 }
-flatpak_last_label() { upd_age_label "flatpak"; }
+# Real last-updated date from flatpak's own history (native source).
+flatpak_last_label() {
+    command -v flatpak >/dev/null 2>&1 || { echo "unknown"; return; }
+    local t
+    t="$(flatpak history --columns=time,change 2>/dev/null \
+         | awk -F'\t' '/update|deploy/ {last=$1} END{print last}')"
+    [[ -z "$t" ]] && { echo "unknown"; return; }
+    date -d "$t" +%Y-%m-%d 2>/dev/null || printf '%s' "$t"
+}
 
 # ── rpm-ostree (Fedora OS) ────────────────────────────────────────────────
 # The check is slow and network-flaky, so callers run os_check_raw ONCE and
@@ -54,6 +62,15 @@ os_staged()     { rpm-ostree status 2>/dev/null | grep -q "(staged)" && echo 1 |
 
 os_parse_pending() {                   # $1 = raw check text
     printf '%s' "$1" | grep -q "AvailableUpdate:" && echo 1 || echo 0
+}
+# os_parse_state: "pending" | "current" | "unknown"
+# "unknown" means the check could not complete (e.g. a repo was unreachable),
+# so we must NOT claim the system is up to date.
+os_parse_state() {                     # $1 = raw check text
+    if   printf '%s' "$1" | grep -q "AvailableUpdate:";                    then echo "pending"
+    elif printf '%s' "$1" | grep -qiE "no upgrade available|no updates available"; then echo "current"
+    elif printf '%s' "$1" | grep -qiE "error:|could not connect|cannot update repo"; then echo "unknown"
+    else echo "current"; fi
 }
 os_parse_version() {                   # $1 = raw check text
     printf '%s\n' "$1" | awk -F": " '/^[[:space:]]*Version:/ {print $2; exit}'
@@ -92,7 +109,27 @@ discover_toolbox() {
     command -v toolbox >/dev/null 2>&1 || return 0
     toolbox list --containers 2>/dev/null | awk 'NR>1 && NF>=2 {print $2}'
 }
+# Effective "last touched" epoch: our update timestamp if present, else the
+# podman container creation time (a freshly created container is not stale).
+container_epoch() {                    # echoes epoch seconds, 0 if unknown
+    local name="$1" f ts
+    f="$(upd_ts_file "container-$name")"
+    [[ -f "$f" ]] && { cat "$f"; return; }
+    # Go template .Unix avoids the unparseable "+0100 BST" string from date -d
+    ts="$(podman inspect "$name" --format '{{.Created.Unix}}' 2>/dev/null)"
+    [[ "$ts" =~ ^[0-9]+$ ]] && { echo "$ts"; return; }
+    echo 0
+}
+container_age_label() {                # human label from effective epoch
+    local e; e="$(container_epoch "$1")"
+    [[ "$e" -eq 0 ]] && { echo "unknown"; return; }
+    local d=$(( ( $(date +%s) - e ) / 86400 ))
+    if   [[ "$d" -le 0 ]]; then echo "today"
+    else echo "${d}d ago"; fi
+}
 container_is_stale() {                 # exit 0 = stale (needs attention)
-    local d; d="$(upd_age_days "container-$1")"
-    [[ "$d" -lt 0 || "$d" -ge "$CONTAINER_STALE_DAYS" ]]
+    local e; e="$(container_epoch "$1")"
+    [[ "$e" -eq 0 ]] && return 0
+    local d=$(( ( $(date +%s) - e ) / 86400 ))
+    [[ "$d" -ge "$CONTAINER_STALE_DAYS" ]]
 }

@@ -23,6 +23,7 @@ show_summary() {
     FP_COUNT="$(flatpak_count)"
     OS_RAW="$(os_check_raw)"
     OS_STAGED="$(os_staged)"
+    OS_STATE="$(os_parse_state "$OS_RAW")"
     OS_PENDING="$(os_parse_pending "$OS_RAW")"
 
     clear
@@ -43,7 +44,7 @@ show_summary() {
         [[ -z "$c" ]] && continue
         found=1
         local mark=""; container_is_stale "$c" && mark=" ⚠"
-        printf '    %-22s last updated: %s%s\n' "$c" "$(upd_age_label "container-$c")" "$mark"
+        printf '    %-22s last updated: %s%s\n' "$c" "$(container_age_label "$c")" "$mark"
     done < <(discover_distrobox; discover_toolbox)
     [[ "$found" -eq 0 ]] && echo "    (none found)"
     echo ""
@@ -57,6 +58,9 @@ show_summary() {
     elif [[ "$OS_PENDING" -eq 1 ]]; then
         echo "    Available:  $(os_parse_version "$OS_RAW")"
         echo "    Packages:   $(os_parse_pkgcount "$OS_RAW")"
+    elif [[ "$OS_STATE" == "unknown" ]]; then
+        echo "    Available:  check unavailable (a repo is unreachable)"
+        echo "    Packages:   ?"
     else
         echo "    Available:  up to date"
         echo "    Packages:   0"
