@@ -70,7 +70,10 @@ elif [[ "$os_state" == "pending" ]]; then
     sec_imp="$(os_parse_sec important "$os_raw")"; sec_crit="$(os_parse_sec critical "$os_raw")"
     sec_high=$(( sec_imp + sec_crit ))
     lines+=("OS: ${pc:-?} pkg(s) → ${nv:-new version}")
-    lines+=("  Important: $sec_imp  Moderate: $(os_parse_sec moderate "$os_raw")  Low: $(os_parse_sec low "$os_raw")")
+    lines+=("  Important: $sec_imp")
+    lines+=("  Moderate:  $(os_parse_sec moderate "$os_raw")")
+    lines+=("  Low:       $(os_parse_sec low "$os_raw")")
+    lines+=("  Unknown:   $(os_parse_sec unknown "$os_raw")")
     total=$(( total + 1 ))
 elif [[ "$os_state" == "unknown" ]]; then
     lines+=("OS: check unavailable (a repo is unreachable)")
