@@ -126,7 +126,8 @@ ask_reboot() {
 show_list() {
     {
         echo "╔══════════════════════════════════════════════════╗"
-        echo "║   Update List                                    ║"
+        echo "║   Update List   —   scroll: ↑ ↓ / PgUp PgDn      ║"
+        echo "║                     press  q  to go back         ║"
         echo "╚══════════════════════════════════════════════════╝"
         echo ""
         local NAME_W=44 VER_W=22
@@ -178,7 +179,7 @@ show_list() {
         [[ "$found" -eq 0 ]] && echo "  (none found)"
         echo ""
         echo "(Container package details require entering the container.)"
-    } | less -R
+    } | less -R --prompt=' ↑/↓ scroll   ·   press q to return to the menu '
 }
 
 # ── Refresh Waybar after any change ──────────────────────────────────────
