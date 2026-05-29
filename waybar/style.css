@@ -222,6 +222,22 @@ button:hover {
     color: #ff6b6b;
 }
 
+/* ── Updates indicator ──────────────────────────────────── */
+#custom-updates {
+    background-color: #1e2230;
+    color: #8a9bb5;
+    padding: 0 10px;
+}
+
+#custom-updates.updates {
+    background-color: #2a2010;
+    color: #c8a060;
+}
+
+#custom-updates.uptodate {
+    /* empty text hides this module automatically */
+}
+
 /* ── Audio — muted olive ────────────────────────────────── */
 #pulseaudio {
     background-color: #1e2230;

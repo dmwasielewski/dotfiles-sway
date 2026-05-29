@@ -25,6 +25,7 @@
         "temperature",
         "backlight",
         "battery",
+        "custom/updates",
         "clock",
         "tray",
         "custom/adguard",
@@ -235,6 +236,14 @@
         "escape": true,
         "exec": "$HOME/.config/waybar/mediaplayer.py 2> /dev/null" // Script in resources folder
         // "exec": "$HOME/.config/waybar/mediaplayer.py --player spotify 2> /dev/null" // Filter player based on name
+    },
+    "custom/updates": {
+        "exec": "$HOME/.local/bin/updates-waybar",
+        "return-type": "json",
+        "interval": 60,
+        "tooltip": true,
+        "signal": 8,
+        "on-click": "$HOME/.local/bin/updates-do"
     },
     "custom/power": {
         "format": "⏻ ",

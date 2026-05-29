@@ -125,7 +125,7 @@ cat ~/.ssh/id_ed25519.pub
 
 An SSH key is only needed if you want to use SSH remotes or private forks. `bootstrap.sh` clones this repo over HTTPS by default.
 
-If ShellGPT should be ready immediately after the dev container setup, restore `~/.config/voice-type/gemini-api-key` before `setup-damian-container.sh` or `setup-ubuntu-dev-container.sh` runs. ShellGPT reuses that same Gemini key through LiteLLM by default. ShellGPT prefers `gemini-3.1-flash-lite` and the installed `sgpt` wrapper retries `gemini-2.5-flash` when the primary model is temporarily unavailable. Other supported private sources are `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SHELLGPT_API_KEY`, `ANTHROPIC_API_KEY`, `~/.config/ai/api.env`, `~/.config/shell_gpt/credentials.env`, and `~/.bashrc.d/ai-keys.bash`. These files are private and must not be committed to this repo.
+If ShellGPT should be ready immediately after the dev container setup, restore `~/.config/voice-type/gemini-api-key` before `setup-damian-container.sh` or `setup-ubuntu-dev-container.sh` runs. ShellGPT reuses that same Gemini key through LiteLLM by default. ShellGPT prefers `gemini-3.1-flash-lite` and the installed `sgpt` wrapper retries `gemini-2.5-flash-lite` when the primary model is temporarily unavailable. Other supported private sources are `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SHELLGPT_API_KEY`, `ANTHROPIC_API_KEY`, `~/.config/ai/api.env`, `~/.config/shell_gpt/credentials.env`, and `~/.bashrc.d/ai-keys.bash`. These files are private and must not be committed to this repo.
 
 ### Step 1 — Bootstrap
 
@@ -273,7 +273,7 @@ Normal version drift is expected during those migrations. Fedora 44, for example
 
 npm prefix is set to `~/.npm-global` — global npm packages visible from host too.
 
-ShellGPT config is generated non-interactively by `scripts/configure-shellgpt.sh` into `~/.config/shell_gpt/.sgptrc`. The preferred provider is Gemini via LiteLLM, using the same private key file as voice typing: `~/.config/voice-type/gemini-api-key`. It sets `gemini/gemini-3.1-flash-lite` as the primary ShellGPT model and installs `~/.local/bin/sgpt` as an executable wrapper around `~/.local/bin/sgpt-cli`; the wrapper retries `gemini/gemini-2.5-flash` on temporary availability errors and prints a clear diagnostic if both models fail. If Damian already has a custom unmanaged `sgpt`, the script leaves it untouched instead of overwriting it. If no private API key source exists, the config uses the placeholder `OPENAI_API_KEY=missing-shellgpt-api-key` so `sgpt` never blocks setup with an interactive prompt. Do not commit API keys to this repo.
+ShellGPT config is generated non-interactively by `scripts/configure-shellgpt.sh` into `~/.config/shell_gpt/.sgptrc`. The preferred provider is Gemini via LiteLLM, using the same private key file as voice typing: `~/.config/voice-type/gemini-api-key`. It sets `gemini/gemini-3.1-flash-lite` as the primary ShellGPT model and installs `~/.local/bin/sgpt` as an executable wrapper around `~/.local/bin/sgpt-cli`; the wrapper retries `gemini/gemini-2.5-flash-lite` on temporary availability errors and prints a clear diagnostic if both models fail. If Damian already has a custom unmanaged `sgpt`, the script leaves it untouched instead of overwriting it. If no private API key source exists, the config uses the placeholder `OPENAI_API_KEY=missing-shellgpt-api-key` so `sgpt` never blocks setup with an interactive prompt. Do not commit API keys to this repo.
 
 ### Layer 4: distrobox `damianu` (Ubuntu 26.04 dev/CLI parity)
 
@@ -409,10 +409,11 @@ Config is in `sway/config.d/90-swayidle.conf` (overrides Fedora's system default
 
 - Position: **bottom**, height 25px
 - Dark muted blue-slate theme (low contrast, easy on the eyes)
-- Modules right → left: `power` · `nordvpn` · tray · clock · battery · `adguard` · backlight · temp · RAM · CPU · power profile · network · audio · idle inhibitor · `claude` status
+- Modules right → left: `power` · `nordvpn` · tray · clock · `updates` · battery · `adguard` · backlight · temp · RAM · CPU · power profile · network · audio · idle inhibitor · `claude` status
 - `custom/adguard`: calls `~/.local/bin/adguard-waybar` every 10s — shows `AG`; click toggles protection on/off
 - `custom/claude`: calls `~/.npm-global/bin/ccstatusline waybar` every 5s — shows Claude Code state (idle/working/waiting/error) with colour coding
-- `custom/nordvpn`: calls `~/.local/bin/nordvpn-waybar` every 15s — shows `VPN`; click toggles connect/disconnect
+- `custom/nordvpn`: calls `~/.local/bin/nordvpn-waybar` every 15s — shows `VPN`; left click toggles connect/disconnect; right click opens rofi domain whitelist prompt (`nordvpn-whitelist-domain.sh`)
+- `custom/updates`: calls `~/.local/bin/updates-waybar` every 60s — shows `⬆ N` (amber) when updates pending, hidden when up-to-date; click opens foot terminal to review and apply; checks rpm-ostree + Flatpak user; results cached 1h to avoid blocking Waybar; signal 8 forces cache refresh
 - `custom/power`: shows ⏻ icon; click opens rofi power menu (shutdown/reboot/suspend/hibernate/logout)
 
 **Alert thresholds:**
@@ -613,7 +614,7 @@ Preferred source, shared with voice typing:
 - `GEMINI_API_KEY`
 - `GOOGLE_API_KEY`
 
-With that key, the generated config uses `USE_LITELLM=true` and `DEFAULT_MODEL=gemini/gemini-3.1-flash-lite`, writes `~/.bashrc.d/shellgpt-gemini.bash` to export `GEMINI_API_KEY` in toolbox shells, and installs `~/.local/bin/sgpt` as a fallback wrapper. The original ShellGPT launcher is preserved as `~/.local/bin/sgpt-cli` when the existing launcher is already repo-managed; if Damian already has a custom unmanaged `sgpt`, the script leaves it untouched and prints a warning instead of overwriting it. The wrapper retries `gemini/gemini-2.5-flash` if the primary model fails with temporary availability errors such as `503`, `UNAVAILABLE`, high demand, overload, or rate limits. If both models fail, it prints a short "could not connect to the AI service" diagnostic.
+With that key, the generated config uses `USE_LITELLM=true` and `DEFAULT_MODEL=gemini/gemini-3.1-flash-lite`, writes `~/.bashrc.d/shellgpt-gemini.bash` to export `GEMINI_API_KEY` in toolbox shells, and installs `~/.local/bin/sgpt` as a fallback wrapper. The original ShellGPT launcher is preserved as `~/.local/bin/sgpt-cli` when the existing launcher is already repo-managed; if Damian already has a custom unmanaged `sgpt`, the script leaves it untouched and prints a warning instead of overwriting it. The wrapper retries `gemini/gemini-2.5-flash-lite` if the primary model fails with temporary availability errors such as `503`, `UNAVAILABLE`, high demand, overload, or rate limits. If both models fail, it prints a short "could not connect to the AI service" diagnostic.
 
 For this environment, `scripts/configure-shellgpt.sh` also writes `DISABLE_STREAMING=true` into the private ShellGPT config by default. This is intentional: the current `shell-gpt` + LiteLLM + Gemini combination can produce duplicated partial output and a `CustomStreamWrapper` / `KeyboardInterrupt` traceback during streamed responses.
 
@@ -632,7 +633,7 @@ Optional ShellGPT settings:
 - `SHELLGPT_API_BASE_URL` or `API_BASE_URL` — defaults to `default`
 - `SHELLGPT_DEFAULT_MODEL` or `DEFAULT_MODEL` — defaults to Gemini 3.1 Flash Lite Preview when the voice key exists, otherwise `gpt-4o`
 - `SHELLGPT_USE_LITELLM` or `USE_LITELLM` — defaults to `true` for Gemini/Anthropic, otherwise `false`
-- `SHELLGPT_GEMINI_PRIMARY_MODEL` and `SHELLGPT_GEMINI_FALLBACK_MODEL` — default to `gemini/gemini-3.1-flash-lite` and `gemini/gemini-2.5-flash`
+- `SHELLGPT_GEMINI_PRIMARY_MODEL` and `SHELLGPT_GEMINI_FALLBACK_MODEL` — default to `gemini/gemini-3.1-flash-lite` and `gemini/gemini-2.5-flash-lite`
 
 If no private key exists, the config contains `OPENAI_API_KEY=missing-shellgpt-api-key` and `verify.sh` reports a warning. Do not store ShellGPT API keys in this repo. The home directory is shared with the toolbox, so private files under `~/.config/` are visible where `sgpt` runs.
 

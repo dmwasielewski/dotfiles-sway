@@ -6,7 +6,7 @@ Items to implement, fix, or automate. Ordered by priority.
 
 ## Waybar — Update notification module
 
-**Status:** planned — researched, ready to implement
+**Status:** ✅ DONE
 **Priority:** high — user wants click-to-update from Waybar
 
 **Reference:** https://github.com/ccuqme/swarofi-updater — only existing Fedora Sway Atomic + Waybar update applet (needs adaptation for this setup)
