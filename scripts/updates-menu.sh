@@ -10,6 +10,17 @@ source "$SCRIPT_DIR/lib-updates.sh"
 
 bar() { printf '%s\n' "────────────────────────────────────────────────────"; }
 
+# ── Logging ───────────────────────────────────────────────────────────────
+# Every update action is timestamped and tee'd to a persistent log, so if an
+# update fails the output survives after the terminal closes.
+LOG_DIR="${XDG_STATE_HOME:-$HOME/.local/state}"
+LOG="$LOG_DIR/dotfiles-updates.log"
+mkdir -p "$LOG_DIR"
+log_line()   { printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG"; }
+# Run a command showing output on screen AND appending it to the log.
+# pipefail (set at top) makes the pipeline keep the command's exit code.
+run_logged() { "$@" 2>&1 | tee -a "$LOG"; }
+
 # OS check uses the shared "last known good" cache from lib-updates.sh:
 # os_refresh_cache() does a live check (with retries) and falls back to the
 # last successful result when a repo is unreachable. OS_FRESHNESS records
@@ -83,10 +94,18 @@ show_summary() {
 # ── Update actions (each returns 0 on success, 1 on failure) ──────────────
 do_flatpak() {
     echo ""; echo "── Updating Flatpak apps ────────────────────────────"
-    if flatpak update --user -y --noninteractive; then upd_record flatpak; return 0; fi
-    echo "  Retry after flatpak repair…"
-    flatpak repair --user 2>/dev/null || true
-    if flatpak update --user -y --noninteractive; then upd_record flatpak; return 0; fi
+    log_line "BEGIN Flatpak update"
+    if run_logged flatpak update --user -y --noninteractive; then
+        upd_record flatpak; log_line "OK Flatpak update"; return 0
+    fi
+    echo "  First attempt failed — retrying after flatpak repair…"
+    log_line "RETRY Flatpak (running flatpak repair)"
+    run_logged flatpak repair --user || true
+    if run_logged flatpak update --user -y --noninteractive; then
+        upd_record flatpak; log_line "OK Flatpak update (after repair)"; return 0
+    fi
+    log_line "FAIL Flatpak update — see log"
+    echo "  ✗ Flatpak update failed. Log: $LOG"
     return 1
 }
 
@@ -96,27 +115,39 @@ do_containers() {
     while IFS= read -r name; do
         [[ -z "$name" ]] && continue
         echo ""; echo "── Updating distrobox: $name ────────────────────────"
-        if distrobox upgrade "$name"; then upd_record "container-$name"
-        else echo "  ✗ $name failed (continuing)"; rc=1; fi
+        log_line "BEGIN distrobox upgrade $name"
+        if run_logged distrobox upgrade "$name"; then
+            upd_record "container-$name"; log_line "OK distrobox $name"
+        else
+            echo "  ✗ $name failed (continuing). Log: $LOG"; log_line "FAIL distrobox $name"; rc=1
+        fi
     done < <(discover_distrobox)
     # toolbox containers — dnf inside
     while IFS= read -r name; do
         [[ -z "$name" ]] && continue
         echo ""; echo "── Updating toolbox: $name ──────────────────────────"
-        if toolbox run --container "$name" sudo dnf upgrade -y --skip-unavailable; then upd_record "container-$name"
-        else echo "  ✗ $name failed (continuing)"; rc=1; fi
+        log_line "BEGIN toolbox dnf upgrade $name"
+        if run_logged toolbox run --container "$name" sudo dnf upgrade -y --skip-unavailable; then
+            upd_record "container-$name"; log_line "OK toolbox $name"
+        else
+            echo "  ✗ $name failed (continuing). Log: $LOG"; log_line "FAIL toolbox $name"; rc=1
+        fi
     done < <(discover_toolbox)
     return "$rc"
 }
 
 do_os() {
     echo ""; echo "── Updating Fedora OS ───────────────────────────────"
+    log_line "BEGIN rpm-ostree upgrade"
     # rpm-ostree is atomic: a failed upgrade leaves the current deployment intact,
     # so there is nothing to "repair" — just report success or failure.
-    if rpm-ostree upgrade; then
+    if run_logged rpm-ostree upgrade; then
         echo "  ✔ OS update staged. Reboot required to apply."
+        log_line "OK rpm-ostree upgrade (staged)"
         return 0
     fi
+    log_line "FAIL rpm-ostree upgrade — see log"
+    echo "  ✗ OS update failed (system unchanged — rpm-ostree is atomic). Log: $LOG"
     return 1
 }
 
@@ -211,6 +242,9 @@ do_everything() {
     [[ "$r_fp" -eq 0 ]] && echo "    ✔ Flatpak apps updated"      || echo "    ✗ Flatpak apps failed"
     [[ "$r_ct" -eq 0 ]] && echo "    ✔ Containers updated"        || echo "    ✗ Some containers failed"
     [[ "$r_os" -eq 0 ]] && echo "    ✔ Fedora OS staged"          || echo "    ✗ Fedora OS failed"
+    if [[ "$r_fp" -ne 0 || "$r_ct" -ne 0 || "$r_os" -ne 0 ]]; then
+        echo ""; echo "    Some steps failed — full output logged to:"; echo "      $LOG"
+    fi
     [[ "$r_os" -eq 0 ]] && ask_reboot
 }
 
@@ -219,6 +253,7 @@ do_everything() {
 # summary and the list always agree. Refreshed only after an OS update.
 clear
 echo "Checking for updates… (querying repositories, please wait)"
+log_line "=== update menu session started ==="
 refresh_os_cache
 
 while true; do
