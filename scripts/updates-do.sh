@@ -44,7 +44,7 @@ fp_count=$(printf "%s\n" "$fp_list" | grep -c "." 2>/dev/null || echo 0)
 
 clear
 echo "╔══════════════════════════════════════════════════╗"
-echo "║   System Updates                                 ║"
+echo "║   Available Updates                              ║"
 echo "╚══════════════════════════════════════════════════╝"
 echo ""
 
