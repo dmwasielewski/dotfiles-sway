@@ -10,18 +10,33 @@ source "$SCRIPT_DIR/lib-updates.sh"
 
 bar() { printf '%s\n' "────────────────────────────────────────────────────"; }
 
+# The rpm-ostree check is slow and flaky (a third-party repo can be briefly
+# unreachable), so we run it ONCE per session and reuse the result everywhere.
+# This keeps the summary and the list view consistent. refresh_os_cache()
+# retries a few times so a transient repo hiccup doesn't show a false "0".
+OS_RAW_FILE="$(mktemp -t updates-osraw.XXXXXX)"
+trap 'rm -f "$OS_RAW_FILE"' EXIT
+
+refresh_os_cache() {
+    local try out
+    for try in 1 2 3; do
+        out="$(os_check_raw)"
+        # Accept the result if it clearly says pending or up-to-date;
+        # retry only when it failed because a repo was unreachable.
+        if [[ "$(os_parse_state "$out")" != "unknown" ]]; then
+            printf '%s' "$out" > "$OS_RAW_FILE"; return
+        fi
+        sleep 1
+    done
+    printf '%s' "$out" > "$OS_RAW_FILE"   # give up: store last (unknown) result
+}
+os_raw_cached() { cat "$OS_RAW_FILE" 2>/dev/null; }
+
 # ── Summary screen (always shows every section) ──────────────────────────
 show_summary() {
-    clear
-    echo "╔══════════════════════════════════════════════════╗"
-    echo "║   System Updates                                 ║"
-    echo "╚══════════════════════════════════════════════════╝"
-    echo ""
-    echo "Checking… (querying repositories)"
-
-    # Gather once
+    # Gather (OS comes from the per-session cache, not a fresh slow check)
     FP_COUNT="$(flatpak_count)"
-    OS_RAW="$(os_check_raw)"
+    OS_RAW="$(os_raw_cached)"
     OS_STAGED="$(os_staged)"
     OS_STATE="$(os_parse_state "$OS_RAW")"
     OS_PENDING="$(os_parse_pending "$OS_RAW")"
@@ -147,9 +162,9 @@ show_list() {
         fi
         echo ""
 
-        # OS — table of package name | current → new
+        # OS — table of package name | current → new (from session cache)
         echo "FEDORA OS"
-        local os_raw; os_raw="$(os_check_raw)"
+        local os_raw; os_raw="$(os_raw_cached)"
         if [[ "$(os_parse_pending "$os_raw")" -eq 1 ]]; then
             local sec pc reg
             sec="$(os_parse_sec_total "$os_raw")"; pc="$(os_parse_pkgcount "$os_raw")"
@@ -158,11 +173,20 @@ show_list() {
                 "$(os_current_version)" "$(os_parse_version "$os_raw")" "$sec" "$reg"
             printf '  %-*s  %-*s    %s\n' "$NAME_W" "Package" "$VER_W" "Current" "New"
             printf '  %s\n' "$(printf '─%.0s' $(seq 1 $((NAME_W + VER_W + 18))))"
-            # Parse "name oldver -> newver" from the Upgraded: section
-            rpm-ostree upgrade --preview 2>/dev/null \
+            # Parse "name oldver -> newver" from the Upgraded: section.
+            # --preview is a separate (flaky) call; if it returns no rows,
+            # show a clear fallback instead of a misleading empty table.
+            local table
+            table="$(rpm-ostree upgrade --preview 2>/dev/null \
                 | awk '/Upgraded:/{p=1;next} /Removed:|Added:|Downgraded:/{p=0} p && NF>=3 {print}' \
                 | awk -v nw="$NAME_W" -v vw="$VER_W" \
-                    '{ name=$1; old=$2; new=$4; printf "  %-*s  %-*s →  %s\n", nw, name, vw, old, new }'
+                    '{ name=$1; old=$2; new=$4; printf "  %-*s  %-*s →  %s\n", nw, name, vw, old, new }')"
+            if [[ -n "$table" ]]; then
+                printf '%s\n' "$table"
+            else
+                echo "  (package list temporarily unavailable — a repo is busy;"
+                echo "   $pc packages are pending, shown above)"
+            fi
         else
             echo "  (up to date)"
         fi
@@ -203,6 +227,12 @@ do_everything() {
 }
 
 # ── Main loop ─────────────────────────────────────────────────────────────
+# One OS check at startup (with retries), reused for the whole session so the
+# summary and the list always agree. Refreshed only after an OS update.
+clear
+echo "Checking for updates… (querying repositories, please wait)"
+refresh_os_cache
+
 while true; do
     show_summary
     echo ""
@@ -222,9 +252,9 @@ while true; do
            echo ""; read -rp "  Press Enter to return to menu…" _ ;;
         2) do_containers && echo "  ✔ Done." || echo "  ✗ Some failed."; refresh_waybar
            echo ""; read -rp "  Press Enter to return to menu…" _ ;;
-        3) if do_os; then ask_reboot; fi; refresh_waybar
+        3) if do_os; then ask_reboot; fi; refresh_os_cache; refresh_waybar
            echo ""; read -rp "  Press Enter to return to menu…" _ ;;
-        4) do_everything; refresh_waybar
+        4) do_everything; refresh_os_cache; refresh_waybar
            echo ""; read -rp "  Press Enter to return to menu…" _ ;;
         5) show_list ;;                       # less → returns straight to menu
         q|Q|"") break ;;
