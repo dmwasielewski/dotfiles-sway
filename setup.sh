@@ -54,6 +54,7 @@ ln -sf "$DOTFILES/scripts/nordvpn-waybar.sh"                   ~/.local/bin/nord
 ln -sf "$DOTFILES/scripts/nordvpn-whitelist-domain.sh"         ~/.local/bin/nordvpn-whitelist-domain
 ln -sf "$DOTFILES/scripts/updates-waybar.sh"                   ~/.local/bin/updates-waybar
 ln -sf "$DOTFILES/scripts/updates-do.sh"                       ~/.local/bin/updates-do
+ln -sf "$DOTFILES/scripts/updates-menu.sh"                     ~/.local/bin/updates-menu
 ln -sf "$DOTFILES/scripts/power-menu.sh"                       ~/.local/bin/power-menu
 ln -sf "$DOTFILES/scripts/enter-damianf.sh"                    ~/.local/bin/damianf
 ln -sf "$DOTFILES/scripts/enter-damianu.sh"                    ~/.local/bin/damianu

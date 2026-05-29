@@ -7,50 +7,27 @@ Items to implement, fix, or automate. Ordered by priority.
 ## Waybar — Update notification module
 
 **Status:** ✅ DONE
-**Priority:** high — user wants click-to-update from Waybar
 
-**Reference:** https://github.com/ccuqme/swarofi-updater — only existing Fedora Sway Atomic + Waybar update applet (needs adaptation for this setup)
+Icon-only Waybar indicator + interactive foot menu for Flatpak / containers / Fedora OS updates.
 
-**Architecture (3 components):**
+**Files:**
+- `scripts/lib-updates.sh` — shared detection logic (single source of truth). All names discovered dynamically (`distrobox list`, `toolbox list`, `flatpak remote-ls`, `rpm-ostree`). No hardcoding.
+- `scripts/updates-waybar.sh` — indicator: icon `⬆`, 3 CSS severity classes, multiline tooltip. Caches JSON 1h.
+- `scripts/updates-do.sh` — tiny launcher → foot → updates-menu.
+- `scripts/updates-menu.sh` — interactive menu (loop, returns after each action).
+- `waybar/config` — `custom/updates` module (interval 60, signal 8).
+- `waybar/style.css` — `.warning` (amber), `.critical` (red); uptodate hidden via empty text.
+- `sway/config` — floating rule `system-updates` 900×640.
 
-1. **`scripts/updates-check.sh`** — systemd timer script, writes cache file `~/.cache/waybar-update-count`
-   - Checks: `flatpak remote-ls --user --updates | wc -l` (user flatpaks only, NOT system)
-   - Checks: `rpm-ostree upgrade --check` (slow 5-30s — runs in background timer, NOT inline)
-   - Writes count + tooltip to `~/.cache/waybar-update-count`
+**Severity logic:** critical = OS update pending (reboot); warning = Flatpak/stale containers; uptodate = hidden.
 
-2. **`scripts/updates-waybar.sh`** — Waybar polling script (reads cache, instant)
-   - JSON output: `{"text":"⬆ 3","class":"updates","tooltip":"OS: 1 | Flatpak: 2"}`
-   - Empty text when 0 updates (hides module in Waybar)
-   - Signal 8 triggers immediate re-read
+**Menu (order by update frequency):** 1) Flatpak  2) Containers  3) Fedora OS  4) Everything (apps→containers→OS, continue-on-error + results summary, no `--force`)  5) Show update list (scrollable `less`, returns to menu)  q) Cancel.
 
-3. **`scripts/updates-do.sh`** — click handler (foot terminal)
-   - Shows: `rpm-ostree status`, available updates list
-   - Asks: "Apply all updates? [y/N]"
-   - Runs: `rpm-ostree upgrade` + `flatpak update --user -y`
-   - Offers reboot after OS update
-   - After done: sends `pkill -SIGRTMIN+8 waybar` to force refresh
+**Last-updated dates:** OS from `rpm-ostree status --json` timestamp; Flatpak/containers from our own `~/.cache/update-last-*` files written after each successful update.
 
-4. **`~/.config/systemd/user/check-updates.timer`** — runs every 1h
-   - Calls `scripts/updates-check.sh` in background
-   - Avoids blocking Waybar during slow network checks
+**Known limitation:** `rpm-ostree upgrade --check` fails when the NordVPN rpm repo is unreachable (no network/VPN), so OS shows "up to date" until the repo is reachable again. Degrades gracefully (no crash).
 
-5. **`waybar/config`** — add module:
-   ```json
-   "custom/updates": {
-       "exec": "$HOME/.local/bin/updates-waybar",
-       "return-type": "json",
-       "interval": 60,
-       "signal": 8,
-       "on-click": "$HOME/.local/bin/updates-do"
-   }
-   ```
-   Add `"custom/updates"` to `modules-right` before `"clock"`.
-
-6. **`waybar/style.css`** — add CSS class `.updates` (amber colour when updates pending)
-
-**NordVPN updates:** covered automatically via `rpm-ostree upgrade` (NordVPN is rpm-ostree layered package).
-
-**Performance note:** NEVER use `rpm-ostree upgrade --check` at short Waybar intervals — it's 5-30s network call. Always use systemd timer → cache file pattern.
+**Performance:** indicator caches JSON for 1h; OS check runs ONCE per invocation (parsed from captured text, not re-run per field).
 
 ---
 

@@ -92,6 +92,11 @@ dotfiles-sway/
     ├── configure-shellgpt.sh          ← Non-interactive ShellGPT config from private env/API files
     ├── adguard-waybar.sh              ← AdGuard Waybar status helper (AG + click toggle)
     ├── nordvpn-waybar.sh              ← NordVPN Waybar status helper (VPN + click toggle)
+    ├── nordvpn-whitelist-domain.sh    ← NordVPN: rofi prompt → allowlist a domain (right-click VPN icon)
+    ├── lib-updates.sh                 ← Shared update-detection logic (Waybar indicator + menu)
+    ├── updates-waybar.sh              ← Waybar update indicator (icon + severity colour + tooltip)
+    ├── updates-do.sh                  ← Launcher: opens update menu in foot
+    ├── updates-menu.sh                ← Interactive update menu (Flatpak/containers/OS/everything/list)
     ├── power-menu.sh                  ← Rofi power menu (shutdown/reboot/suspend/hibernate/logout)
     ├── setup-splunk.sh                ← OPTIONAL: Splunk Enterprise (free) via podman (SIEM lab)
     ├── setup-wazuh.sh                 ← OPTIONAL: Wazuh all-in-one via podman (SIEM/XDR lab)
@@ -413,7 +418,8 @@ Config is in `sway/config.d/90-swayidle.conf` (overrides Fedora's system default
 - `custom/adguard`: calls `~/.local/bin/adguard-waybar` every 10s — shows `AG`; click toggles protection on/off
 - `custom/claude`: calls `~/.npm-global/bin/ccstatusline waybar` every 5s — shows Claude Code state (idle/working/waiting/error) with colour coding
 - `custom/nordvpn`: calls `~/.local/bin/nordvpn-waybar` every 15s — shows `VPN`; left click toggles connect/disconnect; right click opens rofi domain whitelist prompt (`nordvpn-whitelist-domain.sh`)
-- `custom/updates`: calls `~/.local/bin/updates-waybar` every 60s — shows `⬆ N` (amber) when updates pending, hidden when up-to-date; click opens foot terminal to review and apply; checks rpm-ostree + Flatpak user; results cached 1h to avoid blocking Waybar; signal 8 forces cache refresh
+- `custom/updates`: calls `~/.local/bin/updates-waybar` every 60s — icon-only `⬆` (no count), hidden when up-to-date. Three severity classes via CSS: `warning` (amber — Flatpak/container updates, no reboot), `critical` (red — Fedora OS update pending, reboot required). Hover tooltip lists every section one per line (Flatpak / OS with Important/Moderate/Low counts / Containers with per-container last-updated date). Left click opens the update menu (`updates-do` → foot → `updates-menu`). Results cached 1h; signal 8 forces refresh. **All detection is shared via `scripts/lib-updates.sh`** so the indicator and the menu always agree; containers/apps/OS are discovered dynamically (no hardcoded names).
+  - `updates-menu.sh` (interactive, runs in foot): always shows all three sections with last-updated dates even at 0; menu order by update frequency — 1) Flatpak 2) Containers 3) Fedora OS 4) Everything (apps→containers→OS, continue-on-error with a results summary, no `--force`) 5) Show update list (scrollable via `less`, returns to menu) q) Cancel. OS updates are atomic (rpm-ostree) so a failed upgrade is inherently safe — nothing to repair.
 - `custom/power`: shows ⏻ icon; click opens rofi power menu (shutdown/reboot/suspend/hibernate/logout)
 
 **Alert thresholds:**
