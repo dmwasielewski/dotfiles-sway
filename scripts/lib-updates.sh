@@ -27,22 +27,47 @@ upd_age_label() {                      # human-readable label
 # flatpak_count            → integer number of user apps with updates
 # flatpak_update_rows      → lines "appid<TAB>current<TAB>available"
 # flatpak_last_label       → when flatpak was last updated by us
+# Flatpak apps live across one or more installations (user, system, or custom
+# ones in /etc/flatpak/installations.d/). Discover them dynamically rather than
+# assuming scopes, then query each — flatpak reports all apps in an
+# installation in a single call, so we don't loop over individual apps.
+flatpak_installations() {              # installation names that actually hold apps
+    command -v flatpak >/dev/null 2>&1 || return 0
+    flatpak list --columns=installation 2>/dev/null | sort -u
+}
+_flatpak_scope_arg() {                 # map installation name → flatpak scope flag
+    case "$1" in
+        user)   echo "--user" ;;
+        system) echo "--system" ;;
+        *)      echo "--installation=$1" ;;
+    esac
+}
 flatpak_count() {
     command -v flatpak >/dev/null 2>&1 || { echo 0; return; }
-    # grep -c prints 0 and exits 1 when there are no matches; swallow the exit.
-    flatpak remote-ls --user --updates 2>/dev/null | grep -c . || true
+    local total=0 inst scope n
+    while IFS= read -r inst; do
+        [[ -z "$inst" ]] && continue
+        scope="$(_flatpak_scope_arg "$inst")"
+        n="$(flatpak remote-ls $scope --updates 2>/dev/null | grep -c . || true)"
+        total=$(( total + n ))
+    done < <(flatpak_installations)
+    echo "$total"
 }
-flatpak_update_rows() {
+flatpak_update_rows() {                # echoes "appid<TAB>current<TAB>available"
     command -v flatpak >/dev/null 2>&1 || return 0
-    local updates cur
-    updates="$(flatpak remote-ls --user --updates --columns=application,version 2>/dev/null)" || return 0
-    [[ -z "$updates" ]] && return 0
-    while IFS=$'\t' read -r appid avail; do
-        [[ -z "$appid" ]] && continue
-        cur="$(flatpak info --user "$appid" 2>/dev/null | awk -F': ' '/^[[:space:]]*Version:/ {print $2; exit}')"
-        [[ -z "$cur" ]] && cur="—"
-        printf '%s\t%s\t%s\n' "$appid" "$cur" "$avail"
-    done <<< "$updates"
+    local inst scope updates cur appid avail
+    while IFS= read -r inst; do
+        [[ -z "$inst" ]] && continue
+        scope="$(_flatpak_scope_arg "$inst")"
+        updates="$(flatpak remote-ls $scope --updates --columns=application,version 2>/dev/null)" || continue
+        [[ -z "$updates" ]] && continue
+        while IFS=$'\t' read -r appid avail; do
+            [[ -z "$appid" ]] && continue
+            cur="$(flatpak info $scope "$appid" 2>/dev/null | awk -F': ' '/^[[:space:]]*Version:/ {print $2; exit}')"
+            [[ -z "$cur" ]] && cur="—"
+            printf '%s\t%s\t%s\n' "$appid" "$cur" "$avail"
+        done <<< "$updates"
+    done < <(flatpak_installations)
 }
 # Real last-updated date from flatpak's own history (native source).
 flatpak_last_label() {

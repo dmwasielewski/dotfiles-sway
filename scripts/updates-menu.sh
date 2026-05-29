@@ -93,20 +93,22 @@ show_summary() {
 
 # ── Update actions (each returns 0 on success, 1 on failure) ──────────────
 do_flatpak() {
-    echo ""; echo "── Updating Flatpak apps ────────────────────────────"
-    log_line "BEGIN Flatpak update"
-    if run_logged flatpak update --user -y --noninteractive; then
-        upd_record flatpak; log_line "OK Flatpak update"; return 0
-    fi
-    echo "  First attempt failed — retrying after flatpak repair…"
-    log_line "RETRY Flatpak (running flatpak repair)"
-    run_logged flatpak repair --user || true
-    if run_logged flatpak update --user -y --noninteractive; then
-        upd_record flatpak; log_line "OK Flatpak update (after repair)"; return 0
-    fi
-    log_line "FAIL Flatpak update — see log"
-    echo "  ✗ Flatpak update failed. Log: $LOG"
-    return 1
+    local rc=0 inst scope
+    # Iterate the discovered installations (user needs no auth; system/custom
+    # use polkit — an interactive prompt is fine, the user opened this menu).
+    while IFS= read -r inst; do
+        [[ -z "$inst" ]] && continue
+        scope="$(_flatpak_scope_arg "$inst")"
+        echo ""; echo "── Updating Flatpak ($inst) ─────────────────────────"
+        log_line "BEGIN Flatpak update ($inst)"
+        if run_logged flatpak update $scope -y; then
+            log_line "OK Flatpak ($inst)"
+        else
+            log_line "FAIL Flatpak ($inst)"; echo "  ✗ $inst scope failed. Log: $LOG"; rc=1
+        fi
+    done < <(flatpak_installations)
+    [[ "$rc" -eq 0 ]] && upd_record flatpak
+    return "$rc"
 }
 
 do_containers() {
