@@ -299,6 +299,10 @@ exec flatpak run com.vivaldi.Vivaldi
 exec flatpak run md.obsidian.Obsidian
 bindsym $mod+Shift+s exec ~/dotfiles-sway/scripts/autostart.sh
 
+# ── Floating rules for utility terminals ──
+for_window [title="system-updates"]     floating enable, resize set 700 500
+for_window [title="nordvpn-whitelist"]  floating enable, resize set 500 120
+
 # ── Routing rules ──
 assign [app_id="foot"] workspace number 1
 assign [app_id="org.mozilla.Thunderbird"] workspace number 3

@@ -112,6 +112,9 @@ check_symlink "deepseek"                   "$HOME/.local/bin/deepseek"
 check_symlink "deepseek-tui"               "$HOME/.local/bin/deepseek-tui"
 check_symlink "adguard-waybar"             "$HOME/.local/bin/adguard-waybar"
 check_symlink "nordvpn-waybar"             "$HOME/.local/bin/nordvpn-waybar"
+check_symlink "nordvpn-whitelist-domain"   "$HOME/.local/bin/nordvpn-whitelist-domain"
+check_symlink "updates-waybar"             "$HOME/.local/bin/updates-waybar"
+check_symlink "updates-do"                 "$HOME/.local/bin/updates-do"
 check_symlink "damianf entry shortcut"     "$HOME/.local/bin/damianf"
 check_symlink "damianu entry shortcut"     "$HOME/.local/bin/damianu"
 check_symlink "bat cross-distro wrapper"   "$HOME/.local/bin/bat"
@@ -334,7 +337,7 @@ if host toolbox list 2>/dev/null | grep -qw "$TOOLBOX_CONTAINER"; then
     fi
 
     if host toolbox run --container "$TOOLBOX_CONTAINER" bash -c \
-        'test -x ~/.local/bin/sgpt && grep -q "real_sgpt=" ~/.local/bin/sgpt 2>/dev/null && grep -q "SGPT_FALLBACK_MODEL" ~/.local/bin/sgpt 2>/dev/null && grep -q "gemini/gemini-2.5-flash" ~/.local/bin/sgpt 2>/dev/null' 2>/dev/null; then
+        'test -x ~/.local/bin/sgpt && grep -q "real_sgpt=" ~/.local/bin/sgpt 2>/dev/null && grep -q "SGPT_FALLBACK_MODEL" ~/.local/bin/sgpt 2>/dev/null && grep -q "gemini/gemini-2.5-flash-lite" ~/.local/bin/sgpt 2>/dev/null' 2>/dev/null; then
         pass "ShellGPT executable fallback configured"
     else
         warn "ShellGPT executable fallback not configured — rerun bash ~/dotfiles-sway/scripts/setup-damian-container.sh"

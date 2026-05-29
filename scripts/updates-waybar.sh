@@ -52,9 +52,13 @@ else
     # No staged update — check remotely (slow ~5-30s)
     check_out=$(rpm-ostree upgrade --check 2>/dev/null || true)
     if printf '%s\n' "$check_out" | grep -q "AvailableUpdate:"; then
-        diff_line=$(printf '%s\n' "$check_out" | grep "Diff:" | head -1)
-        ostree_count=$(printf '%s\n' "$diff_line" | grep -oP '^\s*Diff:\s*\K[0-9]+' || echo 1)
-        tooltip_parts+=("OS: $ostree_count package update(s) available")
+        ostree_count=$(printf '%s\n' "$check_out" | grep -oP '^\s*Diff:\s*\K[0-9]+' || echo 1)
+        new_ver=$(printf '%s\n' "$check_out" | awk -F": " '/^[[:space:]]*Version:/ {print $2; exit}')
+        sec_adv=$(printf '%s\n' "$check_out" | awk -F": " '/SecAdvisories:/ {print $2}')
+        tip="OS: $ostree_count pkg(s)"
+        [[ -n "$new_ver" ]] && tip="$tip → $new_ver"
+        [[ -n "$sec_adv" ]] && tip="$tip | ⚠ $sec_adv"
+        tooltip_parts+=("$tip")
     fi
 fi
 
