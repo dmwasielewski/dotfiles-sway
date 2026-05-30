@@ -337,9 +337,13 @@ show_list() {
 }
 
 # ── Refresh Waybar after any change ──────────────────────────────────────
+# Don't just drop the cache and hope the signal is caught — regenerate the
+# cache ourselves (in the background, since the OS check is slow) so the tray
+# tooltip reflects the post-update state, then nudge Waybar to re-read it.
 refresh_waybar() {
     rm -f "$CACHE_DIR/waybar-updates.json"
-    pkill -SIGRTMIN+8 waybar 2>/dev/null || true
+    ( "$SCRIPT_DIR/updates-waybar.sh" >/dev/null 2>&1
+      pkill -RTMIN+8 waybar 2>/dev/null || true ) &
 }
 
 # ── Run "everything" with continue-on-error + summary ─────────────────────
