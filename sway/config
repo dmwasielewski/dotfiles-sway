@@ -301,7 +301,7 @@ exec flatpak run md.obsidian.Obsidian
 bindsym $mod+Shift+s exec ~/dotfiles-sway/scripts/autostart.sh
 
 # ── Floating rules for utility terminals ──
-for_window [title="system-updates"]     floating enable, resize set 900 640
+# system-updates opens as a normal tiled terminal (was floating).
 for_window [title="nordvpn-whitelist"]  floating enable, resize set 500 120
 
 # ── Routing rules ──

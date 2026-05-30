@@ -20,7 +20,9 @@ PYEOF
 
 sleep 6
 
-flatpak run com.vivaldi.Vivaldi &
+# Pin the main browser to the Default profile so a hard-kill that leaves
+# last_used pointing at a PWA profile (Claude/ChatGPT) doesn't open an empty one.
+flatpak run com.vivaldi.Vivaldi --profile-directory=Default &
 disown
 sleep 4
 

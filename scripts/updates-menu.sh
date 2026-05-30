@@ -169,9 +169,45 @@ do_flatpak() {
     return "$rc"
 }
 
+# Package-manager-agnostic upgrade command run inside any container.
+CONTAINER_UPGRADE_CMD='
+    if   command -v dnf     >/dev/null 2>&1; then sudo dnf upgrade -y --skip-unavailable
+    elif command -v apt-get >/dev/null 2>&1; then sudo apt-get update && sudo apt-get upgrade -y
+    elif command -v zypper  >/dev/null 2>&1; then sudo zypper -n update
+    elif command -v pacman  >/dev/null 2>&1; then sudo pacman -Syu --noconfirm
+    elif command -v apk     >/dev/null 2>&1; then sudo apk upgrade
+    else echo "no known package manager in this container"; exit 1; fi'
+
+# Ensure passwordless sudo inside a container so updates never hang on a hidden
+# password prompt (distrobox sets this up automatically; toolbox may not). If it
+# is missing, ask the user once for their password to install a NOPASSWD rule —
+# after that every future update is silent, consistent with distrobox.
+# $1 = "toolbox"|"distrobox", $2 = container name. Returns 0 if sudo is usable.
+ensure_container_nopasswd() {
+    local kind="$1" name="$2" runner
+    [[ "$kind" == "toolbox" ]] && runner=(toolbox run --container "$name") \
+                               || runner=(distrobox enter "$name" --)
+    # Already passwordless?
+    if "${runner[@]}" sudo -n true >/dev/null 2>&1; then return 0; fi
+    echo "  ⚠ '$name' has no passwordless sudo — updates would hang on a prompt."
+    echo "    Setting up a one-time NOPASSWD rule (asks your password once)…"
+    log_line "configuring NOPASSWD sudo in $name"
+    # This single sudo call prompts on the real terminal; afterwards it's silent.
+    if "${runner[@]}" bash -c \
+        "sudo install -m 0440 /dev/stdin /etc/sudoers.d/00-nopasswd-\$USER <<<\"\$USER ALL=(root) NOPASSWD:ALL\""; then
+        echo "    ✓ passwordless sudo configured for '$name'."
+        return 0
+    fi
+    echo "    ✗ could not configure sudo for '$name' — skipping it."
+    log_line "FAILED to configure NOPASSWD in $name"
+    return 1
+}
+
 do_containers() {
     local rc=0 name
+    local failed=()        # names of containers that failed, for a clear summary
     # distrobox containers — distrobox upgrade picks the right package manager
+    # and distrobox already provides passwordless sudo.
     while IFS= read -r name; do
         [[ -z "$name" ]] && continue
         echo ""; echo "── Updating distrobox: $name ────────────────────────"
@@ -179,27 +215,29 @@ do_containers() {
         if run_logged distrobox upgrade "$name"; then
             upd_record "container-$name"; log_line "OK distrobox $name"
         else
-            echo "  ✗ $name failed (continuing). Log: $LOG"; log_line "FAIL distrobox $name"; rc=1
+            echo "  ✗ $name failed (continuing)."; log_line "FAIL distrobox $name"; failed+=("$name"); rc=1
         fi
     done < <(discover_distrobox)
-    # toolbox containers — detect the package manager inside (don't assume dnf;
-    # a toolbox is usually Fedora but could be built from another image).
+    # toolbox containers — ensure passwordless sudo first, then upgrade with the
+    # detected package manager.
     while IFS= read -r name; do
         [[ -z "$name" ]] && continue
         echo ""; echo "── Updating toolbox: $name ──────────────────────────"
         log_line "BEGIN toolbox upgrade $name"
-        if run_logged toolbox run --container "$name" bash -c '
-            if   command -v dnf     >/dev/null 2>&1; then sudo dnf upgrade -y --skip-unavailable
-            elif command -v apt-get >/dev/null 2>&1; then sudo apt-get update && sudo apt-get upgrade -y
-            elif command -v zypper  >/dev/null 2>&1; then sudo zypper -n update
-            elif command -v pacman  >/dev/null 2>&1; then sudo pacman -Syu --noconfirm
-            elif command -v apk     >/dev/null 2>&1; then sudo apk upgrade
-            else echo "no known package manager in this container"; exit 1; fi'; then
+        if ! ensure_container_nopasswd toolbox "$name"; then failed+=("$name (sudo)"); rc=1; continue; fi
+        if run_logged toolbox run --container "$name" bash -c "$CONTAINER_UPGRADE_CMD"; then
             upd_record "container-$name"; log_line "OK toolbox $name"
         else
-            echo "  ✗ $name failed (continuing). Log: $LOG"; log_line "FAIL toolbox $name"; rc=1
+            echo "  ✗ $name failed (continuing)."; log_line "FAIL toolbox $name"; failed+=("$name"); rc=1
         fi
     done < <(discover_toolbox)
+    # Clear summary so the user always knows exactly what failed and where.
+    if [[ "${#failed[@]}" -gt 0 ]]; then
+        echo ""
+        echo "  ⚠ These containers did NOT update:"
+        printf '%s\n' "${failed[@]}" | sed 's/^/      • /'
+        echo "    Full output: $LOG"
+    fi
     return "$rc"
 }
 
