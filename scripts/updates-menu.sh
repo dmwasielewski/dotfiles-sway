@@ -110,17 +110,42 @@ do_flatpak() {
         printf '%s\n' "$running_updated" | sed 's/^/      • /'
         echo ""
         echo "    A running app keeps the OLD version until its background"
-        echo "    process is closed. Closing just the window (Alt+Shift+Q) is"
-        echo "    NOT enough for browsers / Electron apps."
+        echo "    process is closed. Closing just the window does NOT stop"
+        echo "    browsers / Electron apps — they keep a master process alive."
+        echo "    Save any unsaved work first; apps are asked to close (SIGTERM)."
         echo ""
         read -rp "  Close these apps now and continue with the update? [y/N] " ans
         if [[ "$ans" =~ ^[Yy]$ ]]; then
+            # 1) graceful SIGTERM via flatpak kill
             while IFS= read -r app; do
                 [[ -z "$app" ]] && continue
-                echo "    Closing $app…"; log_line "flatpak kill $app (before update)"
+                echo "    Closing $app…"; log_line "flatpak kill (SIGTERM) $app"
                 flatpak kill "$app" 2>/dev/null || true
             done <<< "$running_updated"
-            sleep 1
+            sleep 2
+            # 2) escalate to SIGKILL for any that ignored SIGTERM (Electron masters)
+            local survivors
+            survivors="$(comm -12 \
+                <(printf '%s\n' "$running_updated" | sort -u) \
+                <(flatpak ps --columns=application 2>/dev/null | sort -u) 2>/dev/null)"
+            if [[ -n "$survivors" ]]; then
+                while IFS= read -r app; do
+                    [[ -z "$app" ]] && continue
+                    echo "    $app ignored close — forcing (SIGKILL)…"; log_line "flatpak kill -s SIGKILL $app"
+                    flatpak kill -s SIGKILL "$app" 2>/dev/null || true
+                done <<< "$survivors"
+                sleep 1
+            fi
+            # 3) report anything STILL alive (couldn't be killed)
+            local still
+            still="$(comm -12 \
+                <(printf '%s\n' "$running_updated" | sort -u) \
+                <(flatpak ps --columns=application 2>/dev/null | sort -u) 2>/dev/null)"
+            if [[ -n "$still" ]]; then
+                echo "  ⚠ Could not stop these — restart them manually after the update:"
+                printf '%s\n' "$still" | sed 's/^/      • /'
+                log_line "STILL RUNNING after kill: $(printf '%s ' $still)"
+            fi
         else
             echo "  Leaving them open — restart them yourself afterwards to apply."
             log_line "user declined closing running apps"
