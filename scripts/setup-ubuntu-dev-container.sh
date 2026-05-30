@@ -90,6 +90,15 @@ run_step "UBUNTU_DEV_RUST" "Installing Rust toolchain (rustup + rust-analyzer)" 
         fi
         "$HOME/.cargo/bin/rustup" component add rust-analyzer'
 
+# ── DevOps stack (parity with toolbox damianf) ────────────────────────────
+# Container engine is per-OS; the rest is home-local and OS-agnostic (shared
+# with damianf and the host). See scripts/install-devops-tools.sh.
+run_step "UBUNTU_DEV_PODMAN" "Installing container engine (podman + docker CLI)" \
+    ubox "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y podman podman-docker"
+
+run_step "UBUNTU_DEV_DEVOPS_TOOLS" "Installing DevOps CLIs (kubectl, helm, kind, k9s, opentofu, ansible, yq)" \
+    ubox "bash '$DOTFILES/scripts/install-devops-tools.sh'"
+
 # ── Node.js 22 + GitHub CLI ──────────────────────────────────────────────
 run_step "UBUNTU_DEV_NODEJS" "Installing Node.js 22 and GitHub CLI" \
     ubox "sudo install -m 0755 -d /etc/apt/keyrings &&
@@ -169,7 +178,7 @@ run_step "UBUNTU_DEV_VOICE_WHISPER" "Installing faster-whisper + google-genai" \
 # ── Verify ───────────────────────────────────────────────────────────────
 echo -e "\n${CYAN}==> Verifying distrobox '$CONTAINER'...${NC}"
 VERIFY_FAIL=0
-for tool in node npm gh claude codex deepseek sgpt git btop duf bat ncdu rg fzf fd go cargo rustc rust-analyzer uv; do
+for tool in node npm gh claude codex deepseek sgpt git btop duf bat ncdu rg fzf fd go cargo rustc rust-analyzer uv podman kubectl helm kind k9s tofu ansible yq; do
     if distrobox enter --name "$CONTAINER" -- which "$tool" &>/dev/null 2>&1; then
         echo -e "  ${GREEN}✓${NC} $tool"
     else

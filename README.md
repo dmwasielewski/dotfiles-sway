@@ -46,6 +46,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Neovim 0.12.1 — user-local latest pinned binary with Chris Titus Tech `titus-kickstart` config
 - AI terminal tools in `damianf` toolbox and `damianu` distrobox: Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT (`sgpt`)
 - Dev language toolchains in both dev containers: Go, Rust (`rustup` + `rust-analyzer`, into the shared `~/.cargo`), Python tooling (`pipx` + `uv`)
+- DevOps stack in both dev containers: `podman`/`docker` CLI (per-OS) plus a home-local, OS-agnostic set — `kubectl`, `helm`, `kind`, `k9s`, `opentofu` (`tofu`), `ansible`, `yq` — installed by `scripts/install-devops-tools.sh` with runtime-discovered versions
 - NordVPN CLI with Waybar status/toggle helper (click to connect/disconnect)
 - AdGuard for Linux CLI with Waybar toggle helper (click to enable/disable)
 - LibreOffice — open source office suite (Writer, Calc, Impress)
@@ -476,6 +477,7 @@ dotfiles-sway/
 │   ├── setup-damian-container.sh      # Toolbox damianf: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
 │   ├── setup-ubuntu-dev-container.sh  # Distrobox damianu: Ubuntu 26.04 dev/AI CLI parity — writes state
 │   ├── configure-shellgpt.sh          # Non-interactive ShellGPT config from private env/API files
+│   ├── install-devops-tools.sh        # Home-local DevOps CLIs (kubectl/helm/kind/k9s/tofu/ansible/yq), shared across containers
 │   ├── adguard-waybar.sh              # AdGuard Waybar toggle helper (AG — click to start/stop)
 │   ├── nordvpn-waybar.sh              # NordVPN Waybar toggle helper (VPN — click to connect/disconnect)
 │   ├── power-menu.sh                  # Rofi power menu (shutdown/reboot/suspend/hibernate/logout)

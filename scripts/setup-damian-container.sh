@@ -59,6 +59,15 @@ run_step "TOOLBOX_RUST" "Installing Rust toolchain (rustup + rust-analyzer)" \
         "$HOME/.cargo/bin/rustup" component add rust-analyzer
     '
 
+# ── DevOps stack ──────────────────────────────────────────────────────────
+# Container engine is per-OS; the rest is home-local and OS-agnostic (shared
+# with damianu and the host). See scripts/install-devops-tools.sh.
+run_step "TOOLBOX_PODMAN" "Installing container engine (podman + docker CLI)" \
+    toolbox run --container "$CONTAINER" sudo dnf install -y podman podman-docker
+
+run_step "TOOLBOX_DEVOPS_TOOLS" "Installing DevOps CLIs (kubectl, helm, kind, k9s, opentofu, ansible, yq)" \
+    toolbox run --container "$CONTAINER" bash "$DOTFILES/scripts/install-devops-tools.sh"
+
 # ── Configure npm prefix ─────────────────────────────────────────────────
 run_step "TOOLBOX_NPM_PREFIX" "Configuring npm prefix (~/.npm-global)" \
     toolbox run --container "$CONTAINER" bash -c '
@@ -149,7 +158,7 @@ run_step "VOICE_WHISPER" "Installing faster-whisper + google-genai (voice typing
 # ── Verify ───────────────────────────────────────────────────────────────
 echo -e "\n${CYAN}==> Verifying toolbox '$CONTAINER'...${NC}"
 VERIFY_FAIL=0
-for tool in node npm gh claude codex deepseek sgpt git btop duf bat ncdu rg fzf fd go cargo rustc rust-analyzer uv; do
+for tool in node npm gh claude codex deepseek sgpt git btop duf bat ncdu rg fzf fd go cargo rustc rust-analyzer uv podman kubectl helm kind k9s tofu ansible yq; do
     if toolbox run --container "$CONTAINER" which "$tool" &>/dev/null 2>&1; then
         echo -e "  ${GREEN}✓${NC} $tool"
     else
