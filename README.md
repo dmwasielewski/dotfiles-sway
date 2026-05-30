@@ -74,7 +74,7 @@ printf '%s\n' 'your-gemini-api-key-here' > ~/.config/voice-type/gemini-api-key
 chmod 600 ~/.config/voice-type/gemini-api-key
 ```
 
-This file is private, outside git, and is shared with the active dev containers through the home directory. Voice typing uses it directly, and `scripts/configure-shellgpt.sh` uses the same key by default through LiteLLM. ShellGPT prefers `gemini-3.1-flash-lite` and its installed `sgpt` wrapper retries `gemini-2.5-flash` if the primary model is temporarily unavailable. On a fresh machine the key should be restored from your private backup or secret manager before `setup-damian-container.sh` or `setup-ubuntu-dev-container.sh` runs.
+This file is private, outside git, and is shared with the active dev containers through the home directory. Voice typing uses it directly, and `scripts/configure-shellgpt.sh` uses the same key by default through LiteLLM. ShellGPT prefers `gemini-3.1-flash-lite` and its installed `sgpt` wrapper retries `gemini-2.5-flash-lite` if the primary model is temporarily unavailable. On a fresh machine the key should be restored from your private backup or secret manager before `setup-damian-container.sh` or `setup-ubuntu-dev-container.sh` runs.
 
 ShellGPT also accepts `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `OPENAI_API_KEY`, `SHELLGPT_API_KEY`, `ANTHROPIC_API_KEY`, `~/.config/ai/api.env`, `~/.config/shell_gpt/credentials.env`, and `~/.bashrc.d/ai-keys.bash`. Use `SHELLGPT_PROVIDER=openai`, `gemini`, or `anthropic` only when you need to override the automatic choice.
 
@@ -374,7 +374,7 @@ Dark muted blue-slate palette — low contrast, easy on the eyes.
 
 **Centre:** `window` (focused window title)
 
-**Right:** `claude` · `idle_inhibitor` · `pulseaudio` · `network` · `power-profiles-daemon` · `cpu` · `memory` · `temperature` · `backlight` · `adguard` · `battery` · `clock` · `tray` · `nordvpn`
+**Right:** `claude` · `idle_inhibitor` · `pulseaudio` · `network` · `power-profiles-daemon` · `cpu` · `memory` · `temperature` · `backlight` · `adguard` · `updates` · `battery` · `clock` · `tray` · `nordvpn`
 
 ### Alert thresholds
 
@@ -384,6 +384,22 @@ Dark muted blue-slate palette — low contrast, easy on the eyes.
 | Memory | 70% | 80% (blinking) |
 | Temperature | 85°C | 95°C (blinking) |
 | Battery | 40% | 20% (blinking) |
+
+### Updates indicator
+
+The `custom/updates` module (`⬆` icon) tracks pending updates across three sources, with all detection logic shared in `scripts/lib-updates.sh`:
+
+- **Flatpak** apps
+- **Containers** (auto-discovered distrobox + toolbox; flagged stale past a threshold)
+- **Fedora OS** (`rpm-ostree`; uses a last-known-good cache so it still reports when the repo is offline)
+
+**Severity classes:** `uptodate` (nothing pending) · `warning` (Flatpak/containers only) · `critical` (OS update staged/pending, or security updates). The tooltip lists each source on its own line.
+
+**Performance — instant by design.** Waybar polls `updates-waybar` every 5 s, but the default mode *only reads the cached JSON* (~13 ms) and never blocks on the slow (~10 s) `rpm-ostree` check. When the cache is missing or older than 15 min (`CACHE_MAX_AGE`), it spawns a fully detached `--compute` worker in the background that recomputes and atomically rewrites `~/.cache/waybar-updates.json`. No systemd timer is needed — the poll itself keeps the cache fresh.
+
+**Interaction:** left-click runs `updates-do` (apply updates); the update menu (`updates-menu`) regenerates the cache via `updates-waybar --compute` after any change so the tray reflects the new state on the next poll.
+
+All three scripts (`updates-waybar`, `updates-do`, `updates-menu`) are symlinked into `~/.local/bin` by `setup.sh`; `lib-updates.sh` is resolved next to them and needs no separate symlink.
 
 ### Fonts
 - **Primary:** JetBrainsMono Nerd Font — monospace, icons in terminal and Waybar
@@ -799,7 +815,7 @@ When that key exists, the script configures:
 - `USE_LITELLM=true`
 - `DEFAULT_MODEL=gemini/gemini-3.1-flash-lite`
 - `~/.bashrc.d/shellgpt-gemini.bash` to export `GEMINI_API_KEY` inside the toolbox shell
-- `~/.local/bin/sgpt` wrapper around `~/.local/bin/sgpt-cli`; it retries `gemini/gemini-2.5-flash` when the primary model fails with temporary availability errors such as `503`, `UNAVAILABLE`, high demand, overload, or rate limits
+- `~/.local/bin/sgpt` wrapper around `~/.local/bin/sgpt-cli`; it retries `gemini/gemini-2.5-flash-lite` when the primary model fails with temporary availability errors such as `503`, `UNAVAILABLE`, high demand, overload, or rate limits
 
 If both the primary model and fallback fail, `sgpt` prints a short diagnostic:
 
@@ -819,7 +835,7 @@ Other supported private sources:
 - `~/.config/shell_gpt/credentials.env`
 - `~/.bashrc.d/ai-keys.bash`
 
-If no private key exists, the config contains `OPENAI_API_KEY=missing-shellgpt-api-key` and `verify.sh` reports a warning. Optional settings are `SHELLGPT_PROVIDER`, `SHELLGPT_API_BASE_URL`, `SHELLGPT_DEFAULT_MODEL`, `SHELLGPT_USE_LITELLM`, `SHELLGPT_GEMINI_PRIMARY_MODEL` defaulting to `gemini/gemini-3.1-flash-lite`, and `SHELLGPT_GEMINI_FALLBACK_MODEL` defaulting to `gemini/gemini-2.5-flash`.
+If no private key exists, the config contains `OPENAI_API_KEY=missing-shellgpt-api-key` and `verify.sh` reports a warning. Optional settings are `SHELLGPT_PROVIDER`, `SHELLGPT_API_BASE_URL`, `SHELLGPT_DEFAULT_MODEL`, `SHELLGPT_USE_LITELLM`, `SHELLGPT_GEMINI_PRIMARY_MODEL` defaulting to `gemini/gemini-3.1-flash-lite`, and `SHELLGPT_GEMINI_FALLBACK_MODEL` defaulting to `gemini/gemini-2.5-flash-lite`.
 
 ### ccstatusline — Claude Code status in Waybar
 

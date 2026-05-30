@@ -240,7 +240,7 @@
     "custom/updates": {
         "exec": "$HOME/.local/bin/updates-waybar",
         "return-type": "json",
-        "interval": 60,
+        "interval": 5,
         "tooltip": true,
         "signal": 8,
         "on-click": "$HOME/.local/bin/updates-do"
