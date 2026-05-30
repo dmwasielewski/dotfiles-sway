@@ -116,3 +116,4 @@ damianu() {
 }
 
 unset rc
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
