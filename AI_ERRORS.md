@@ -752,3 +752,65 @@ the Whispering UI:
 - test global shortcut behavior under Sway
 
 Only after that should the repo automation be changed.
+
+## Podman / kind inside dev containers — do NOT nest the engine
+
+**The mistake to avoid:** installing `podman`/`docker`/`kind` inside the
+`damianf` toolbox or `damianu` distrobox and assuming they can run containers
+there. They cannot. The dev containers are themselves **rootless Podman
+containers**, so a nested rootless Podman fails immediately with:
+
+```
+Error: fatal error, invalid internal status, unable to create a new pause
+process: cannot re-exec process to join the existing user namespace
+```
+
+This breaks `docker run`, `kind create cluster`, anything that needs a real
+engine. Running `podman system migrate` or rebooting does **not** fix it — it
+is fundamental to nested rootless namespaces. Do not chase it down that path.
+
+**What to do instead — use the HOST engine as a remote (no nesting):**
+
+1. **Enable the host user socket:** `systemctl --user enable --now podman.socket`
+   on the host. Creates `/run/user/<uid>/podman/podman.sock`. The socket path
+   is already visible inside toolbox/distrobox (they share `/run/user/<uid>`).
+2. **Make the container a remote client**, per-container, in
+   `/etc/containers/containers.conf.d/99-host-engine.conf` (NOT in `~/.config`
+   — that is the SHARED home and would wrongly force the host's own Podman into
+   remote mode):
+   ```toml
+   [engine]
+   remote = true
+   active_service = "host"
+   [engine.service_destinations]
+   [engine.service_destinations.host]
+   uri = "unix:///run/user/<uid>/podman/podman.sock"
+   ```
+   With `remote = true`, plain `podman` (and the `podman-docker` `docker` shim)
+   transparently target the host engine — no `--remote`/`--url` flags needed.
+   Verify: `podman info` should report the host's hostname.
+3. **kind:** export `KIND_EXPERIMENTAL_PROVIDER=podman` (the host engine is
+   rootless Podman; there is no Docker daemon).
+4. **Rootless kind cgroups:** the user manager must delegate `cpuset` (Fedora
+   delegates `cpu io memory pids` by default but NOT `cpuset`). Add
+   `/etc/systemd/system/user@.service.d/delegate.conf`:
+   ```ini
+   [Service]
+   Delegate=cpu cpuset io memory pids
+   ```
+   then `systemctl daemon-reload` and re-login. Without `cpuset`, kind cluster
+   creation fails. Check current delegation with:
+   `cat /sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service/cgroup.controllers`
+
+**Key gotcha — the shared `$HOME` trap.** `~/.cargo`, `~/.local/bin`, `~/go/bin`
+and `~/.config` are shared between the host and every container. Home-local
+tools (kubectl, helm via `HELM_INSTALL_DIR`, kind/yq via `go install`, ansible
+via `pipx`, uv) therefore install ONCE and appear everywhere — but anything that
+must differ per environment (like Podman `remote=true`) must go in the
+container's own `/etc`, never in shared `$HOME`.
+
+**Running on the host from inside the toolbox:** `flatpak-spawn --host <cmd>`
+works inside `damianf` (an earlier memory note claimed it did not — it does).
+`toolbox` and `podman` CLIs are also available from inside. `distrobox` is NOT
+on PATH inside the toolbox — drive `damianu`/`security` via
+`flatpak-spawn --host distrobox …` or from the host.
