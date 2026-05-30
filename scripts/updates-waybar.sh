@@ -16,7 +16,7 @@ SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 source "$SCRIPT_DIR/lib-updates.sh"
 
 CACHE_FILE="$CACHE_DIR/waybar-updates.json"
-CACHE_MAX_AGE=900    # background-refresh the cache when older than 15 min
+CACHE_MAX_AGE=10800    # background-refresh the cache when older than 3 hours
 
 json_escape() { sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g' | awk '{printf "%s\\n", $0}' | sed '$ s/\\n$//'; }
 emit() {

@@ -31,23 +31,17 @@ Icon-only Waybar indicator + interactive foot menu for Flatpak / containers / Fe
 
 ---
 
-## NordVPN update to latest version
+## NordVPN
 
-**Status:** ready — NordVPN 4.6.0 is outdated
-**What:** NordVPN showed "A new version of NordVPN is available!" at every command.
-**Command:**
-```bash
-bash ~/dotfiles-sway/scripts/setup-nordvpn.sh
-```
-Or update the setup script to handle upgrades automatically.
+**Status:** ✅ current (2026-05-30) — `rpm-ostree upgrade --check` reports no updates for the layered `nordvpn` package.
+**Note:** A stale `NORDVPN_REPO` failure (from 2026-05-29 when the repo was unreachable) lingers in the shared install-state file and shows up in setup summaries. The repo is reachable again; re-run `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` to clear it.
 
 ---
 
 ## System updates (rpm-ostree)
 
-**Status:** ready — run when convenient (requires reboot)
-**What:** `rpm-ostree upgrade` — checks and installs host system updates.
-After install: `systemctl reboot`
+**Status:** ✅ current (2026-05-30) — booted `44.20260530.0`; `rpm-ostree upgrade --check` → "No updates available".
+**When new updates appear:** `rpm-ostree upgrade` then `systemctl reboot`.
 
 ---
 
