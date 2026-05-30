@@ -49,6 +49,24 @@ Do this dynamically for ANY container — never hardcode container names. Always
 collect failed container names and print an explicit summary + log path so a
 failure is never silent.
 
+## `while read` loops + stdin-consuming commands skip later items
+
+**Symptom:** "option 2 updates only the first container, the rest are silently
+skipped." Root cause: a `while IFS= read -r x; do … done < <(list)` loop where a
+command inside the body reads stdin (`apt`/`distrobox upgrade`, `toolbox run`,
+`flatpak update`, `ssh`, `ffmpeg`…) consumes the remaining lines of the list, so
+the loop ends early. This skipped `damianu` after `security`.
+
+**Fix:** read the list on a dedicated file descriptor so inner commands keep the
+real stdin (TTY, needed for sudo prompts):
+```bash
+while IFS= read -r x <&3; do
+    …            # inner commands still use FD 0 (the terminal)
+done 3< <(list)
+```
+Applied to every container/flatpak loop in `updates-menu.sh`. Always use this
+pattern when a loop body may run a program that reads stdin.
+
 ## Vivaldi (multi-profile browser) — hard kill can open an empty profile
 
 Vivaldi runs the main browser and each PWA (Claude, ChatGPT) as SEPARATE

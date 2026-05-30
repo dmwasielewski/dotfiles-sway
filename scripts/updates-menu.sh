@@ -154,7 +154,8 @@ do_flatpak() {
 
     # Iterate the discovered installations (user needs no auth; system/custom
     # use polkit — an interactive prompt is fine, the user opened this menu).
-    while IFS= read -r inst; do
+    # FD 3 so `flatpak update` reading stdin can't swallow the rest of the list.
+    while IFS= read -r inst <&3; do
         [[ -z "$inst" ]] && continue
         scope="$(_flatpak_scope_arg "$inst")"
         echo ""; echo "── Updating Flatpak ($inst) ─────────────────────────"
@@ -164,7 +165,7 @@ do_flatpak() {
         else
             log_line "FAIL Flatpak ($inst)"; echo "  ✗ $inst scope failed. Log: $LOG"; rc=1
         fi
-    done < <(flatpak_installations)
+    done 3< <(flatpak_installations)
     [[ "$rc" -eq 0 ]] && upd_record flatpak
     return "$rc"
 }
@@ -206,9 +207,14 @@ ensure_container_nopasswd() {
 do_containers() {
     local rc=0 name
     local failed=()        # names of containers that failed, for a clear summary
+    # NOTE: read the container list on FD 3, not stdin. Commands inside the loop
+    # (distrobox upgrade → apt, toolbox run → sudo) read stdin and would otherwise
+    # consume the rest of the list, silently skipping later containers (this is
+    # why damianu was skipped after security). Inner commands keep the real TTY
+    # on FD 0 so sudo can still prompt when needed.
     # distrobox containers — distrobox upgrade picks the right package manager
     # and distrobox already provides passwordless sudo.
-    while IFS= read -r name; do
+    while IFS= read -r name <&3; do
         [[ -z "$name" ]] && continue
         echo ""; echo "── Updating distrobox: $name ────────────────────────"
         log_line "BEGIN distrobox upgrade $name"
@@ -217,10 +223,10 @@ do_containers() {
         else
             echo "  ✗ $name failed (continuing)."; log_line "FAIL distrobox $name"; failed+=("$name"); rc=1
         fi
-    done < <(discover_distrobox)
+    done 3< <(discover_distrobox)
     # toolbox containers — ensure passwordless sudo first, then upgrade with the
     # detected package manager.
-    while IFS= read -r name; do
+    while IFS= read -r name <&3; do
         [[ -z "$name" ]] && continue
         echo ""; echo "── Updating toolbox: $name ──────────────────────────"
         log_line "BEGIN toolbox upgrade $name"
@@ -230,7 +236,7 @@ do_containers() {
         else
             echo "  ✗ $name failed (continuing)."; log_line "FAIL toolbox $name"; failed+=("$name"); rc=1
         fi
-    done < <(discover_toolbox)
+    done 3< <(discover_toolbox)
     # Clear summary so the user always knows exactly what failed and where.
     if [[ "${#failed[@]}" -gt 0 ]]; then
         echo ""
