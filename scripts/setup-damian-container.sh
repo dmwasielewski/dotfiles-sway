@@ -68,6 +68,16 @@ run_step "TOOLBOX_PODMAN" "Installing container engine (podman + docker CLI)" \
 run_step "TOOLBOX_DEVOPS_TOOLS" "Installing DevOps CLIs (kubectl, helm, kind, k9s, opentofu, ansible, yq)" \
     toolbox run --container "$CONTAINER" bash "$DOTFILES/scripts/install-devops-tools.sh"
 
+# Nested rootless Podman cannot run here; point podman/docker/kind at the host
+# engine via its user socket (UID discovered at runtime, never hardcoded).
+run_step "TOOLBOX_HOST_ENGINE" "Pointing Podman/Docker at the host container engine" \
+    toolbox run --container "$CONTAINER" bash -c '
+        set -eo pipefail
+        sudo mkdir -p /etc/containers/containers.conf.d
+        printf "[engine]\nremote = true\nactive_service = \"host\"\n\n[engine.service_destinations]\n[engine.service_destinations.host]\nuri = \"unix:///run/user/%s/podman/podman.sock\"\n" "$(id -u)" \
+            | sudo tee /etc/containers/containers.conf.d/99-host-engine.conf >/dev/null
+    '
+
 # ── Configure npm prefix ─────────────────────────────────────────────────
 run_step "TOOLBOX_NPM_PREFIX" "Configuring npm prefix (~/.npm-global)" \
     toolbox run --container "$CONTAINER" bash -c '

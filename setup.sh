@@ -91,6 +91,25 @@ else
     toolbox create --assumeyes --image "$TOOLBOX_IMAGE" "$TOOLBOX_CONTAINER"
 fi
 
+# Container engine for the dev containers (Podman/kind cannot run nested
+# inside a rootless toolbox/distrobox, so the containers use the HOST engine
+# as a remote — see containers.conf.d written by the container setup scripts).
+echo "==> Enabling host Podman socket for dev containers..."
+systemctl --user enable --now podman.socket 2>/dev/null || \
+    echo "    (could not enable podman.socket — enable it manually with: systemctl --user enable --now podman.socket)"
+
+# Rootless kind needs cpuset (and cpu) cgroup delegation for the user manager.
+if [[ ! -f /etc/systemd/system/user@.service.d/delegate.conf ]]; then
+    echo "==> Adding cgroup delegation for rootless kind (needs sudo)..."
+    if sudo mkdir -p /etc/systemd/system/user@.service.d && \
+       printf '[Service]\nDelegate=cpu cpuset io memory pids\n' | sudo tee /etc/systemd/system/user@.service.d/delegate.conf >/dev/null; then
+        sudo systemctl daemon-reload
+        echo "    ✓ Delegation set — takes effect after the next login."
+    else
+        echo "    ⚠ Could not write delegation — kind clusters may fail until you add it."
+    fi
+fi
+
 # Flatpaks
 echo "==> Installing Flatpaks..."
 flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo

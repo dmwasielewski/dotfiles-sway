@@ -120,3 +120,7 @@ damianu() {
 
 unset rc
 [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+# kind uses the Podman provider (dev containers talk to the host engine, which
+# is rootless Podman; there is no Docker daemon).
+export KIND_EXPERIMENTAL_PROVIDER=podman

@@ -681,6 +681,8 @@ Host (rpm-ostree immutable)
 │   ├─ ccstatusline (Claude Code Waybar integration)
 │   ├─ faster-whisper (local Whisper AI for voice typing)
 │   ├─ terminal tools: btop, duf, bat, ncdu, rg, fzf, fd
+│   ├─ languages: go, rust (rustup + rust-analyzer), python (pipx + uv)
+│   ├─ DevOps: podman/docker CLI, kubectl, helm, kind, k9s, tofu, ansible, yq
 │   └─ nvim (shared user-local Neovim + Chris Titus Tech config)
 │
 ├─ distrobox: damianu (Ubuntu 26.04) — Ubuntu userland with AI/dev CLI parity
@@ -695,6 +697,8 @@ Host (rpm-ostree immutable)
 │   ├─ markdownlint-cli2
 │   ├─ faster-whisper
 │   ├─ terminal tools: btop, duf, bat, ncdu, rg, fzf, fd
+│   ├─ languages: go, rust (rustup + rust-analyzer), python (pipx + uv)
+│   ├─ DevOps: podman/docker CLI, kubectl, helm, kind, k9s, tofu, ansible, yq
 │   └─ nvim (shared user-local Neovim + Chris Titus Tech config)
 │
 └─ distrobox: security (Ubuntu 26.04) — pentesting & security research
@@ -707,6 +711,19 @@ Host (rpm-ostree immutable)
     ├─ Wordlists:  SecLists at /opt/SecLists
     └─ Utils:      tmux, vim, jq, htop, btop, curl, wget, git, python3
 ```
+
+### Container engine (Podman) — host engine, not nested
+
+The dev containers (`damianf`, `damianu`) are themselves **rootless Podman containers**. Running Podman *again* inside them (nested rootless) **does not work** — it fails with `cannot re-exec process to join the existing user namespace`. So `kind`, `docker run`, etc. cannot use a nested engine.
+
+Instead, the containers act as **remote clients of the host's Podman engine**:
+
+1. The host runs the user Podman socket — `systemctl --user enable --now podman.socket` (done by `setup.sh`).
+2. Each container ships `/etc/containers/containers.conf.d/99-host-engine.conf` with `remote = true` pointing at `unix:///run/user/<uid>/podman/podman.sock` (written by the container setup scripts). This makes plain `podman`/`docker` talk to the host engine transparently — no flags needed.
+3. `KIND_EXPERIMENTAL_PROVIDER=podman` is exported in `.bashrc` (the host engine is rootless Podman, there is no Docker daemon).
+4. Rootless `kind` needs cgroup delegation — `setup.sh` writes `/etc/systemd/system/user@.service.d/delegate.conf` with `Delegate=cpu cpuset io memory pids` (takes effect after the next login).
+
+Consequence: containers (and clusters) created by either dev container run on the **one shared host engine**, so they are visible from `damianf`, `damianu`, and the host alike. The config file lives in each container's `/etc` (not the shared `$HOME`) so it never forces the host's own Podman into remote mode.
 
 ### Setup dev toolbox
 ```bash
