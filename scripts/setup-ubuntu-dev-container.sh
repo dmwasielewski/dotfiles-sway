@@ -73,6 +73,23 @@ run_step "UBUNTU_DEV_TERMINAL_TOOLS" "Installing terminal inspection/search tool
     ubox "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
             btop duf bat ncdu ripgrep fzf fd-find"
 
+# ── Dev language toolchains (parity with toolbox damianf) ─────────────────
+# Go is per-OS (apt). Rust (rustup) and uv (via pipx) install into the shared
+# $HOME, so they are visible from every container and the host alike.
+run_step "UBUNTU_DEV_GO" "Installing Go toolchain" \
+    ubox "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y golang-go"
+
+run_step "UBUNTU_DEV_PYTHON_TOOLING" "Installing Python tooling (pipx + uv)" \
+    ubox "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y pipx &&
+        pipx ensurepath >/dev/null 2>&1 || true
+        pipx install uv >/dev/null 2>&1 || pipx upgrade uv >/dev/null 2>&1 || true"
+
+run_step "UBUNTU_DEV_RUST" "Installing Rust toolchain (rustup + rust-analyzer)" \
+    ubox 'if [ ! -x "$HOME/.cargo/bin/rustup" ]; then
+            curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+        fi
+        "$HOME/.cargo/bin/rustup" component add rust-analyzer'
+
 # ── Node.js 22 + GitHub CLI ──────────────────────────────────────────────
 run_step "UBUNTU_DEV_NODEJS" "Installing Node.js 22 and GitHub CLI" \
     ubox "sudo install -m 0755 -d /etc/apt/keyrings &&
@@ -152,7 +169,7 @@ run_step "UBUNTU_DEV_VOICE_WHISPER" "Installing faster-whisper + google-genai" \
 # ── Verify ───────────────────────────────────────────────────────────────
 echo -e "\n${CYAN}==> Verifying distrobox '$CONTAINER'...${NC}"
 VERIFY_FAIL=0
-for tool in node npm gh claude codex deepseek sgpt git btop duf bat ncdu rg fzf fd; do
+for tool in node npm gh claude codex deepseek sgpt git btop duf bat ncdu rg fzf fd go cargo rustc rust-analyzer uv; do
     if distrobox enter --name "$CONTAINER" -- which "$tool" &>/dev/null 2>&1; then
         echo -e "  ${GREEN}✓${NC} $tool"
     else

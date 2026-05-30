@@ -45,6 +45,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Voice typing — push-to-talk (`Mod+T`) with local Whisper AI + Gemini UK English correction
 - Neovim 0.12.1 — user-local latest pinned binary with Chris Titus Tech `titus-kickstart` config
 - AI terminal tools in `damianf` toolbox and `damianu` distrobox: Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT (`sgpt`)
+- Dev language toolchains in both dev containers: Go, Rust (`rustup` + `rust-analyzer`, into the shared `~/.cargo`), Python tooling (`pipx` + `uv`)
 - NordVPN CLI with Waybar status/toggle helper (click to connect/disconnect)
 - AdGuard for Linux CLI with Waybar toggle helper (click to enable/disable)
 - LibreOffice — open source office suite (Writer, Calc, Impress)
