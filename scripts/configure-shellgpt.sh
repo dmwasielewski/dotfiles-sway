@@ -49,7 +49,7 @@ PLACEHOLDER_KEY="missing-shellgpt-api-key"
 DEFAULT_MODEL_FALLBACK="gpt-4o"
 USE_LITELLM_FALLBACK="false"
 GEMINI_PRIMARY_MODEL="${SHELLGPT_GEMINI_PRIMARY_MODEL:-gemini/gemini-3.1-flash-lite}"
-GEMINI_FALLBACK_MODEL="${SHELLGPT_GEMINI_FALLBACK_MODEL:-gemini/gemini-2.5-flash}"
+GEMINI_FALLBACK_MODEL="${SHELLGPT_GEMINI_FALLBACK_MODEL:-gemini/gemini-2.5-flash-lite}"
 API_KEY="$OPENAI_STYLE_API_KEY"
 SHELLGPT_PLACEHOLDER_CONFIG=false
 
@@ -164,7 +164,7 @@ set -uo pipefail
 
 real_sgpt="${SGPT_REAL_BIN:-$HOME/.local/bin/sgpt-cli}"
 primary_model="${SGPT_PRIMARY_MODEL:-${SHELLGPT_GEMINI_PRIMARY_MODEL:-gemini/gemini-3.1-flash-lite}}"
-fallback_model="${SGPT_FALLBACK_MODEL:-${SHELLGPT_GEMINI_FALLBACK_MODEL:-gemini/gemini-2.5-flash}}"
+fallback_model="${SGPT_FALLBACK_MODEL:-${SHELLGPT_GEMINI_FALLBACK_MODEL:-gemini/gemini-2.5-flash-lite}}"
 
 load_env_file() {
     local file="$1"
@@ -264,7 +264,7 @@ if [ "${SHELLGPT_GEMINI_PRIMARY_MODEL:-}" = "gemini/gemini-3.1-flash-lite-previe
 fi
 
 export SHELLGPT_GEMINI_PRIMARY_MODEL="${SHELLGPT_GEMINI_PRIMARY_MODEL:-gemini/gemini-3.1-flash-lite}"
-export SHELLGPT_GEMINI_FALLBACK_MODEL="${SHELLGPT_GEMINI_FALLBACK_MODEL:-gemini/gemini-2.5-flash}"
+export SHELLGPT_GEMINI_FALLBACK_MODEL="${SHELLGPT_GEMINI_FALLBACK_MODEL:-gemini/gemini-2.5-flash-lite}"
 EOF
 chmod 600 "$ENV_LOADER"
 
