@@ -129,8 +129,9 @@ input "type:touchpad" {
     bindsym --no-repeat Alt+Shift+d exec kill -RTMIN+1 $(pgrep -x whispering-open)
     bindsym --release    Alt+Shift+d exec kill -RTMIN+2 $(pgrep -x whispering-open)
 
-    # Kill focused window
-    bindsym $mod+Shift+q kill
+    # Fully close the focused app (terminates the process, not just the window)
+    # so Chromium/Electron apps don't linger in the background. SIGTERM = graceful.
+    bindsym $mod+Shift+q exec ~/.local/bin/close-focused-app
 
     # Start your launcher
     bindsym $mod+d exec $menu
