@@ -35,6 +35,30 @@ run_step "TOOLBOX_PACKAGES" "Installing node, npm, gh, git, pip inside toolbox" 
 run_step "TOOLBOX_TERMINAL_TOOLS" "Installing terminal inspection/search tools inside toolbox" \
     toolbox run --container "$CONTAINER" sudo dnf install -y btop duf bat ncdu ripgrep fzf fd-find
 
+# ── Dev language toolchains (Go, Rust, Python tooling) ────────────────────
+# Languages live in the container, never on the immutable host. Cargo/pipx
+# install into the shared $HOME, so the binaries are visible from the host too.
+run_step "TOOLBOX_GO" "Installing Go toolchain" \
+    toolbox run --container "$CONTAINER" sudo dnf install -y golang
+
+run_step "TOOLBOX_PYTHON_TOOLING" "Installing Python tooling (pipx + uv)" \
+    toolbox run --container "$CONTAINER" bash -c '
+        set -eo pipefail
+        sudo dnf install -y pipx
+        pipx ensurepath >/dev/null 2>&1 || true
+        pipx install uv >/dev/null 2>&1 || pipx upgrade uv >/dev/null 2>&1 || true
+    '
+
+run_step "TOOLBOX_RUST" "Installing Rust toolchain (rustup + rust-analyzer)" \
+    toolbox run --container "$CONTAINER" bash -c '
+        set -eo pipefail
+        sudo dnf install -y curl
+        if [ ! -x "$HOME/.cargo/bin/rustup" ]; then
+            curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+        fi
+        "$HOME/.cargo/bin/rustup" component add rust-analyzer
+    '
+
 # ── Configure npm prefix ─────────────────────────────────────────────────
 run_step "TOOLBOX_NPM_PREFIX" "Configuring npm prefix (~/.npm-global)" \
     toolbox run --container "$CONTAINER" bash -c '
@@ -125,7 +149,7 @@ run_step "VOICE_WHISPER" "Installing faster-whisper + google-genai (voice typing
 # ── Verify ───────────────────────────────────────────────────────────────
 echo -e "\n${CYAN}==> Verifying toolbox '$CONTAINER'...${NC}"
 VERIFY_FAIL=0
-for tool in node npm gh claude codex deepseek sgpt git btop duf bat ncdu rg fzf fd; do
+for tool in node npm gh claude codex deepseek sgpt git btop duf bat ncdu rg fzf fd go cargo rustc rust-analyzer uv; do
     if toolbox run --container "$CONTAINER" which "$tool" &>/dev/null 2>&1; then
         echo -e "  ${GREEN}✓${NC} $tool"
     else

@@ -12,6 +12,9 @@ fi
 if ! [[ "$PATH" =~ "$HOME/.npm-global/bin" ]]; then
     PATH="$PATH:$HOME/.npm-global/bin"
 fi
+if [[ -d "$HOME/go/bin" ]] && ! [[ "$PATH" =~ "$HOME/go/bin" ]]; then
+    PATH="$PATH:$HOME/go/bin"
+fi
 export PATH
 
 if command -v dircolors >/dev/null 2>&1; then
