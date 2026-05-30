@@ -63,8 +63,18 @@ PY
 }
 
 ensure_repo() {
+    # Idempotent: if the repo file and GPG key are already in place, there is
+    # nothing to download — succeed without touching the network or sudo. This
+    # is the common case on re-runs and must NOT fail when repo.nordvpn.com is
+    # unreachable.
+    if [[ -f "$REPO_FILE" && -f "$KEY_FILE" ]]; then
+        echo "NordVPN repo + GPG key already configured — skipping download"
+        return 0
+    fi
+
     local tmpdir
     tmpdir="$(mktemp -d)"
+    trap 'rm -rf "$tmpdir"' RETURN
     if ! command -v rpm2cpio >/dev/null 2>&1; then
         echo "rpm2cpio is required to unpack the NordVPN release RPM" >&2
         return 1
@@ -74,11 +84,24 @@ ensure_repo() {
         return 1
     fi
 
-    curl -fL -o "$tmpdir/nordvpn-release.rpm" "$KEY_URL"
-    (cd "$tmpdir" && rpm2cpio nordvpn-release.rpm | cpio -idm >/dev/null 2>&1)
+    # set -e does not apply inside a function tested by `if` (run_step), so each
+    # critical step must check its own exit status and fail loudly — otherwise a
+    # download failure is masked by the final `tee` succeeding (false green).
+    if ! curl -fL -o "$tmpdir/nordvpn-release.rpm" "$KEY_URL"; then
+        echo "Could not download the NordVPN release RPM from $KEY_URL — repo unreachable" >&2
+        return 1
+    fi
+    if ! (cd "$tmpdir" && rpm2cpio nordvpn-release.rpm | cpio -idm >/dev/null 2>&1); then
+        echo "Failed to unpack the NordVPN release RPM" >&2
+        return 1
+    fi
+    if [[ ! -f "$tmpdir/etc/pki/rpm-gpg/RPM-GPG-KEY-NordVPN" ]]; then
+        echo "GPG key not found in the unpacked RPM" >&2
+        return 1
+    fi
 
-    sudo -n install -Dm0644 "$tmpdir/etc/pki/rpm-gpg/RPM-GPG-KEY-NordVPN" "$KEY_FILE"
-    sudo -n install -Dm0644 /dev/null "$REPO_FILE"
+    sudo -n install -Dm0644 "$tmpdir/etc/pki/rpm-gpg/RPM-GPG-KEY-NordVPN" "$KEY_FILE" || return 1
+    sudo -n install -Dm0644 /dev/null "$REPO_FILE" || return 1
     sudo -n tee "$REPO_FILE" >/dev/null <<EOF
 ####################################################################
 # NordVPN releases, stable                                         #

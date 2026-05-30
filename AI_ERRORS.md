@@ -814,3 +814,28 @@ works inside `damianf` (an earlier memory note claimed it did not — it does).
 `toolbox` and `podman` CLIs are also available from inside. `distrobox` is NOT
 on PATH inside the toolbox — drive `damianu`/`security` via
 `flatpak-spawn --host distrobox …` or from the host.
+
+## `set -e` does NOT protect a function tested by `if` — guard each command
+
+**The trap:** a setup function whose body has a failing command in the middle
+but a succeeding command at the end reports **success** (false green), even with
+`set -euo pipefail` at the top of the script. Real example: `setup-nordvpn.sh`
+→ `ensure_repo` had `curl … "$KEY_URL"` fail (repo unreachable), then continued
+to `rpm2cpio`/`install` (also failing), yet the step showed `✓` and `Failed: 0`.
+
+**Why:** `run_step` calls the function as `if ensure_repo; then …`. Bash
+disables `set -e` for the **entire** body of a function (or any command) whose
+status is being tested by `if`, `&&`, `||`, `!`, or `while`. So intermediate
+failures do NOT abort — the function's return value is just the exit status of
+its **last** command (here the `tee` that writes the repo file, which succeeds
+regardless of the earlier download failing).
+
+**What to do:**
+- Never rely on `set -e` inside a function invoked by `run_step`/`if`. Check
+  each critical command explicitly: `cmd || return 1`, or
+  `if ! cmd; then echo "why" >&2; return 1; fi`.
+- Make the step **idempotent and offline-safe**: if the artifact already exists
+  (repo file + GPG key here), return 0 early WITHOUT re-downloading — so a
+  re-run never fails just because the remote is unreachable.
+- A step that can "succeed" while its real work failed is worse than a hard
+  failure: it hides the problem. Fail loudly with a reason on stderr.
