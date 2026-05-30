@@ -93,14 +93,40 @@ show_summary() {
 
 # ── Update actions (each returns 0 on success, 1 on failure) ──────────────
 do_flatpak() {
-    local rc=0 inst scope
-    # Note which apps that have pending updates are RUNNING right now — flatpak
-    # does not close apps, so a running instance keeps the old version until it
-    # is fully quit and reopened. We warn about these after updating.
+    local rc=0 inst scope ans app
+    # A running app keeps the OLD version until its background process is fully
+    # killed — closing the window (e.g. Alt+Shift+Q in Sway) only hides it;
+    # Chromium/Electron apps keep a master process alive. So before updating we
+    # find apps that (a) have a pending update and (b) are running, and offer
+    # to close them so the new version actually takes effect.
     local running_updated
     running_updated="$(comm -12 \
         <(flatpak_update_rows | cut -f1 | sort -u) \
         <(flatpak ps --columns=application 2>/dev/null | sort -u) 2>/dev/null)"
+
+    if [[ -n "$running_updated" ]]; then
+        echo ""
+        echo "  ⚠ These apps have an update AND are running right now:"
+        printf '%s\n' "$running_updated" | sed 's/^/      • /'
+        echo ""
+        echo "    A running app keeps the OLD version until its background"
+        echo "    process is closed. Closing just the window (Alt+Shift+Q) is"
+        echo "    NOT enough for browsers / Electron apps."
+        echo ""
+        read -rp "  Close these apps now and continue with the update? [y/N] " ans
+        if [[ "$ans" =~ ^[Yy]$ ]]; then
+            while IFS= read -r app; do
+                [[ -z "$app" ]] && continue
+                echo "    Closing $app…"; log_line "flatpak kill $app (before update)"
+                flatpak kill "$app" 2>/dev/null || true
+            done <<< "$running_updated"
+            sleep 1
+        else
+            echo "  Leaving them open — restart them yourself afterwards to apply."
+            log_line "user declined closing running apps"
+        fi
+    fi
+
     # Iterate the discovered installations (user needs no auth; system/custom
     # use polkit — an interactive prompt is fine, the user opened this menu).
     while IFS= read -r inst; do
@@ -115,13 +141,6 @@ do_flatpak() {
         fi
     done < <(flatpak_installations)
     [[ "$rc" -eq 0 ]] && upd_record flatpak
-    # Tell the user which updated apps are still running with the OLD version.
-    if [[ -n "$running_updated" ]]; then
-        echo ""
-        echo "  ⚠ These apps were running — fully quit and reopen them to apply"
-        echo "    the new version (closing just the window may not be enough):"
-        printf '%s\n' "$running_updated" | sed 's/^/      • /'
-    fi
     return "$rc"
 }
 

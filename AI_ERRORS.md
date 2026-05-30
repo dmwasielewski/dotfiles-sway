@@ -32,6 +32,18 @@ without a password because of the `org.freedesktop.Flatpak.rules` polkit rule
 (active local user is allowed to update). Do NOT add a polkit agent believing
 it is required for flatpak updates — it is not.
 
+**Trap 5 — "I closed the app but it still shows the old version after update."**
+A running app keeps the OLD version in memory until its background process is
+killed. Closing the window — including Sway's `Alt+Shift+Q` (`kill`, which only
+closes the window/surface) — does NOT stop Chromium/Electron master processes
+(Vivaldi, VSCode, Obsidian…). They keep a background master process alive, and
+reopening attaches to it. **Proof technique:** `ps -eo pid,lstart,cmd | grep
+vivaldi` shows the process start time (predating the update) and the crashpad
+`ver=7.8.3925.81` annotation reveals the actually-running version, while
+`flatpak info … Version:` shows the (newer) on-disk version. This is NOT an
+update-tooling bug. Fix: `flatpak kill <app-id>` then relaunch. The update menu
+now detects running apps with pending updates and offers to close them first.
+
 ---
 
 > **Read this before making any changes to this repository.**
