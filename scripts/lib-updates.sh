@@ -65,6 +65,10 @@ flatpak_update_rows() {                # echoes "appid<TAB>current<TAB>available
             [[ -z "$appid" ]] && continue
             cur="$(flatpak info $scope "$appid" 2>/dev/null | awk -F': ' '/^[[:space:]]*Version:/ {print $2; exit}')"
             [[ -z "$cur" ]] && cur="—"
+            # Flathub often republishes the SAME version with a new commit
+            # (rebuild for an updated runtime/security fix). The version string
+            # is unchanged, so label it clearly instead of showing "X → X".
+            [[ -n "$avail" && "$cur" == "$avail" ]] && avail="$avail (rebuild)"
             printf '%s\t%s\t%s\n' "$appid" "$cur" "$avail"
         done <<< "$updates"
     done < <(flatpak_installations)

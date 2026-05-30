@@ -124,12 +124,19 @@ do_containers() {
             echo "  ✗ $name failed (continuing). Log: $LOG"; log_line "FAIL distrobox $name"; rc=1
         fi
     done < <(discover_distrobox)
-    # toolbox containers — dnf inside
+    # toolbox containers — detect the package manager inside (don't assume dnf;
+    # a toolbox is usually Fedora but could be built from another image).
     while IFS= read -r name; do
         [[ -z "$name" ]] && continue
         echo ""; echo "── Updating toolbox: $name ──────────────────────────"
-        log_line "BEGIN toolbox dnf upgrade $name"
-        if run_logged toolbox run --container "$name" sudo dnf upgrade -y --skip-unavailable; then
+        log_line "BEGIN toolbox upgrade $name"
+        if run_logged toolbox run --container "$name" bash -c '
+            if   command -v dnf     >/dev/null 2>&1; then sudo dnf upgrade -y --skip-unavailable
+            elif command -v apt-get >/dev/null 2>&1; then sudo apt-get update && sudo apt-get upgrade -y
+            elif command -v zypper  >/dev/null 2>&1; then sudo zypper -n update
+            elif command -v pacman  >/dev/null 2>&1; then sudo pacman -Syu --noconfirm
+            elif command -v apk     >/dev/null 2>&1; then sudo apk upgrade
+            else echo "no known package manager in this container"; exit 1; fi'; then
             upd_record "container-$name"; log_line "OK toolbox $name"
         else
             echo "  ✗ $name failed (continuing). Log: $LOG"; log_line "FAIL toolbox $name"; rc=1

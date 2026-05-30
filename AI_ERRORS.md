@@ -1,5 +1,39 @@
 # AI_ERRORS.md — Lessons Learned for AI Assistants
 
+## Flatpak update detection — common false-bug traps
+
+**Trap 1 — Only checking `--user` scope.** Apps may be installed in `--user`,
+`--system`, or custom installations. Hardcoding `--user` misses everything
+installed system-wide (Vivaldi, VSCode, Spotify, Bitwarden, OBS … were all
+`system`). Discover installations dynamically with
+`flatpak list --columns=installation | sort -u`, map each to its scope flag
+(`user`→`--user`, `system`→`--system`, else `--installation=NAME`), and query
+each. See `scripts/lib-updates.sh` → `flatpak_installations`.
+
+**Trap 2 — Assuming "same version string = no update".** Flathub frequently
+republishes the SAME version with a NEW commit (rebuild for an updated runtime
+or security fix). `flatpak remote-ls --updates` correctly reports it as pending
+even though the version label is unchanged (e.g. Bitwarden `2026.4.0 → 2026.4.0`).
+The real test is the **commit hash**, not the version string:
+`flatpak info … Commit:` vs `flatpak remote-info … Commit:`. The update list
+labels these as `(rebuild)` so they don't look broken.
+
+**Trap 3 — Browser flatpaks nag about a "newer version" that flatpak can't see.**
+Vivaldi / Chrome / Firefox have their OWN in-app update checkers that compare
+against the vendor website, which is always a few days ahead of the Flathub
+package. The in-app nag persists even when the flatpak is fully up to date, and
+it CANNOT be acted on (flatpak is read-only). This is **not a bug** and not
+something the update tooling can fix — do not chase it. Verify with the commit
+hash: if installed commit == flathub commit, the app is current.
+
+**Trap 4 — Thinking system flatpak updates need a polkit agent.** This Sway
+setup runs NO polkit authentication agent, yet `flatpak update --system` works
+without a password because of the `org.freedesktop.Flatpak.rules` polkit rule
+(active local user is allowed to update). Do NOT add a polkit agent believing
+it is required for flatpak updates — it is not.
+
+---
+
 > **Read this before making any changes to this repository.**
 >
 > This file records things that **DO NOT WORK** and why, plus what **DOES WORK**
