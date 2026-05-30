@@ -32,6 +32,42 @@ without a password because of the `org.freedesktop.Flatpak.rules` polkit rule
 (active local user is allowed to update). Do NOT add a polkit agent believing
 it is required for flatpak updates — it is not.
 
+## Container updates — sudo and silent failures
+
+**Toolbox needs a sudo password; distrobox does not.** Distrobox auto-installs
+a `NOPASSWD:ALL` sudoers rule, so `distrobox upgrade <name>` runs unattended.
+Toolbox containers may NOT have that rule, so `toolbox run … sudo dnf upgrade`
+fails with "sudo: a password is required" — and if the call is piped (e.g.
+through `tee` for logging) the prompt may never appear, so the update fails
+**silently** and only that one container is skipped. Symptom: "option 2 doesn't
+update all containers, with no error shown."
+
+Fix (in `updates-menu.sh` → `ensure_container_nopasswd`): per container, test
+`sudo -n true`; if it fails, install `<user> ALL=(root) NOPASSWD:ALL` into
+`/etc/sudoers.d/` once (asks the password a single time), matching distrobox.
+Do this dynamically for ANY container — never hardcode container names. Always
+collect failed container names and print an explicit summary + log path so a
+failure is never silent.
+
+## Vivaldi (multi-profile browser) — hard kill can open an empty profile
+
+Vivaldi runs the main browser and each PWA (Claude, ChatGPT) as SEPARATE
+profiles (`--profile-directory=`). A hard kill (SIGKILL) while a PWA window was
+last-focused leaves `profile.last_used` in `…/config/vivaldi/Local State`
+pointing at that PWA profile, so the next launch opens an EMPTY-looking profile.
+**The data is NOT lost** — it is intact in the `Default` profile
+(`…/config/vivaldi/Default/{Bookmarks,History,Login Data}`). Do not panic or
+delete anything.
+
+Fixes:
+- Launch the main browser with `--profile-directory=Default` (done in
+  `autostart.sh`) so it always opens the main profile regardless of last_used.
+- To recover after it happened: fully close Vivaldi, then set
+  `profile.last_used` (and `last_active_profiles`) back to `"Default"` in
+  `Local State` (back it up first) and remove stale `Singleton*` lock files.
+- Prefer SIGTERM (graceful) over SIGKILL where possible; only escalate to
+  SIGKILL for apps that refuse to die.
+
 **Trap 5 — "I closed the app but it still shows the old version after update."**
 A running app keeps the OLD version in memory until its background process is
 killed. Closing the window — including Sway's `Alt+Shift+Q` (`kill`, which only
