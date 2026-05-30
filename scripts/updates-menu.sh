@@ -94,6 +94,13 @@ show_summary() {
 # ── Update actions (each returns 0 on success, 1 on failure) ──────────────
 do_flatpak() {
     local rc=0 inst scope
+    # Note which apps that have pending updates are RUNNING right now — flatpak
+    # does not close apps, so a running instance keeps the old version until it
+    # is fully quit and reopened. We warn about these after updating.
+    local running_updated
+    running_updated="$(comm -12 \
+        <(flatpak_update_rows | cut -f1 | sort -u) \
+        <(flatpak ps --columns=application 2>/dev/null | sort -u) 2>/dev/null)"
     # Iterate the discovered installations (user needs no auth; system/custom
     # use polkit — an interactive prompt is fine, the user opened this menu).
     while IFS= read -r inst; do
@@ -108,6 +115,13 @@ do_flatpak() {
         fi
     done < <(flatpak_installations)
     [[ "$rc" -eq 0 ]] && upd_record flatpak
+    # Tell the user which updated apps are still running with the OLD version.
+    if [[ -n "$running_updated" ]]; then
+        echo ""
+        echo "  ⚠ These apps were running — fully quit and reopen them to apply"
+        echo "    the new version (closing just the window may not be enough):"
+        printf '%s\n' "$running_updated" | sed 's/^/      • /'
+    fi
     return "$rc"
 }
 
