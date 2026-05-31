@@ -121,9 +121,22 @@ install_asset() {
         return 1
     fi
 
-    ln -sf "$binary" "$BIN_LINK"
     chmod +x "$binary"
     printf '%s\n' "$binary" > "$INSTALL_DIR/current-binary"
+    # Launcher must set the WebKitGTK workaround env on Fedora Sway, otherwise the
+    # app shows a blank/white window. A bare symlink to the binary skips this and
+    # regresses every reinstall — see whispering-open AI_ERRORS.md. Write a wrapper
+    # that exports the env and execs the recorded binary (resolved at runtime so it
+    # survives version upgrades).
+    cat > "$BIN_LINK" <<WRAP
+#!/bin/bash
+export GDK_BACKEND=x11
+export WEBKIT_DISABLE_COMPOSITING_MODE=1
+export WEBKIT_DISABLE_DMABUF_RENDERER=1
+export LIBGL_ALWAYS_SOFTWARE=1
+exec "\$(cat "$INSTALL_DIR/current-binary")" "\$@"
+WRAP
+    chmod +x "$BIN_LINK"
     printf '%s\n' "$REPO" > "$INSTALL_DIR/source-repo"
     printf '%s\n' "$(basename "$asset")" > "$INSTALL_DIR/source-asset"
     echo "==> Installed Whispering Open binary: $binary"
