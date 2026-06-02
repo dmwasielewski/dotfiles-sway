@@ -28,7 +28,7 @@ emit() {
 
 # ── Heavy worker: compute everything and write the cache atomically ────────
 compute_and_cache() {
-    local total=0 os_is_pending=0 sec_high=0
+    local total=0 os_is_staged=0 sec_high=0
     local lines=()
 
     # Flatpak (first — most frequently updated)
@@ -66,11 +66,10 @@ compute_and_cache() {
     [[ "$os_fresh" == "stale" ]] && stale_note=" (as of $(os_cache_date), repo offline)"
 
     if [[ "$(os_staged)" -eq 1 ]]; then
-        os_is_pending=1; lines+=("OS: staged update — reboot to apply"); total=$(( total + 1 ))
+        os_is_staged=1; lines+=("OS: staged update — reboot to apply"); total=$(( total + 1 ))
     elif [[ "$os_fresh" == "none" ]]; then
         lines+=("OS: not yet checked (repo unreachable)")
     elif [[ "$os_state" == "pending" ]]; then
-        os_is_pending=1
         local nv pc reg
         nv="$(os_parse_version "$os_raw")"; pc="$(os_parse_pkgcount "$os_raw")"
         sec_high="$(os_parse_sec_total "$os_raw")"
@@ -83,11 +82,16 @@ compute_and_cache() {
         lines+=("OS: up to date (booted $(os_last_label))$stale_note")
     fi
 
-    # Severity class
+    # Severity class — the colour encodes the action required of the user:
+    #   uptodate (grey)    nothing to do
+    #   warning  (amber)   updates available (apps / containers / OS) — run the updater
+    #   critical (red)     a deployment is staged — reboot required / pending
+    # OS pending packages and security count toward the badge (amber) but never
+    # turn it red; only an actually staged update (awaiting reboot) is red.
     local klass
-    if   [[ "$total" -eq 0 ]];                              then klass="uptodate"
-    elif [[ "$os_is_pending" -eq 1 || "$sec_high" -gt 0 ]]; then klass="critical"
-    else                                                         klass="warning"; fi
+    if   [[ "$total" -eq 0 ]];         then klass="uptodate"
+    elif [[ "$os_is_staged" -eq 1 ]];  then klass="critical"
+    else                                    klass="warning"; fi
 
     local tooltip result
     tooltip="$(printf '%s\n' "${lines[@]}")"
@@ -97,6 +101,15 @@ compute_and_cache() {
     mkdir -p "$CACHE_DIR"
     printf '%s\n' "$result" > "$CACHE_FILE.tmp" && mv -f "$CACHE_FILE.tmp" "$CACHE_FILE"
     printf '%s\n' "$result"
+
+    # Push: the module declares "signal": 8, so SIGRTMIN+8 makes Waybar re-run
+    # its exec at once and pick up the cache we just wrote. This is what keeps the
+    # icon responsive without a fast poll interval — every recompute (menu action,
+    # post-reboot, periodic) announces itself the moment fresh data is ready.
+    # -x: exact process-name match. Without it the pattern "waybar" also matches
+    # this very script ("updates-waybar.sh"), which would signal/kill ourselves
+    # and any concurrent instance. Only the real Waybar binary is named "waybar".
+    pkill -RTMIN+8 -x waybar 2>/dev/null || true
 }
 
 # Spawn the heavy worker fully detached so Waybar doesn't wait on it.
@@ -111,14 +124,30 @@ if [[ "${1:-}" == "--compute" ]]; then
     exit 0
 fi
 
-# Default (Waybar) mode — always instant.
+# Default (Waybar) mode — always instant: print the cached JSON, then decide
+# whether to kick off a background recompute. The recompute (not the poll) is what
+# keeps the icon correct: it signals Waybar when done. Waybar's poll interval is
+# therefore just a slow heartbeat, so it can be long — no fast 5s polling needed.
+SESSION_MARKER="${XDG_RUNTIME_DIR:-/tmp}/waybar-updates.session"
+need_refresh=0
+
 if [[ -f "$CACHE_FILE" ]]; then
     cat "$CACHE_FILE"
     age=$(( $(date +%s) - $(stat -c %Y "$CACHE_FILE" 2>/dev/null || echo 0) ))
-    [[ "$age" -ge "$CACHE_MAX_AGE" ]] && spawn_refresh   # stale → refresh in background
-    exit 0
+    [[ "$age" -ge "$CACHE_MAX_AGE" ]] && need_refresh=1   # periodic discovery of new updates
+else
+    emit "⬆" "uptodate" "Checking for updates…"           # no cache yet
+    need_refresh=1
 fi
 
-# No cache yet — show a neutral placeholder instantly and compute in background.
-emit "⬆" "uptodate" "Checking for updates…"
-spawn_refresh
+# First run of this login session (e.g. right after a reboot): force one refresh
+# so a staged update applied by the reboot is reflected even when the cache is
+# younger than CACHE_MAX_AGE. XDG_RUNTIME_DIR is wiped on logout/reboot, so the
+# marker's absence reliably means "first time since boot".
+if [[ ! -f "$SESSION_MARKER" ]]; then
+    : > "$SESSION_MARKER" 2>/dev/null
+    need_refresh=1
+fi
+
+[[ "$need_refresh" -eq 1 ]] && spawn_refresh
+exit 0

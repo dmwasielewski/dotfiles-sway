@@ -397,11 +397,23 @@ The `custom/updates` module (`⬆` icon) tracks pending updates across three sou
 - **Containers** (auto-discovered distrobox + toolbox; flagged stale past a threshold)
 - **Fedora OS** (`rpm-ostree`; uses a last-known-good cache so it still reports when the repo is offline)
 
-**Severity classes:** `uptodate` (nothing pending) · `warning` (Flatpak/containers only) · `critical` (OS update staged/pending, or security updates). The tooltip lists each source on its own line.
+**Severity classes — the colour encodes the action required of you:**
 
-**Performance — instant by design.** Waybar polls `updates-waybar` every 5 s, but the default mode *only reads the cached JSON* (~13 ms) and never blocks on the slow (~10 s) `rpm-ostree` check. When the cache is missing or older than 15 min (`CACHE_MAX_AGE`), it spawns a fully detached `--compute` worker in the background that recomputes and atomically rewrites `~/.cache/waybar-updates.json`. No systemd timer is needed — the poll itself keeps the cache fresh.
+- `uptodate` (grey, neutral) — nothing to do
+- `warning` (amber) — updates available (Flatpak, containers, **or** an OS update to download, incl. security) → run the updater, **no reboot**
+- `critical` (red) — a deployment is **staged**, awaiting reboot → reboot to apply
 
-**Interaction:** left-click runs `updates-do` (apply updates); the update menu (`updates-menu`) regenerates the cache via `updates-waybar --compute` after any change so the tray reflects the new state on the next poll.
+OS pending packages and security updates count toward the badge (amber) but never turn it red; only an actually staged update (waiting for a reboot) is red. The tooltip lists each source on its own line.
+
+**Event-driven, not polled — light on the host.** The default mode *only reads the cached JSON* (~13 ms) and never blocks on the slow (~10 s) `rpm-ostree` check. Correctness comes from recomputing at every state change, not from frequent polling:
+
+- **Push:** every `--compute` run atomically rewrites `~/.cache/waybar-updates.json`, then signals Waybar (`pkill -RTMIN+8 -x waybar`; the module declares `"signal": 8`) to redraw at once.
+- **Per-session refresh:** the first default-mode run of a login session (marker in `$XDG_RUNTIME_DIR`, wiped on reboot) forces one recompute, so a staged update applied by a reboot is reflected immediately on next login.
+- **Periodic discovery:** Waybar polls only once an hour (`interval: 3600`) as a slow heartbeat; that run recomputes when the cache is older than `CACHE_MAX_AGE` (3 h), catching new upstream packages.
+
+Because the push handles instant feedback, there is no fast 5 s polling — idle wake-ups drop from ~720/h to 1/h. No systemd timer is needed.
+
+**Interaction:** left-click runs `updates-do` (apply updates). The update menu (`updates-menu`) recomputes the cache via `updates-waybar --compute` after **every** option and on exit (via an `EXIT` trap — covers Cancel/Ctrl-C), and again before the reboot prompt so the icon turns red while you decide. A recompute reads ground truth, so an update that silently failed keeps the badge lit instead of falsely clearing it.
 
 All three scripts (`updates-waybar`, `updates-do`, `updates-menu`) are symlinked into `~/.local/bin` by `setup.sh`; `lib-updates.sh` is resolved next to them and needs no separate symlink.
 

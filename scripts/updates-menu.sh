@@ -271,6 +271,9 @@ do_os() {
 }
 
 ask_reboot() {
+    # Recompute the badge before prompting so the icon already shows red
+    # ("staged — reboot to apply") while the user decides, instead of only after.
+    refresh_waybar
     echo ""; read -rp "  Reboot now to apply the OS update? [y/N] " rb
     [[ "$rb" =~ ^[Yy]$ ]] && systemctl reboot
 }
@@ -345,12 +348,19 @@ show_list() {
 }
 
 # ── Refresh Waybar after any change ──────────────────────────────────────
-# Regenerate the cache via the heavy worker (--compute) in the background, so
-# the tray reflects the post-update state. Waybar reads the fresh cache on its
-# next (5s) poll — the module itself is instant (cache-only), so this is cheap.
+# Recompute the cache via the heavy worker (--compute) in the background; when it
+# finishes it writes the cache and signals Waybar (SIGRTMIN+8) to redraw at once.
+# setsid -f fully detaches it so the recompute still completes (and the icon still
+# updates) even when this menu's terminal closes right after — e.g. on Cancel.
 refresh_waybar() {
-    ( "$SCRIPT_DIR/updates-waybar.sh" --compute >/dev/null 2>&1 ) &
+    setsid -f "$SCRIPT_DIR/updates-waybar.sh" --compute >/dev/null 2>&1 || \
+        ( "$SCRIPT_DIR/updates-waybar.sh" --compute >/dev/null 2>&1 & )
 }
+
+# Every exit path (Cancel, Ctrl-C, end of an action) ends with one recompute, so
+# the icon always reflects the real post-session state — including an update that
+# silently failed (its count stays > 0, so the badge stays lit).
+trap refresh_waybar EXIT
 
 # ── Run "everything" with continue-on-error + summary ─────────────────────
 do_everything() {
@@ -404,7 +414,7 @@ while true; do
            echo ""; read -rp "  Press Enter to return to menu…" _ ;;
         4) do_everything; refresh_os_cache; refresh_waybar
            echo ""; read -rp "  Press Enter to return to menu…" _ ;;
-        5) show_list ;;                       # less → returns straight to menu
+        5) show_list; refresh_waybar ;;       # less → returns straight to menu
         q|Q|"") break ;;
         *) echo "  Unknown option."; sleep 1 ;;
     esac
