@@ -129,6 +129,11 @@ input "type:touchpad" {
     bindsym --no-repeat Alt+Shift+d exec kill -RTMIN+1 $(pgrep -x whispering-open)
     bindsym --release    Alt+Shift+d exec kill -RTMIN+2 $(pgrep -x whispering-open)
 
+    # Close just the focused WINDOW (Sway's native close request). Use this for a
+    # secondary window like a Vivaldi "Settings" window — it closes only that
+    # window and leaves the rest of the app running. Pairs with $mod+Shift+q below.
+    bindsym $mod+q kill
+
     # Fully close the focused app (terminates the process, not just the window)
     # so Chromium/Electron apps don't linger in the background. SIGTERM = graceful.
     bindsym $mod+Shift+q exec ~/.local/bin/close-focused-app

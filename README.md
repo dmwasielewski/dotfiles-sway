@@ -295,7 +295,8 @@ Solid black (`#000000`) — no image, no distractions.
 |---|---|
 | `Mod+Return` | Open terminal (foot) |
 | `Mod+D` | Application launcher (rofi) |
-| `Mod+Shift+Q` | Close focused window |
+| `Mod+Q` | Close focused **window** only (e.g. one Vivaldi Settings window — the rest of the app keeps running) |
+| `Mod+Shift+Q` | Close the whole **app** (terminates the process, so Chromium/Electron apps don't linger) |
 | `Mod+Shift+C` | Reload Sway config |
 | `Mod+Shift+E` | Exit Sway session |
 | `Mod+C` | Clipboard history picker (clipman + rofi) |
