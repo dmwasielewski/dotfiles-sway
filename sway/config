@@ -232,6 +232,10 @@ input "type:touchpad" {
 
     # Move the currently focused window to the scratchpad
     bindsym $mod+Shift+minus move scratchpad
+    # Same as above, on a more memorable key: "close but not fully" — hide the
+    # focused window to the background. Bring it back with $mod+minus. Works for
+    # any app (apps with a tray, like Whispering Open, keep their tray icon too).
+    bindsym $mod+Shift+w move scratchpad
 
     # Show the next scratchpad window or hide the focused scratchpad window.
     # If there are multiple scratchpad windows, this command cycles through them.

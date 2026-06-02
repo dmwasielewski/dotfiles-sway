@@ -336,7 +336,8 @@ Solid black (`#000000`) — no image, no distractions.
 | Shortcut | Action |
 |---|---|
 | `Mod+Shift+-` | Send window to scratchpad |
-| `Mod+-` | Show/cycle scratchpad |
+| `Mod+Shift+W` | Hide focused window to background ("close but not fully") — same as send-to-scratchpad, on a memorable key. Apps keep running (tray apps like Whispering Open keep their tray icon). |
+| `Mod+-` | Show/cycle scratchpad (bring a hidden window back) |
 
 #### Autostart trigger
 | Shortcut | Action |
