@@ -304,7 +304,7 @@ set $ws4 4
 # ── Workspace bootstrap ──
 
 exec foot
-exec flatpak run org.mozilla.Thunderbird
+exec ~/dotfiles-sway/scripts/launch-thunderbird.sh
 exec flatpak run com.vivaldi.Vivaldi
 exec flatpak run md.obsidian.Obsidian
 bindsym $mod+Shift+s exec ~/dotfiles-sway/scripts/autostart.sh
@@ -315,7 +315,9 @@ for_window [title="nordvpn-whitelist"]  floating enable, resize set 500 120
 
 # ── Routing rules ──
 assign [app_id="foot"] workspace number 1
-assign [app_id="org.mozilla.Thunderbird"] workspace number 3
+# Match any Thunderbird variant (regular or _esr) — case-insensitive, so a
+# variant swap never breaks workspace routing again.
+assign [app_id="(?i)^org\.mozilla\.thunderbird.*"] workspace number 3
 for_window [app_id="vivaldi-chatgpt.com__-Claude"] move to workspace number 5
 for_window [app_id="vivaldi-claude.ai__-Claude"] move to workspace number 5
 assign [title=".*Obsidian.*"] workspace number 4
