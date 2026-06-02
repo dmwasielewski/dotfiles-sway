@@ -67,6 +67,20 @@ done 3< <(list)
 Applied to every container/flatpak loop in `updates-menu.sh`. Always use this
 pattern when a loop body may run a program that reads stdin.
 
+## `rpm-ostree upgrade` exits 0 even when there is nothing to upgrade
+
+**Symptom:** "the update menu told me to reboot Fedora even though it said
+0 packages / up to date." Root cause: `rpm-ostree upgrade` returns exit code 0
+both when it stages a new deployment AND when there is nothing to do
+("No upgrade available"). Code that treats command success as "an update was
+staged" will always claim a reboot is required.
+
+**Fix (in `updates-menu.sh` → `do_os`):** after the upgrade, ask the deployment
+state itself — `os_staged` (greps `rpm-ostree status` for `(staged)`) — to decide
+whether a reboot is warranted. Return three states, not two: `0` staged (offer
+reboot), `2` nothing changed (no reboot prompt), `1` failed. Never infer "staged"
+from the upgrade command's exit code alone.
+
 ## Vivaldi (multi-profile browser) — hard kill can open an empty profile
 
 Vivaldi runs the main browser and each PWA (Claude, ChatGPT) as SEPARATE
@@ -139,6 +153,20 @@ pgrep -x waybar | wc -l   # must be 1
 ```
 
 If count is 2+, kill all extras: `pkill -x waybar; sleep 1; swaymsg reload`
+
+**Signal a single module without restarting — and ALWAYS use `pkill -x`.**
+A Waybar custom module with `"signal": N` re-runs ONLY that module's `exec` when
+Waybar receives `SIGRTMIN+N`. The updates module (`"signal": 8`) pushes a refresh
+with `pkill -RTMIN+8 -x waybar` after recomputing its cache — this refreshes just
+the `⬆` icon, NOT the whole bar, and does NOT reload config or touch other modules.
+
+The `-x` (exact process-name match) is mandatory: `pkill -RTMIN+8 waybar` treats
+`waybar` as a substring/regex and also matches the worker script
+`updates-waybar.sh`, so the real-time signal lands on the script itself (whose
+default action for SIGRTMIN+8 is to terminate) — it signal-kills its own
+`--compute` worker and any concurrent instance. Symptom: `Real-time signal 8`
+killing `updates-waybar.sh`. Only the real Waybar binary is named exactly
+`waybar`, so `-x` targets it alone.
 > instead. Every AI session starts here to avoid repeating known mistakes.
 >
 > Only **real logic/architecture issues** are recorded, NOT transient failures
