@@ -1,12 +1,20 @@
 #!/bin/bash
 # setup-thunderbird.sh — applies Thunderbird profile config from dotfiles
 # Run after first Thunderbird launch (profile must exist).
-# Thunderbird is installed as Flatpak (org.mozilla.Thunderbird) by setup.sh.
+# Thunderbird is installed as a Flatpak by setup.sh; its app ID is discovered at
+# runtime (Flathub rebased org.mozilla.Thunderbird -> org.mozilla.thunderbird_esr),
+# so the per-variant data dir is never hardcoded.
 set -euo pipefail
 
 DOTFILES="${DOTFILES:-$HOME/dotfiles-sway}"
 TB_CONFIG="$DOTFILES/thunderbird"
-TB_BASE="$HOME/.var/app/org.mozilla.Thunderbird/.thunderbird"
+
+TB_ID="$("$DOTFILES/scripts/thunderbird-id.sh" 2>/dev/null || true)"
+if [[ -z "$TB_ID" ]]; then
+    echo "==> No Thunderbird flatpak installed. Install it first (setup.sh), then re-run."
+    exit 0
+fi
+TB_BASE="$HOME/.var/app/$TB_ID/.thunderbird"
 
 # Find the default-esr profile
 PROFILE=$(ls -d "$TB_BASE"/*.default-esr 2>/dev/null | head -1)

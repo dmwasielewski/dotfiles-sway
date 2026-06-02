@@ -129,8 +129,12 @@ install_flatpak_app io.mpv.Mpv
 install_flatpak_app com.visualstudio.code
 install_flatpak_app com.bitwarden.desktop
 install_flatpak_app md.obsidian.Obsidian
-install_flatpak_app org.mozilla.Thunderbird
-flatpak override --user --env=LC_TIME=en_GB.UTF-8 org.mozilla.Thunderbird || true
+# Flathub rebased the plain org.mozilla.Thunderbird ID to the ESR build, so install
+# that and apply the LC_TIME override to whatever variant actually got installed
+# (discovered at runtime — never hardcode the ID).
+install_flatpak_app org.mozilla.thunderbird_esr
+tb_id="$("$DOTFILES/scripts/thunderbird-id.sh" 2>/dev/null || true)"
+[[ -n "$tb_id" ]] && flatpak override --user --env=LC_TIME=en_GB.UTF-8 "$tb_id" || true
 install_flatpak_app com.spotify.Client
 install_flatpak_app com.obsproject.Studio
 install_flatpak_app org.jdownloader.JDownloader

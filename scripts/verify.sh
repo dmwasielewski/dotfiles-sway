@@ -148,8 +148,14 @@ else
     fail "sway config missing LC_TIME import" "echo 'exec_always systemctl --user import-environment LC_TIME' >> ~/.config/sway/config"
 fi
 
-if host flatpak override --user --show org.mozilla.Thunderbird 2>/dev/null | grep -q "LC_TIME"; then
-    pass "Thunderbird flatpak override LC_TIME"
+# Thunderbird's flatpak ID is variant-dependent (Flathub rebased the plain
+# org.mozilla.Thunderbird to org.mozilla.thunderbird_esr), so discover whatever is
+# installed instead of hardcoding it. Reused for the presence check further down.
+TB_ID="$(host flatpak list --app --columns=application 2>/dev/null | grep -iE '^org\.mozilla\.thunderbird' | grep -vi esr | head -n1)"
+[[ -z "$TB_ID" ]] && TB_ID="$(host flatpak list --app --columns=application 2>/dev/null | grep -iE '^org\.mozilla\.thunderbird' | head -n1)"
+
+if [[ -n "$TB_ID" ]] && host flatpak override --user --show "$TB_ID" 2>/dev/null | grep -q "LC_TIME"; then
+    pass "Thunderbird flatpak override LC_TIME  ($TB_ID)"
 else
     warn "Thunderbird flatpak override LC_TIME not set"
 fi
@@ -224,7 +230,6 @@ declare -A FLATPAKS=(
     ["com.vivaldi.Vivaldi"]="Vivaldi (default browser)"
     ["com.visualstudio.code"]="VSCode"
     ["md.obsidian.Obsidian"]="Obsidian"
-    ["org.mozilla.Thunderbird"]="Thunderbird"
     ["org.libreoffice.LibreOffice"]="LibreOffice"
     ["com.bitwarden.desktop"]="Bitwarden"
     ["com.spotify.Client"]="Spotify"
@@ -243,6 +248,13 @@ for id in "${!FLATPAKS[@]}"; do
         fail "$label  MISSING" "flatpak install -y --user flathub $id"
     fi
 done
+
+# Thunderbird checked separately — its ID is variant-dependent (discovered above).
+if [[ -n "$TB_ID" ]]; then
+    pass "Thunderbird  ($TB_ID)"
+else
+    fail "Thunderbird  MISSING" "flatpak install -y --user flathub org.mozilla.thunderbird_esr"
+fi
 
 # ── 4. Fonts ──────────────────────────────────────────────────────────────
 section "4. Fonts"
