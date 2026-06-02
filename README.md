@@ -284,9 +284,18 @@ Solid black (`#000000`) — no image, no distractions.
 |---|---|
 | 1 | Foot terminal |
 | 2 | Vivaldi browser |
-| 3 | Obsidian |
-| 4 | Claude AI PWA + ChatGPT PWA |
+| 3 | Thunderbird |
+| 4 | Obsidian |
+| 5 | Claude AI PWA + ChatGPT PWA |
 | 9 | WhatsApp PWA |
+
+Apps are launched by `exec` lines in `sway/config` and pinned to workspaces by
+`assign`/`for_window` rules. Thunderbird is started via
+`scripts/launch-thunderbird.sh`, which discovers the installed Thunderbird
+flatpak at runtime (regular or `_esr` variant) instead of hardcoding an app ID —
+Flathub deprecated the plain `org.mozilla.Thunderbird` ID in favour of
+`org.mozilla.thunderbird_esr`, which silently broke the old hardcoded `exec`. The
+`assign` rule matches any variant via a case-insensitive regex.
 
 ### Key bindings
 
@@ -442,7 +451,7 @@ pair <MAC_ADDRESS>
 ## Notes
 
 - `pavucontrol` is already included in Fedora Atomic base — no separate install needed
-- Thunderbird is installed as the verified Flathub Flatpak `org.mozilla.Thunderbird`
+- Thunderbird is installed from Flathub as `org.mozilla.thunderbird_esr` (the plain `org.mozilla.Thunderbird` ID is end-of-life and rebased to the ESR build; Flathub ships only ESR). Autostart discovers the installed variant at runtime via `scripts/launch-thunderbird.sh`
 - 24-hour time format: `LC_TIME=en_GB.UTF-8` via `~/.config/environment.d/locale.conf`, imported into Sway session and overridden for Thunderbird Flatpak
 - Thunderbird custom CSS lives in `thunderbird/userChrome.css` and `thunderbird/userContent.css`; `scripts/setup-thunderbird.sh` creates one-time `_old` backups in the active profile before applying repo-managed files
 - Thunderbird message list (`#threadTree`, Thread Pane) uses a Tokyo Night-inspired style: `Noto Sans` at `1rem`, `#1a1b26` background, `#c0caf5` text, cyan unread indicator/subject (`#7dcfff`), and `font-weight: 400` for read mail vs `600` for unread mail. Folder list (`#folderTree`, Folder Pane) uses the same base font and size.

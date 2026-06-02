@@ -242,7 +242,7 @@ Managed by `setup.sh`. Installed from Flathub as user Flatpaks (`--user`) to avo
 
 Notes:
 - `pavucontrol` is in Fedora Atomic base — no separate install needed.
-- Thunderbird is installed as the verified Flathub Flatpak `org.mozilla.Thunderbird`. Account setup is manual (OAuth).
+- Thunderbird is installed from Flathub. NOTE: the plain `org.mozilla.Thunderbird` ID is end-of-life and rebased to `org.mozilla.thunderbird_esr` — Flathub now ships only the ESR build (no separate "release/feature" channel; for that you'd need Mozilla's tarball or an RPM). Autostart uses `scripts/launch-thunderbird.sh`, which discovers whichever Thunderbird flatpak is installed at runtime (never hardcode the ID). Account setup is manual (OAuth).
 - Thunderbird profile config (`user.js`, `userChrome.css`, `userContent.css`) is stored in `thunderbird/` and applied by `scripts/setup-thunderbird.sh` after first launch.
 - LibreOffice is installed as the verified Flathub Flatpak `org.libreoffice.LibreOffice` (Writer, Calc, Impress).
 - NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start.
@@ -800,7 +800,10 @@ Snapshot before running malware/attacks — restore in seconds.
 ## Thunderbird configuration
 
 Thunderbird is installed as Flatpak. Account setup is manual (OAuth to Gmail).
-Profile: `~/.var/app/org.mozilla.Thunderbird/.thunderbird/<profile>.default-esr/`
+Profile: `~/.var/app/<thunderbird-flatpak-id>/.thunderbird/<profile>.default-esr/`
+(currently `<thunderbird-flatpak-id>` = `org.mozilla.thunderbird_esr`; each flatpak
+variant has its OWN data dir, so the ID is part of the path — never assume the old
+`org.mozilla.Thunderbird`).
 
 Mako only displays notifications and does not provide notification sounds. If Thunderbird
 new-mail sound is enabled but silent, check PipeWire/PulseAudio and Thunderbird sound prefs
