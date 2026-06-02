@@ -250,16 +250,24 @@ do_containers() {
 do_os() {
     echo ""; echo "── Updating Fedora OS ───────────────────────────────"
     log_line "BEGIN rpm-ostree upgrade"
-    # rpm-ostree is atomic: a failed upgrade leaves the current deployment intact,
-    # so there is nothing to "repair" — just report success or failure.
-    if run_logged rpm-ostree upgrade; then
+    # rpm-ostree is atomic: a failed upgrade leaves the current deployment intact.
+    # NOTE: `rpm-ostree upgrade` exits 0 even when there is nothing to upgrade
+    # ("No upgrade available"), so command success does NOT imply an update was
+    # staged. Ask the deployment state itself (os_staged checks status for
+    # "(staged)") to decide whether a reboot is actually warranted.
+    if ! run_logged rpm-ostree upgrade; then
+        log_line "FAIL rpm-ostree upgrade — see log"
+        echo "  ✗ OS update failed (system unchanged — rpm-ostree is atomic). Log: $LOG"
+        return 1
+    fi
+    if [[ "$(os_staged)" -eq 1 ]]; then
         echo "  ✔ OS update staged. Reboot required to apply."
         log_line "OK rpm-ostree upgrade (staged)"
         return 0
     fi
-    log_line "FAIL rpm-ostree upgrade — see log"
-    echo "  ✗ OS update failed (system unchanged — rpm-ostree is atomic). Log: $LOG"
-    return 1
+    echo "  ✔ Fedora OS already up to date — nothing staged, no reboot needed."
+    log_line "OK rpm-ostree upgrade (no change)"
+    return 2
 }
 
 ask_reboot() {
@@ -354,8 +362,12 @@ do_everything() {
     echo "  Results:"
     [[ "$r_fp" -eq 0 ]] && echo "    ✔ Flatpak apps updated"      || echo "    ✗ Flatpak apps failed"
     [[ "$r_ct" -eq 0 ]] && echo "    ✔ Containers updated"        || echo "    ✗ Some containers failed"
-    [[ "$r_os" -eq 0 ]] && echo "    ✔ Fedora OS staged"          || echo "    ✗ Fedora OS failed"
-    if [[ "$r_fp" -ne 0 || "$r_ct" -ne 0 || "$r_os" -ne 0 ]]; then
+    case "$r_os" in
+        0) echo "    ✔ Fedora OS staged (reboot to apply)" ;;
+        2) echo "    ✔ Fedora OS up to date" ;;
+        *) echo "    ✗ Fedora OS failed" ;;
+    esac
+    if [[ "$r_fp" -ne 0 || "$r_ct" -ne 0 || "$r_os" -eq 1 ]]; then
         echo ""; echo "    Some steps failed — full output logged to:"; echo "      $LOG"
     fi
     [[ "$r_os" -eq 0 ]] && ask_reboot
