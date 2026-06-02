@@ -29,7 +29,11 @@ echo "==> Layering system packages (reboot required after)..."
 # gitleaks    - secret scanner, enforced by the repo pre-push hook
 # ripgrep/fd-find/fzf/wl-clipboard/python3-virtualenv/ShellCheck/libwebp-tools/nodejs/npm/make
 #             - CLI dependencies used by Chris Titus Tech's Neovim config
-PACKAGES="mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer virt-install bridge-utils wtype alsa-utils neovim gitleaks ripgrep fd-find fzf wl-clipboard python3-virtualenv ShellCheck libwebp-tools nodejs npm make"
+# webkit2gtk4.1 - WebKitGTK runtime. Whispering Open (Tauri) renders its whole UI
+#             through it; without it the RPM-installed binary is a blank window.
+#             Present in the Sway base image, but layered explicitly so the app
+#             also works on minimal Fedora spins that lack it.
+PACKAGES="mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer virt-install bridge-utils wtype alsa-utils neovim gitleaks ripgrep fd-find fzf wl-clipboard python3-virtualenv ShellCheck libwebp-tools nodejs npm make webkit2gtk4.1"
 
 # Intel GPU check
 if lspci | grep -qi "Intel.*Graphics"; then

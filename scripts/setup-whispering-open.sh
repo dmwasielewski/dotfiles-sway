@@ -44,12 +44,16 @@ with open(sys.argv[2], encoding="utf-8") as handle:
     data = json.load(handle)
 assets = data.get("assets", [])
 
+# Prefer the RPM on Fedora: it is extracted (rpm2cpio) into a bare binary that
+# uses the system WebKitGTK, which renders correctly on Fedora Sway. The AppImage
+# bundles its own WebKit/Mesa, which fails with EGL_BAD_PARAMETER → blank window
+# on Fedora Sway, so it is the last resort. See whispering-open AI_ERRORS.md.
 priority = [
-    re.compile(r"appimage$", re.I),
+    re.compile(r"\.rpm$", re.I),
     re.compile(r"\.tar\.(gz|xz|bz2)$", re.I),
     re.compile(r"\.tgz$", re.I),
     re.compile(r"\.zip$", re.I),
-    re.compile(r"\.rpm$", re.I),
+    re.compile(r"appimage$", re.I),
 ]
 
 matches = [
