@@ -20,9 +20,10 @@ PYEOF
 
 sleep 6
 
-# Pin the main browser to the Default profile so a hard-kill that leaves
-# last_used pointing at a PWA profile (Claude/ChatGPT) doesn't open an empty one.
-flatpak run com.vivaldi.Vivaldi --profile-directory=Default &
+# Main browser: Firefox (Fedora Sway Atomic's default browser, shipped in the
+# base image). Vivaldi is no longer the main browser — it only hosts the
+# ChatGPT/Claude PWAs launched below with explicit --profile-directory.
+firefox &
 disown
 sleep 4
 

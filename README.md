@@ -7,7 +7,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 ### Window manager & UI
 - Sway window manager config (borders, keybindings, idle/lock, screenshots, touchpad)
 - Waybar status bar (bottom, muted dark theme, colour thresholds for CPU/RAM/temp/battery, Claude Code status, NordVPN toggle, AdGuard toggle, power menu)
-- Autostart layout: terminal on ws1, Vivaldi on ws2, Thunderbird on ws3, Obsidian on ws4, Claude/ChatGPT PWA on ws5
+- Autostart layout: terminal on ws1, Firefox on ws2, Thunderbird on ws3, Obsidian on ws4, Claude/ChatGPT PWA on ws5
 - Foot terminal config
 - Shared Bash prompt/aliases: host prompt in green, `damianf` prompt in cyan, `damianu` Distrobox prompt in cyan with package icon, `security` Distrobox prompt in red, `damianf`/`damianu` entry shortcuts, plus coloured `ls`/`ll`/`la` aliases
 - Mako notification daemon (11s auto-dismiss)
@@ -15,8 +15,11 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - JetBrainsMono Nerd Font + Font Awesome (terminal + Waybar)
 - Black solid wallpaper
 
+### Browser
+- Firefox — main browser (ships in the Fedora Sway Atomic base image; the system default), opens on ws2
+- Vivaldi (Flatpak) — hosts the Claude/ChatGPT PWAs on ws5
+
 ### Applications (Flatpak)
-- Vivaldi browser
 - VSCode — code editor
 - Obsidian — notes
 - Bitwarden — password manager
@@ -284,7 +287,7 @@ Solid black (`#000000`) — no image, no distractions.
 | Workspace | Content |
 |---|---|
 | 1 | Foot terminal |
-| 2 | Vivaldi browser |
+| 2 | Firefox browser |
 | 3 | Thunderbird |
 | 4 | Obsidian |
 | 5 | Claude AI PWA + ChatGPT PWA |
@@ -353,7 +356,7 @@ Flathub deprecated the plain `org.mozilla.Thunderbird` ID in favour of
 #### Autostart trigger
 | Shortcut | Action |
 |---|---|
-| `Mod+Shift+S` | Re-run autostart script (Vivaldi + Claude PWA + ChatGPT PWA + Obsidian) |
+| `Mod+Shift+S` | Re-run autostart script (Firefox + Claude PWA + ChatGPT PWA + Obsidian) |
 
 #### File manager (yazi — in-app, not Sway)
 | Shortcut | Action |
@@ -473,7 +476,7 @@ pair <MAC_ADDRESS>
 - Security container must be created after first reboot (distrobox installed via packages.sh)
 - Rebuild security container manually: `bash ~/dotfiles-sway/scripts/setup-security-container.sh`
 - Enter security container: `distrobox enter security`
-- Default browser set to Vivaldi via xdg-settings
+- Default browser set to Firefox via xdg-settings
 
 ---
 
@@ -495,7 +498,7 @@ dotfiles-sway/
 ├── scripts/
 │   ├── lib-install.sh                 # Shared helpers: state tracking, run_step()
 │   ├── verify.sh                      # Post-install verification — checks all components
-│   ├── autostart.sh                   # Sway autostart: Vivaldi, Claude PWA, ChatGPT PWA, Obsidian
+│   ├── autostart.sh                   # Sway autostart: Firefox, Claude PWA, ChatGPT PWA, Obsidian
 │   ├── fix-vivaldi-profiles.sh        # Fix Vivaldi crash/session recovery dialog
 │   ├── check-hardware.sh              # Hardware check (GPU, VA-API, audio, ...) — writes state
 │   ├── setup-kvm.sh                   # KVM/QEMU setup (libvirtd, groups, network) — writes state

@@ -237,7 +237,7 @@ Managed by `setup.sh`. Installed from Flathub as user Flatpaks (`--user`) to avo
 
 | App | Flatpak ID | Purpose |
 |---|---|---|
-| Vivaldi | `com.vivaldi.Vivaldi` | Primary browser (default) |
+| Vivaldi | `com.vivaldi.Vivaldi` | Hosts the Claude/ChatGPT PWAs (ws5) — no longer the main browser |
 | VSCode | `com.visualstudio.code` | Code editor |
 | Obsidian | `md.obsidian.Obsidian` | Notes (ws3) |
 | Bitwarden | `com.bitwarden.desktop` | Password manager |
@@ -249,6 +249,7 @@ Managed by `setup.sh`. Installed from Flathub as user Flatpaks (`--user`) to avo
 | Sticky | `com.vixalien.sticky` | Desktop sticky notes |
 
 Notes:
+- **Main browser is Firefox**, which ships in the Fedora Sway Atomic **base image** (RPM `firefox`, binary `/usr/bin/firefox`, Wayland `app_id="org.mozilla.firefox"`) — it is not a Flatpak and needs no install step. It is launched on Sway start (`exec firefox`), pinned to ws2, and set as the system default via `xdg-settings` in `setup.sh`. Vivaldi remains installed only to host the Claude/ChatGPT PWAs.
 - `pavucontrol` is in Fedora Atomic base — no separate install needed.
 - Thunderbird is installed from Flathub. NOTE: the plain `org.mozilla.Thunderbird` ID is end-of-life and rebased to `org.mozilla.thunderbird_esr` — Flathub now ships only the ESR build (no separate "release/feature" channel; for that you'd need Mozilla's tarball or an RPM). Autostart uses `scripts/launch-thunderbird.sh`, which discovers whichever Thunderbird flatpak is installed at runtime (never hardcode the ID). Account setup is manual (OAuth).
 - Thunderbird profile config (`user.js`, `userChrome.css`, `userContent.css`) is stored in `thunderbird/` and applied by `scripts/setup-thunderbird.sh` after first launch.
@@ -387,7 +388,7 @@ Config is in `sway/config.d/90-swayidle.conf` (overrides Fedora's system default
 | Workspace | Content |
 |---|---|
 | 1 | Foot terminal |
-| 2 | Vivaldi browser |
+| 2 | Firefox browser |
 | 3 | Obsidian |
 | 4 | Claude AI PWA + ChatGPT PWA |
 | 9 | WhatsApp PWA |

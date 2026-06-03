@@ -181,8 +181,8 @@ else
     fi
 fi
 
-# Set Vivaldi as default browser
-xdg-settings set default-web-browser com.vivaldi.Vivaldi.desktop
+# Set Firefox (Fedora Sway Atomic's base-image browser) as the default browser
+xdg-settings set default-web-browser org.mozilla.firefox.desktop
 
 echo "==> Done."
 echo ""
