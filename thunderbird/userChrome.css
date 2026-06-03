@@ -89,18 +89,19 @@
     stroke: #7aa2f7 !important;
 }
 
-#threadTree .card-container :is(.subject, .date),
+#threadTree .card-container :is(.sender, .subject, .date),
 #threadTree .table-layout :is(td, .subject-line) {
     font-size: 1rem !important;
     font-weight: 400 !important;
 }
 
-/* Sender name in the message list — larger. No !important (by request): it works
-   because .sender was removed from the forced 1rem rule above, so this plain rule
-   wins over Thunderbird's default. */
-#threadTree .card-container .sender,
+/* Sender name in the message list — 1.5× larger, WITHOUT !important (by request).
+   Thunderbird forces the sender's font-size with !important internally, so no
+   font-size rule (any specificity) can win without !important — verified. `zoom`
+   sidesteps font-size entirely: it scales the rendered .sender element 1.5×
+   (1rem → 1.5rem visually) and TB does not force it, so no !important is needed. */
 #threadTree .sender {
-    font-size: 1.5rem;
+    zoom: 1.5;
 }
 
 #threadTree .card-layout[data-properties~="unread"] .card-container,
