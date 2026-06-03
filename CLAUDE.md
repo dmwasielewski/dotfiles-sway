@@ -220,6 +220,10 @@ Managed by `packages.sh`. Install with `rpm-ostree install`, requires reboot.
 | `nodejs` | Neovim Node-based tooling |
 | `npm` | Neovim Node package tooling |
 | `make` | Neovim build/tooling dependency |
+| `yazi` | Terminal file manager (primary FM on Sway; Thunar kept as GUI fallback) |
+| `ffmpegthumbnailer` | yazi video-thumbnail previews |
+| `poppler-utils` | yazi PDF previews (`pdftoppm`) |
+| `webkit2gtk4.1` | WebKitGTK runtime for Whispering Open (Tauri) |
 
 AMD GPU: mesa-va-drivers is already in Fedora Atomic base — no extra package needed.
 

@@ -49,3 +49,13 @@ Icon-only Waybar indicator + interactive foot menu for Flatpak / containers / Fe
 
 **Status:** ✅ triggered (running) — Mesa, Mesa Codecs, KDE runtime updates available
 **Command:** `flatpak update --user -y`
+
+---
+
+## yazi — terminal file manager
+
+**Status:** 🟡 planned — added to `packages.sh` (rpm-ostree layer); installs on next `bash packages.sh` + reboot, or `sudo rpm-ostree install yazi ffmpegthumbnailer poppler-utils` then reboot.
+
+**Why:** Primary, keyboard-driven file manager for Sway — fast, low-footprint, previews (images via foot sixel, video via ffmpegthumbnailer, PDF via poppler), reuses ripgrep/fd/fzf. Thunar stays as the GUI fallback for drag-and-drop into other GUI apps and device/network mounting.
+
+**Open:** optional Sway keybind (`Mod+…` → `foot -e yazi`) — not yet bound (avoid shortcut conflicts; decide key first). Optional shell hook to `cd` into yazi's last dir on exit.
