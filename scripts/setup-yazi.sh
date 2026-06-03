@@ -41,5 +41,23 @@ fi
 
 ln -sfn "$RELEASE_DIR/yazi" "$BIN_DIR/yazi"
 [[ -f "$RELEASE_DIR/ya" ]] && ln -sfn "$RELEASE_DIR/ya" "$BIN_DIR/ya"
-echo "==> Linked into $BIN_DIR:"
+
+# Desktop entry so rofi/app launchers ($mod+d) can open yazi *inside a terminal*.
+# yazi is a TUI — launching it without a terminal does nothing, so Exec opens foot.
+APP_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
+mkdir -p "$APP_DIR"
+cat > "$APP_DIR/yazi.desktop" << 'DESKTOP'
+[Desktop Entry]
+Type=Application
+Name=Yazi
+GenericName=File Manager
+Comment=Terminal file manager
+Exec=foot yazi
+Terminal=false
+Categories=System;FileTools;
+Icon=system-file-manager
+Keywords=files;manager;terminal;explorer;
+DESKTOP
+
+echo "==> Linked into $BIN_DIR and wrote $APP_DIR/yazi.desktop"
 "$BIN_DIR/yazi" --version 2>/dev/null || echo "   (run 'yazi --version' to verify; ensure ~/.local/bin is on PATH)"
