@@ -89,10 +89,18 @@
     stroke: #7aa2f7 !important;
 }
 
-#threadTree .card-container :is(.sender, .subject, .date),
+#threadTree .card-container :is(.subject, .date),
 #threadTree .table-layout :is(td, .subject-line) {
     font-size: 1rem !important;
     font-weight: 400 !important;
+}
+
+/* Sender name in the message list — larger. No !important (by request): it works
+   because .sender was removed from the forced 1rem rule above, so this plain rule
+   wins over Thunderbird's default. */
+#threadTree .card-container .sender,
+#threadTree .sender {
+    font-size: 1.5rem;
 }
 
 #threadTree .card-layout[data-properties~="unread"] .card-container,
