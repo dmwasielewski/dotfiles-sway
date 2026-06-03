@@ -355,6 +355,11 @@ Flathub deprecated the plain `org.mozilla.Thunderbird` ID in favour of
 |---|---|
 | `Mod+Shift+S` | Re-run autostart script (Vivaldi + Claude PWA + ChatGPT PWA + Obsidian) |
 
+#### File manager (yazi — in-app, not Sway)
+| Shortcut | Action |
+|---|---|
+| `Ctrl+O` | Open the current directory in Thunar (GUI) — for drag-and-drop into apps a terminal FM can't reach (e.g. WhatsApp web). Added via `prepend_keymap`, so no default yazi binding is changed. |
+
 ---
 
 ## Waybar configuration
