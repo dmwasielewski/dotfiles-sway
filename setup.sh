@@ -74,6 +74,11 @@ chmod +x "$DOTFILES/.githooks/"* 2>/dev/null || true
 echo "==> Setting up Neovim..."
 bash "$DOTFILES/scripts/setup-neovim-config.sh"
 
+# yazi is not in Fedora's repos, so install it user-local from its GitHub release
+# (no root/reboot). ffmpegthumbnailer for previews comes from packages.sh.
+echo "==> Setting up yazi..."
+bash "$DOTFILES/scripts/setup-yazi.sh" || echo "    (yazi install skipped/failed — see output above)"
+
 # Use versioned git hooks from this repo, including the gitleaks pre-push check.
 if git -C "$DOTFILES" rev-parse --is-inside-work-tree &>/dev/null; then
     git -C "$DOTFILES" config core.hooksPath .githooks

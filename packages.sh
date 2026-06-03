@@ -33,11 +33,11 @@ echo "==> Layering system packages (reboot required after)..."
 #             through it; without it the RPM-installed binary is a blank window.
 #             Present in the Sway base image, but layered explicitly so the app
 #             also works on minimal Fedora spins that lack it.
-# yazi        - terminal file manager (keyboard-driven, fast) — primary FM on Sway;
-#             reuses ripgrep/fd-find/fzf above. Thunar stays as the GUI fallback.
-# ffmpegthumbnailer/poppler-utils - yazi previews (video thumbnails / PDF pages);
-#             images preview directly via foot's sixel support.
-PACKAGES="mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer virt-install bridge-utils wtype alsa-utils neovim gitleaks ripgrep fd-find fzf wl-clipboard python3-virtualenv ShellCheck libwebp-tools nodejs npm make webkit2gtk4.1 yazi ffmpegthumbnailer poppler-utils"
+# ffmpegthumbnailer - yazi video-thumbnail previews (PDF previews use poppler-utils,
+#             which is already in the Fedora base; yazi itself is NOT in Fedora repos
+#             and is installed user-local via scripts/setup-yazi.sh, not here).
+#             yazi previews images directly via foot's sixel support.
+PACKAGES="mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer virt-install bridge-utils wtype alsa-utils neovim gitleaks ripgrep fd-find fzf wl-clipboard python3-virtualenv ShellCheck libwebp-tools nodejs npm make webkit2gtk4.1 ffmpegthumbnailer"
 
 # Intel GPU check
 if lspci | grep -qi "Intel.*Graphics"; then

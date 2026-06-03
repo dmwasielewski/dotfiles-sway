@@ -54,8 +54,8 @@ Icon-only Waybar indicator + interactive foot menu for Flatpak / containers / Fe
 
 ## yazi — terminal file manager
 
-**Status:** 🟡 planned — added to `packages.sh` (rpm-ostree layer); installs on next `bash packages.sh` + reboot, or `sudo rpm-ostree install yazi ffmpegthumbnailer poppler-utils` then reboot.
+**Status:** ✅ installed (2026-06-03, yazi 26.5.6). yazi is **not** in Fedora's repos, so it is installed user-local from its GitHub release by `scripts/setup-yazi.sh` (→ `~/.local/opt/yazi-<ver>`, symlinked to `~/.local/bin/{yazi,ya}`) — no root, no reboot. Hooked into `setup.sh`. Previews: images via foot sixel; video via `ffmpegthumbnailer` (in `packages.sh`); PDF via `poppler-utils` (already in Fedora base). Note: there is no flatpak for yazi — it's a TUI/CLI tool, and flatpak targets sandboxed GUI apps.
 
-**Why:** Primary, keyboard-driven file manager for Sway — fast, low-footprint, previews (images via foot sixel, video via ffmpegthumbnailer, PDF via poppler), reuses ripgrep/fd/fzf. Thunar stays as the GUI fallback for drag-and-drop into other GUI apps and device/network mounting.
+**Why:** Primary, keyboard-driven file manager for Sway — fast, low-footprint, reuses ripgrep/fd/fzf. Thunar stays as the GUI fallback for drag-and-drop into other GUI apps and device/network mounting.
 
 **Open:** optional Sway keybind (`Mod+…` → `foot -e yazi`) — not yet bound (avoid shortcut conflicts; decide key first). Optional shell hook to `cd` into yazi's last dir on exit.
