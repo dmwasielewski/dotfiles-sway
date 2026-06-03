@@ -1,0 +1,12 @@
+# yazi keymap overrides. `prepend_keymap` ADDS to yazi's defaults (higher priority)
+# without removing any default binding.
+#
+# <C-o>: open the current directory in Thunar (GUI) — handy when you need a real
+# GUI window to drag a file into another app (e.g. WhatsApp), which a terminal
+# file manager can't do. Verified <C-o> is unbound in yazi 26.5.6's default `mgr`
+# layer, so this conflicts with nothing. --orphan detaches Thunar so it keeps
+# running after yazi exits.
+[[mgr.prepend_keymap]]
+on  = "<C-o>"
+run = 'shell --orphan -- thunar "$PWD"'
+desc = "Open current directory in Thunar (GUI)"

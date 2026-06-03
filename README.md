@@ -44,7 +44,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Gitleaks secret scanner with a repo `pre-push` hook
 - Voice typing — push-to-talk (`Mod+T`) with local Whisper AI + Gemini UK English correction
 - Neovim 0.12.1 — user-local latest pinned binary with Chris Titus Tech `titus-kickstart` config
-- yazi — keyboard-driven terminal file manager (primary FM on Sway; Thunar kept as GUI fallback), with image/video/PDF previews
+- yazi — keyboard-driven terminal file manager (primary FM on Sway; Thunar kept as GUI fallback), with image/video/PDF previews and a `<C-o>` binding that opens the current directory in Thunar (for drag-and-drop into apps yazi can't reach)
 - AI terminal tools in `damianf` toolbox and `damianu` distrobox: Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT (`sgpt`)
 - Dev language toolchains in both dev containers: Go, Rust (`rustup` + `rust-analyzer`, into the shared `~/.cargo`), Python tooling (`pipx` + `uv`)
 - DevOps stack in both dev containers: `podman`/`docker` CLI (per-OS) plus a home-local, OS-agnostic set — `kubectl`, `helm`, `kind`, `k9s`, `opentofu` (`tofu`), `ansible`, `yq` — installed by `scripts/install-devops-tools.sh` with runtime-discovered versions

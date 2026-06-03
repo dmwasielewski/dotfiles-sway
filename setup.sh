@@ -39,6 +39,8 @@ ln -sf "$DOTFILES/waybar/style.css"                           ~/.config/waybar/s
 ln -sf "$DOTFILES/foot/foot.ini"                              ~/.config/foot/foot.ini
 ln -sf "$DOTFILES/user-dirs.dirs"                             ~/.config/user-dirs.dirs
 ln -sf "$DOTFILES/mako/config"                                ~/.config/mako/config
+mkdir -p ~/.config/yazi
+ln -sf "$DOTFILES/yazi/keymap.toml"                           ~/.config/yazi/keymap.toml
 ln -sf "$DOTFILES/environment.d/locale.conf"            ~/.config/environment.d/locale.conf
 ln -sf "$DOTFILES/.bashrc"                                    ~/.bashrc
 ln -sf "$DOTFILES/applications/claude-ai.desktop"             ~/.local/share/applications/claude-ai.desktop
