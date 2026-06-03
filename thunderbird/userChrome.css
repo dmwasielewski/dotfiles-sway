@@ -100,7 +100,7 @@
    font-size rule can win without !important — verified. `zoom` sidesteps
    font-size entirely (scales the rendered element) and TB does not force it. */
 #threadTree .card-layout[data-properties~="unread"] .card-container .sender {
-    zoom: 1.26;
+    zoom: 1.2;
 }
 
 #threadTree .card-layout[data-properties~="unread"] .card-container,
