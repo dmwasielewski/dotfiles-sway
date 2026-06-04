@@ -81,6 +81,13 @@ bash "$DOTFILES/scripts/setup-neovim-config.sh"
 echo "==> Setting up yazi..."
 bash "$DOTFILES/scripts/setup-yazi.sh" || echo "    (yazi install skipped/failed — see output above)"
 
+# Zed (GUI editor) is not in Fedora's repos and the Flathub build is an unofficial
+# wrapper, so install the official upstream binary user-local from its GitHub
+# release (no root/reboot). Launched on demand — no autostart/keybinding; Neovim
+# stays the terminal editor. The asset is ~140 MB, so this can take a while.
+echo "==> Setting up Zed..."
+bash "$DOTFILES/scripts/setup-zed.sh" || echo "    (Zed install skipped/failed — see output above)"
+
 # Use versioned git hooks from this repo, including the gitleaks pre-push check.
 if git -C "$DOTFILES" rev-parse --is-inside-work-tree &>/dev/null; then
     git -C "$DOTFILES" config core.hooksPath .githooks

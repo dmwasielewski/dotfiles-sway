@@ -46,7 +46,8 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Firewall baseline (public zone, SSH + mDNS only)
 - Gitleaks secret scanner with a repo `pre-push` hook
 - Voice typing — push-to-talk (`Mod+T`) with local Whisper AI + Gemini UK English correction
-- Neovim 0.12.1 — user-local latest pinned binary with Chris Titus Tech `titus-kickstart` config
+- Neovim 0.12.1 — user-local latest pinned binary with Chris Titus Tech `titus-kickstart` config (terminal editor)
+- Zed — official upstream GUI code editor, installed user-local (additional editor, launched on demand; Neovim stays the terminal editor)
 - yazi — keyboard-driven terminal file manager (primary FM on Sway; Thunar kept as GUI fallback), with image/video/PDF previews and a `<C-o>` binding that opens the current directory in Thunar (for drag-and-drop into apps yazi can't reach)
 - AI terminal tools in `damianf` toolbox and `damianu` distrobox: Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT (`sgpt`)
 - Dev language toolchains in both dev containers: Go, Rust (`rustup` + `rust-analyzer`, into the shared `~/.cargo`), Python tooling (`pipx` + `uv`)
@@ -677,6 +678,36 @@ nvim filename.txt
 **Config file:** `~/.config/nvim/init.lua` from Chris Titus Tech's `titus-kickstart`.
 
 **Important:** Chris's config includes WakaTime and an image-paste plugin with Chris's own default website image path. If you do not use WakaTime, ignore its prompt or disable that plugin later in the submodule/fork workflow.
+
+---
+
+## Zed
+
+A high-performance, GPU-accelerated **GUI** code editor (Wayland/Vulkan). Zed is an *additional* editor, not a replacement for Neovim:
+
+- **Neovim** stays the terminal editor — used inside `foot` and inside the dev containers, over SSH, and as `$EDITOR` for `git commit` etc.
+- **Zed** is a graphical app launched on demand (like Obsidian/Firefox), for larger editing sessions where a GUI is nicer.
+
+This setup uses:
+- The **official upstream** Zed binary from `zed-industries/zed` GitHub releases, installed to a versioned directory under `~/.local/opt/zed-<version>/` (mirrors how nvim and yazi are installed). The version is discovered (latest stable) at runtime — nothing is hardcoded.
+- `~/.local/bin/zed` symlink → the versioned launcher, so `zed` is on `$PATH`.
+- A `dev.zed.Zed.desktop` entry plus the bundled icons in `~/.local/share`, so app launchers (`$mod+d`) can start it.
+
+**Why not Flatpak or rpm-ostree:** the Flathub build (`dev.zed.Zed`) is an *unofficial community wrapper* not supported by Zed Industries, and Zed is not in Fedora's repos. A user-local install of the official binary avoids both the unofficial wrapper and an rpm-ostree layer (no root, no reboot).
+
+**No autostart / no keybinding / no workspace assignment** — by design. Zed is opened manually when needed; `$EDITOR` is left as Neovim.
+
+**Install or update:**
+```bash
+bash ~/dotfiles-sway/scripts/setup-zed.sh
+```
+The asset is ~140 MB. Pin a specific version with `ZED_VERSION=v1.5.3`, or reuse an already-downloaded tarball with `ZED_TARBALL=/path/to/zed-linux-x86_64.tar.gz` to skip the download.
+
+**Open a file or folder:**
+```bash
+zed .              # open current directory
+zed filename.txt   # open a file
+```
 
 ---
 

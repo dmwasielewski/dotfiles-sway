@@ -84,6 +84,7 @@ dotfiles-sway/
     ├── check-hardware.sh              ← Verifies VA-API, GPU, KVM after reboot — writes state
     ├── setup-kvm.sh                   ← KVM/QEMU setup (libvirtd, user groups, NAT network) — writes state
     ├── setup-neovim-config.sh         ← Neovim 0.12.1 user-local binary + Chris Titus Tech config symlink
+    ├── setup-zed.sh                   ← Zed GUI editor: official upstream binary, user-local in ~/.local/opt
     ├── setup-nordvpn.sh               ← NordVPN CLI install + nordvpnd enable/start + group setup — writes state
     ├── setup-adguard.sh               ← AdGuard for Linux CLI install — writes state
     ├── setup-whispering-open.sh       ← Whispering Open latest GitHub release download — non-blocking
@@ -230,6 +231,14 @@ fallback) is **not** in Fedora's repos, so it is installed user-local from its
 GitHub release by `scripts/setup-yazi.sh` (into `~/.local/opt/yazi-<ver>` with
 `~/.local/bin/{yazi,ya}` symlinks) — no rpm-ostree layer, no reboot. PDF previews
 use `poppler-utils`, already present in the Fedora base.
+
+**Zed** (GUI code editor) is installed the same user-local way by
+`scripts/setup-zed.sh` (official upstream binary from `zed-industries/zed`,
+into `~/.local/opt/zed-<ver>` with a `~/.local/bin/zed` symlink, `.desktop` and
+icons). It is **not** a Flatpak: the Flathub `dev.zed.Zed` build is an unofficial
+community wrapper. Zed is an *additional* GUI editor launched on demand — no
+autostart, no workspace assignment, no keybinding; Neovim stays the terminal
+editor and `$EDITOR`. The version is discovered (latest stable) at runtime.
 
 ### Layer 2: Flatpak (GUI apps)
 
