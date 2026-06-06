@@ -1,6 +1,13 @@
 #!/bin/bash
-# setup-neovim-config.sh — latest pinned Neovim binary + Chris Titus Tech config
-
+# setup-neovim-config.sh — Chris Titus Tech Neovim config + plugin sync.
+#
+# Neovim itself now comes from the OS package manager (rpm-ostree on the host,
+# dnf in the Fedora toolbox, apt in the Ubuntu container), so the binary is kept
+# up to date by the normal system/container update flow — no user-local pinned
+# tarball any more. This script only manages the *config* (Chris Titus Tech's
+# titus-kickstart) and removes any leftover user-local binary from the old setup
+# (a stray ~/.local/bin/nvim would shadow the packaged nvim, since ~/.local/bin
+# is first on PATH).
 set -euo pipefail
 
 DOTFILES="$HOME/dotfiles-sway"
@@ -9,18 +16,11 @@ if [[ -f "$DOTFILES/scripts/lib-install.sh" ]]; then
     setup_logging "scripts/setup-neovim-config.sh"
 fi
 
-NVIM_VERSION="${NVIM_VERSION:-v0.12.1}"
-NVIM_ARCHIVE="nvim-linux-x86_64.tar.gz"
-NVIM_URL="https://github.com/neovim/neovim/releases/download/${NVIM_VERSION}/${NVIM_ARCHIVE}"
-NVIM_OPT_DIR="$HOME/.local/opt"
-NVIM_INSTALL_DIR="$NVIM_OPT_DIR/nvim-linux-x86_64"
-NVIM_RELEASE_DIR="$NVIM_OPT_DIR/nvim-linux-x86_64-${NVIM_VERSION#v}"
-NVIM_BIN="$HOME/.local/bin/nvim"
 CTT_REPO_DIR="$DOTFILES/nvim/christitustech"
 CTT_CONFIG_DIR="$CTT_REPO_DIR/titus-kickstart"
 NVIM_CONFIG="$HOME/.config/nvim"
 
-echo "==> Setting up Neovim ${NVIM_VERSION} with Chris Titus Tech config..."
+echo "==> Setting up Neovim (Chris Titus Tech config; binary from the package manager)..."
 
 if [[ ! -d "$CTT_REPO_DIR/.git" ]] && [[ ! -f "$CTT_REPO_DIR/.git" ]]; then
     echo "==> Initialising ChrisTitusTech/neovim submodule..."
@@ -32,67 +32,52 @@ if [[ ! -f "$CTT_CONFIG_DIR/init.lua" ]]; then
     exit 1
 fi
 
-mkdir -p "$HOME/.local/bin" "$NVIM_OPT_DIR" "$HOME/.config" "$HOME/.vim/undodir" "$HOME/.scripts"
+mkdir -p "$HOME/.config" "$HOME/.vim/undodir" "$HOME/.scripts"
 
-installed_version=""
-installed_from_install_dir=0
-if [[ -x "$NVIM_RELEASE_DIR/bin/nvim" ]]; then
-    installed_version="$("$NVIM_RELEASE_DIR/bin/nvim" --version | head -n1 | awk '{print $2}' | sed 's/^v//')"
-elif [[ -x "$NVIM_INSTALL_DIR/bin/nvim" ]]; then
-    installed_version="$("$NVIM_INSTALL_DIR/bin/nvim" --version | head -n1 | awk '{print $2}' | sed 's/^v//')"
-    installed_from_install_dir=1
+# Remove a previous user-local Neovim install. ~/.local/bin is first on PATH, so
+# a leftover ~/.local/bin/nvim symlink would shadow the packaged /usr/bin/nvim.
+legacy_removed=0
+if [[ -L "$HOME/.local/bin/nvim" || -e "$HOME/.local/bin/nvim" ]]; then
+    rm -f "$HOME/.local/bin/nvim"; legacy_removed=1
 fi
+for d in "$HOME"/.local/opt/nvim-linux-x86_64*; do
+    [[ -e "$d" || -L "$d" ]] || continue          # unmatched glob → skip
+    rm -rf "$d"; legacy_removed=1
+done
+# Neovim is no longer a user-local self-registered app (it comes from packages),
+# so drop any stale update manifest left by the old setup.
+rm -f "${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles-updates/nvim"
+[[ "$legacy_removed" -eq 1 ]] && \
+    echo "==> Removed legacy user-local Neovim (now provided by the package manager)."
 
-if [[ "$installed_version" == "${NVIM_VERSION#v}" ]]; then
-    if [[ "$installed_from_install_dir" -eq 1 && ! -e "$NVIM_RELEASE_DIR" ]]; then
-        echo "==> Promoting existing Neovim ${NVIM_VERSION} install into versioned directory $NVIM_RELEASE_DIR"
-        mv "$NVIM_INSTALL_DIR" "$NVIM_RELEASE_DIR"
-    else
-        echo "==> Neovim ${NVIM_VERSION} already installed in $NVIM_RELEASE_DIR"
-    fi
-else
-    tmpdir="$(mktemp -d)"
-    trap 'rm -rf "$tmpdir"' EXIT
-
-    echo "==> Downloading $NVIM_URL"
-    curl -fL "$NVIM_URL" -o "$tmpdir/$NVIM_ARCHIVE"
-    tar -xzf "$tmpdir/$NVIM_ARCHIVE" -C "$tmpdir"
-
-    mv "$tmpdir/nvim-linux-x86_64" "$tmpdir/nvim-release"
-    [[ -x "$tmpdir/nvim-release/bin/nvim" ]] || {
-        echo "ERROR: Downloaded Neovim archive did not contain a runnable bin/nvim"
-        exit 1
-    }
-    rm -rf "$NVIM_RELEASE_DIR.tmp"
-    mv "$tmpdir/nvim-release" "$NVIM_RELEASE_DIR.tmp"
-    mv "$NVIM_RELEASE_DIR.tmp" "$NVIM_RELEASE_DIR"
-fi
-
-if [[ -e "$NVIM_INSTALL_DIR" && ! -L "$NVIM_INSTALL_DIR" ]]; then
-    legacy_target="$NVIM_OPT_DIR/nvim-linux-x86_64-legacy-$(date +%Y%m%d-%H%M%S)"
-    echo "==> Existing $NVIM_INSTALL_DIR is a directory; moving it to $legacy_target"
-    mv "$NVIM_INSTALL_DIR" "$legacy_target"
-fi
-
-ln -sfn "$NVIM_RELEASE_DIR" "$NVIM_INSTALL_DIR"
-ln -sfn "$NVIM_INSTALL_DIR/bin/nvim" "$NVIM_BIN"
-
+# Config symlink → Chris Titus Tech's titus-kickstart.
 if [[ -L "$NVIM_CONFIG" ]]; then
-    current_target="$(readlink "$NVIM_CONFIG")"
-    if [[ "$current_target" != "$CTT_CONFIG_DIR" ]]; then
-        ln -sfn "$CTT_CONFIG_DIR" "$NVIM_CONFIG"
-    fi
+    [[ "$(readlink "$NVIM_CONFIG")" != "$CTT_CONFIG_DIR" ]] && ln -sfn "$CTT_CONFIG_DIR" "$NVIM_CONFIG"
 elif [[ -e "$NVIM_CONFIG" ]]; then
     backup="$HOME/.config/nvim.backup-before-christitustech-$(date +%Y%m%d-%H%M%S)"
     echo "==> Existing ~/.config/nvim is not a symlink; moving it to $backup"
-    mv "$NVIM_CONFIG" "$backup"
-    ln -s "$CTT_CONFIG_DIR" "$NVIM_CONFIG"
+    mv "$NVIM_CONFIG" "$backup"; ln -s "$CTT_CONFIG_DIR" "$NVIM_CONFIG"
 else
     ln -s "$CTT_CONFIG_DIR" "$NVIM_CONFIG"
 fi
-
-echo "==> Neovim binary: $("$NVIM_BIN" --version | head -n1)"
 echo "==> Neovim config: $NVIM_CONFIG -> $(readlink "$NVIM_CONFIG")"
-echo "==> Syncing Neovim plugins to Chris Titus Tech's lockfile..."
-"$NVIM_BIN" --headless '+lua vim.pack.update(nil, { target = "lockfile", force = true })' '+qa'
-echo "==> Neovim plugins synced to $CTT_CONFIG_DIR/nvim-pack-lock.json"
+
+# Plugin sync needs a working nvim. The packaged binary may not be on PATH yet
+# during a first host setup (rpm-ostree layering only applies after a reboot), so
+# this is best-effort: skip with a clear note rather than failing the whole setup.
+# NOTE: Chris Titus Tech's config uses vim.pack, a Neovim 0.12+ feature, so the
+# sync (and parts of the config) require nvim >= 0.12.
+nvim_bin="$(command -v nvim || true)"
+if [[ -n "$nvim_bin" ]]; then
+    echo "==> Neovim binary: $("$nvim_bin" --version | head -n1)"
+    echo "==> Syncing Neovim plugins to Chris Titus Tech's lockfile..."
+    if "$nvim_bin" --headless '+lua vim.pack.update(nil, { target = "lockfile", force = true })' '+qa'; then
+        echo "==> Neovim plugins synced to $CTT_CONFIG_DIR/nvim-pack-lock.json"
+    else
+        echo "==> WARN: plugin sync failed (continuing). Needs Neovim >= 0.12; re-run after upgrading."
+    fi
+else
+    echo "==> Neovim not on PATH yet (likely a pre-reboot host setup)."
+    echo "    Install it via the package manager, then re-run:"
+    echo "      bash $DOTFILES/scripts/setup-neovim-config.sh"
+fi

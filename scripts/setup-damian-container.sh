@@ -33,7 +33,7 @@ run_step "TOOLBOX_PACKAGES" "Installing node, npm, gh, git, pip inside toolbox" 
     toolbox run --container "$CONTAINER" sudo dnf install -y nodejs npm gh git python3-pip
 
 run_step "TOOLBOX_TERMINAL_TOOLS" "Installing terminal inspection/search tools inside toolbox" \
-    toolbox run --container "$CONTAINER" sudo dnf install -y btop duf bat ncdu ripgrep fzf fd-find
+    toolbox run --container "$CONTAINER" sudo dnf install -y btop duf bat ncdu ripgrep fzf fd-find neovim
 
 # ── Dev language toolchains (Go, Rust, Python tooling) ────────────────────
 # Languages live in the container, never on the immutable host. Cargo/pipx

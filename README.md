@@ -46,8 +46,8 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Firewall baseline (public zone, SSH + mDNS only)
 - Gitleaks secret scanner with a repo `pre-push` hook
 - Voice typing — push-to-talk (`Mod+T`) with local Whisper AI + Gemini UK English correction
-- Neovim 0.12.1 — user-local latest pinned binary with Chris Titus Tech `titus-kickstart` config (terminal editor)
-- Zed — official upstream GUI code editor, installed user-local (additional editor, launched on demand; Neovim stays the terminal editor)
+- Neovim — terminal editor from the OS package manager (rpm-ostree/dnf/apt, updated by the normal flow) with Chris Titus Tech `titus-kickstart` config
+- Zed — official upstream GUI code editor, installed user-local; self-updates via its built-in updater (additional editor, launched on demand; Neovim stays the terminal editor)
 - yazi — keyboard-driven terminal file manager (primary FM on Sway; Thunar kept as GUI fallback), with image/video/PDF previews and a `<C-o>` binding that opens the current directory in Thunar (for drag-and-drop into apps yazi can't reach)
 - AI terminal tools in `damianf` toolbox and `damianu` distrobox: Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT (`sgpt`)
 - Dev language toolchains in both dev containers: Go, Rust (`rustup` + `rust-analyzer`, into the shared `~/.cargo`), Python tooling (`pipx` + `uv`)
@@ -410,16 +410,17 @@ Dark muted blue-slate palette — low contrast, easy on the eyes.
 
 ### Updates indicator
 
-The `custom/updates` module (`⬆` icon) tracks pending updates across three sources, with all detection logic shared in `scripts/lib-updates.sh`:
+The `custom/updates` module (`⬆` icon) tracks pending updates across four sources, with all detection logic shared in `scripts/lib-updates.sh`:
 
 - **Flatpak** apps
 - **Containers** (auto-discovered distrobox + toolbox; flagged stale past a threshold)
 - **Fedora OS** (`rpm-ostree`; uses a last-known-good cache so it still reports when the repo is offline)
+- **User-local apps** — GitHub-release tools that are in no distro repo and have no self-updater (e.g. `yazi`). Each such tool self-registers a key=value manifest under `~/.local/share/dotfiles-updates/` when its setup script installs it; the detector discovers manifests dynamically (no tool names hardcoded), compares the installed version against the latest GitHub tag (`sort -V`, with a 3 h last-known-good tag cache for offline), and updating re-runs the tool's own setup script. Tools covered elsewhere deliberately do **not** register here — Neovim comes from the package manager, and Zed self-updates.
 
 **Severity classes — the colour encodes the action required of you:**
 
 - `uptodate` (grey, neutral) — nothing to do
-- `warning` (amber) — updates available (Flatpak, containers, **or** an OS update to download, incl. security) → run the updater, **no reboot**
+- `warning` (amber) — updates available (Flatpak, containers, user-local apps, **or** an OS update to download, incl. security) → run the updater, **no reboot**
 - `critical` (red) — a deployment is **staged**, awaiting reboot → reboot to apply
 
 OS pending packages and security updates count toward the badge (amber) but never turn it red; only an actually staged update (waiting for a reboot) is red. The tooltip lists each source on its own line.
@@ -631,22 +632,22 @@ Get a free key at: https://aistudio.google.com
 Modern text editor — Vim fork with Lua config, built-in LSP, and a large plugin ecosystem.
 
 This setup uses:
-- Official upstream Neovim `v0.12.1` installed to a versioned directory under `~/.local/opt/`, with `~/.local/opt/nvim-linux-x86_64` pointing at the active release
-- `~/.local/bin/nvim` symlink, which wins over `/usr/bin/nvim` because `.bashrc` puts `~/.local/bin` first
+- **Neovim from the OS package manager** — the host `neovim` rpm (`packages.sh`, via rpm-ostree), `dnf` inside the Fedora toolbox `damianf`, and `apt` inside the Ubuntu container `damianu`. The binary is therefore kept up to date by the normal system/container update flow — no user-local pinned tarball any more.
 - Chris Titus Tech's Neovim config as a git submodule: `nvim/christitustech`
 - `~/.config/nvim` symlinked to `~/dotfiles-sway/nvim/christitustech/titus-kickstart`
 - Plugins synced headlessly to Chris's `nvim-pack-lock.json` during `scripts/setup-neovim-config.sh`
 
-The Fedora `neovim` rpm remains installed as a fallback, but the active editor should be the user-local upstream binary. This is intentional because the Chris Titus Tech config uses newer Neovim features.
+**Version note:** Chris Titus Tech's config uses `vim.pack`, a Neovim **0.12+** feature. Fedora (`dnf`/rpm-ostree) currently ships 0.12.2; Ubuntu's `apt` may be older (e.g. 0.11.6), where the config and plugin sync can be limited. Most dev work happens in the Fedora toolbox, so this is acceptable; the Ubuntu config is reconciled separately if needed.
 
-**Install or repair:**
+**Install or repair the config:**
 ```bash
 bash ~/dotfiles-sway/scripts/setup-neovim-config.sh
 ```
+This script no longer installs the binary. It initialises the config submodule, symlinks `~/.config/nvim`, removes any leftover user-local Neovim from the old setup (a stray `~/.local/bin/nvim` would shadow the packaged one), and headlessly syncs plugins to the lockfile (best-effort — skipped with a note if no `nvim` is on `PATH` yet, e.g. during a pre-reboot host setup).
 
-During setup, Neovim downloads plugins declared by Chris Titus Tech's config and synchronizes them to the config's `nvim-pack-lock.json`. The required CLI dependencies are layered by `packages.sh`: `ripgrep`, `fd-find`, `fzf`, `wl-clipboard`, `python3-virtualenv`, `ShellCheck`, `libwebp-tools`, `nodejs`, `npm`, and `make`. `markdownlint-cli2` is installed into the shared `~/.npm-global` prefix by both dev container setup scripts.
+The plugin-sync CLI dependencies are layered by `packages.sh`: `ripgrep`, `fd-find`, `fzf`, `wl-clipboard`, `python3-virtualenv`, `ShellCheck`, `libwebp-tools`, `nodejs`, `npm`, and `make`. `markdownlint-cli2` is installed into the shared `~/.npm-global` prefix by both dev container setup scripts.
 
-Because `~` is shared into both dev containers, the same `~/.local/bin/nvim` and `~/.config/nvim` are available inside Fedora toolbox `damianf` and Ubuntu distrobox `damianu`.
+Because `~` is shared into both dev containers, the same `~/.config/nvim` is available everywhere; the `nvim` binary is each environment's own packaged build.
 
 **Open a file:**
 ```bash
@@ -697,7 +698,9 @@ This setup uses:
 
 **No autostart / no keybinding / no workspace assignment** — by design. Zed is opened manually when needed; `$EDITOR` is left as Neovim.
 
-**Install or update:**
+**Updates: Zed updates itself.** Zed has a built-in auto-updater that checks `zed.dev`, downloads the new release and applies it in place (it uses `rsync`, which is in the Fedora base). So unlike yazi, Zed is *not* tracked by the dotfiles update app — there is nothing to wire in. `setup-zed.sh` is only needed for the first install (or to reinstall).
+
+**Install or reinstall:**
 ```bash
 bash ~/dotfiles-sway/scripts/setup-zed.sh
 ```

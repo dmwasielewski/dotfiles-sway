@@ -11,8 +11,14 @@ OPT_DIR="$HOME/.local/opt"
 BIN_DIR="$HOME/.local/bin"
 mkdir -p "$OPT_DIR" "$BIN_DIR"
 
-VERSION="${YAZI_VERSION:-$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" \
-    | grep -m1 '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')}"
+# Capture the API response before parsing — piping curl straight into `grep -m1`
+# makes grep close the pipe early, which under `set -o pipefail` surfaces as a
+# curl write error (exit 23).
+VERSION="${YAZI_VERSION:-}"
+if [[ -z "$VERSION" ]]; then
+    latest_json="$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest")"
+    VERSION="$(printf '%s' "$latest_json" | grep -m1 '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')"
+fi
 [[ -z "$VERSION" ]] && { echo "ERROR: could not determine the latest yazi version"; exit 1; }
 
 ASSET="yazi-x86_64-unknown-linux-gnu.zip"
@@ -60,4 +66,18 @@ Keywords=files;manager;terminal;explorer;
 DESKTOP
 
 echo "==> Linked into $BIN_DIR and wrote $APP_DIR/yazi.desktop"
+
+# Self-register an update manifest so the Waybar update app can detect a newer
+# yazi release. yazi is in no distro repo and has no self-updater, so this is the
+# only way the updater learns about it. The manifest is discovered generically by
+# lib-updates.sh (no tool names hardcoded there).
+MANIFEST_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles-updates"
+mkdir -p "$MANIFEST_DIR"
+cat > "$MANIFEST_DIR/yazi" << MANIFEST
+name=yazi
+repo=$REPO
+installed_version=${VERSION#v}
+updater=scripts/setup-yazi.sh
+MANIFEST
+
 "$BIN_DIR/yazi" --version 2>/dev/null || echo "   (run 'yazi --version' to verify; ensure ~/.local/bin is on PATH)"

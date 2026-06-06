@@ -71,7 +71,7 @@ run_step "UBUNTU_DEV_BASE_PKGS" "Installing Ubuntu dev base packages" \
 
 run_step "UBUNTU_DEV_TERMINAL_TOOLS" "Installing terminal inspection/search tools" \
     ubox "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            btop duf bat ncdu ripgrep fzf fd-find"
+            btop duf bat ncdu ripgrep fzf fd-find neovim"
 
 # ── Dev language toolchains (parity with toolbox damianf) ─────────────────
 # Go is per-OS (apt). Rust (rustup) and uv (via pipx) install into the shared

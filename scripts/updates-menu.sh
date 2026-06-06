@@ -29,6 +29,11 @@ OS_FRESHNESS="fresh"
 refresh_os_cache() { OS_FRESHNESS="$(os_refresh_cache)"; }
 os_raw_cached()    { os_cached_raw; }
 
+# User-local app updates are queried once per session (network call) and reused
+# across redraws, mirroring the OS cache. Refreshed after a user-local update.
+UL_ROWS=""
+refresh_userlocal() { UL_ROWS="$(userlocal_update_rows)"; }
+
 # ── Summary screen (always shows every section) ──────────────────────────
 show_summary() {
     # Gather (OS comes from the per-session cache, not a fresh slow check)
@@ -59,6 +64,19 @@ show_summary() {
         printf '    %-22s last updated: %s%s\n' "$c" "$(container_age_label "$c")" "$mark"
     done < <(discover_distrobox; discover_toolbox)
     [[ "$found" -eq 0 ]] && echo "    (none found)"
+    echo ""
+
+    # ── User-local apps (GitHub-release tools without a package/self updater) ──
+    local ul_count; ul_count="$(printf '%s' "$UL_ROWS" | grep -c . || true)"
+    echo "  User-local apps"
+    if [[ "$ul_count" -gt 0 ]]; then
+        while IFS=$'\t' read -r uname ucur unew; do
+            [[ -z "$uname" ]] && continue
+            printf '    %-22s %s → %s\n' "$uname" "$ucur" "$unew"
+        done <<< "$UL_ROWS"
+    else
+        echo "    up to date"
+    fi
     echo ""
 
     # ── Fedora OS ──
@@ -247,6 +265,34 @@ do_containers() {
     return "$rc"
 }
 
+do_userlocal() {
+    # Update GitHub-release tools that have no package/self updater (e.g. yazi)
+    # by re-running each one's own setup script, recorded in its manifest.
+    local rc=0 name cur new updater
+    if [[ -z "$UL_ROWS" ]]; then
+        echo ""; echo "── User-local apps ──────────────────────────────────"
+        echo "  ✔ All user-local apps up to date."
+        return 2
+    fi
+    while IFS=$'\t' read -r name cur new; do
+        [[ -z "$name" ]] && continue
+        echo ""; echo "── Updating $name ($cur → $new) ─────────────────────"
+        log_line "BEGIN user-local update $name"
+        updater="$(userlocal_updater_path "$USERLOCAL_MANIFEST_DIR/$name" || true)"
+        if [[ -n "$updater" && -f "$updater" ]]; then
+            if run_logged bash "$updater"; then
+                log_line "OK user-local $name"
+            else
+                echo "  ✗ $name failed (continuing)."; log_line "FAIL user-local $name"; rc=1
+            fi
+        else
+            echo "  ✗ no updater recorded for $name (manifest missing 'updater')."; rc=1
+        fi
+    done <<< "$UL_ROWS"
+    refresh_userlocal
+    return "$rc"
+}
+
 do_os() {
     echo ""; echo "── Updating Fedora OS ───────────────────────────────"
     log_line "BEGIN rpm-ostree upgrade"
@@ -344,6 +390,21 @@ show_list() {
         [[ "$found" -eq 0 ]] && echo "  (none found)"
         echo ""
         echo "(Container package details require entering the container.)"
+        echo ""
+
+        # User-local apps
+        local ulc; ulc="$(printf '%s' "$UL_ROWS" | grep -c . || true)"
+        echo "USER-LOCAL APPS ($ulc)"
+        if [[ "$ulc" -gt 0 ]]; then
+            printf '  %-*s  %-*s    %s\n' "$NAME_W" "Tool" "$VER_W" "Current" "New"
+            printf '  %s\n' "$(printf '─%.0s' $(seq 1 $((NAME_W + VER_W + 18))))"
+            while IFS=$'\t' read -r uname ucur unew; do
+                [[ -z "$uname" ]] && continue
+                printf '  %-*s  %-*s →  %s\n' "$NAME_W" "$uname" "$VER_W" "$ucur" "$unew"
+            done <<< "$UL_ROWS"
+        else
+            echo "  (up to date)"
+        fi
     } | less -R --prompt=' ↑/↓ scroll   ·   press q to return to the menu '
 }
 
@@ -364,20 +425,26 @@ trap refresh_waybar EXIT
 
 # ── Run "everything" with continue-on-error + summary ─────────────────────
 do_everything() {
-    local r_fp r_ct r_os
+    local r_fp r_ct r_ul r_os
     do_flatpak;    r_fp=$?
     do_containers; r_ct=$?
+    do_userlocal;  r_ul=$?
     do_os;         r_os=$?
     echo ""; bar
     echo "  Results:"
     [[ "$r_fp" -eq 0 ]] && echo "    ✔ Flatpak apps updated"      || echo "    ✗ Flatpak apps failed"
     [[ "$r_ct" -eq 0 ]] && echo "    ✔ Containers updated"        || echo "    ✗ Some containers failed"
+    case "$r_ul" in
+        0) echo "    ✔ User-local apps updated" ;;
+        2) echo "    ✔ User-local apps up to date" ;;
+        *) echo "    ✗ Some user-local apps failed" ;;
+    esac
     case "$r_os" in
         0) echo "    ✔ Fedora OS staged (reboot to apply)" ;;
         2) echo "    ✔ Fedora OS up to date" ;;
         *) echo "    ✗ Fedora OS failed" ;;
     esac
-    if [[ "$r_fp" -ne 0 || "$r_ct" -ne 0 || "$r_os" -eq 1 ]]; then
+    if [[ "$r_fp" -ne 0 || "$r_ct" -ne 0 || "$r_os" -eq 1 || ( "$r_ul" -ne 0 && "$r_ul" -ne 2 ) ]]; then
         echo ""; echo "    Some steps failed — full output logged to:"; echo "      $LOG"
     fi
     [[ "$r_os" -eq 0 ]] && ask_reboot
@@ -390,6 +457,7 @@ clear
 echo "Checking for updates… (querying repositories, please wait)"
 log_line "=== update menu session started ==="
 refresh_os_cache
+refresh_userlocal
 
 while true; do
     show_summary
@@ -398,9 +466,10 @@ while true; do
     echo ""
     echo "    1) Update Flatpak apps      (fastest, no reboot)"
     echo "    2) Update containers        (no reboot)"
-    echo "    3) Update Fedora OS         (reboot required)"
-    echo "    4) Update everything        (apps → containers → OS)"
-    echo "    5) Show update list"
+    echo "    3) Update user-local apps   (no reboot)"
+    echo "    4) Update Fedora OS         (reboot required)"
+    echo "    5) Update everything        (apps → containers → user-local → OS)"
+    echo "    6) Show update list"
     echo "    q) Cancel"
     echo ""
     read -rp "  Choice: " choice
@@ -410,11 +479,14 @@ while true; do
            echo ""; read -rp "  Press Enter to return to menu…" _ ;;
         2) do_containers && echo "  ✔ Done." || echo "  ✗ Some failed."; refresh_waybar
            echo ""; read -rp "  Press Enter to return to menu…" _ ;;
-        3) if do_os; then ask_reboot; fi; refresh_os_cache; refresh_waybar
+        3) do_userlocal; rc=$?; [[ "$rc" -eq 0 || "$rc" -eq 2 ]] && echo "  ✔ Done." || echo "  ✗ Some failed."
+           refresh_waybar
            echo ""; read -rp "  Press Enter to return to menu…" _ ;;
-        4) do_everything; refresh_os_cache; refresh_waybar
+        4) if do_os; then ask_reboot; fi; refresh_os_cache; refresh_waybar
            echo ""; read -rp "  Press Enter to return to menu…" _ ;;
-        5) show_list; refresh_waybar ;;       # less → returns straight to menu
+        5) do_everything; refresh_os_cache; refresh_waybar
+           echo ""; read -rp "  Press Enter to return to menu…" _ ;;
+        6) show_list; refresh_waybar ;;       # less → returns straight to menu
         q|Q|"") break ;;
         *) echo "  Unknown option."; sleep 1 ;;
     esac

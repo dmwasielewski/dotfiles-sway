@@ -83,8 +83,8 @@ dotfiles-sway/
     ├── fix-vivaldi-profiles.sh        ← Fixes Vivaldi crash/session recovery dialog on start
     ├── check-hardware.sh              ← Verifies VA-API, GPU, KVM after reboot — writes state
     ├── setup-kvm.sh                   ← KVM/QEMU setup (libvirtd, user groups, NAT network) — writes state
-    ├── setup-neovim-config.sh         ← Neovim 0.12.1 user-local binary + Chris Titus Tech config symlink
-    ├── setup-zed.sh                   ← Zed GUI editor: official upstream binary, user-local in ~/.local/opt
+    ├── setup-neovim-config.sh         ← Neovim Chris Titus Tech config + plugin sync (binary from the package manager)
+    ├── setup-zed.sh                   ← Zed GUI editor: official upstream binary, user-local in ~/.local/opt (self-updates)
     ├── setup-nordvpn.sh               ← NordVPN CLI install + nordvpnd enable/start + group setup — writes state
     ├── setup-adguard.sh               ← AdGuard for Linux CLI install — writes state
     ├── setup-whispering-open.sh       ← Whispering Open latest GitHub release download — non-blocking
@@ -142,7 +142,7 @@ bash <(curl -s https://raw.githubusercontent.com/dmwasielewski/dotfiles-sway/mai
 Bootstrap does:
 1. Clones this repo to `~/dotfiles-sway`
 2. Initialises git submodules, including `ChrisTitusTech/neovim`
-3. Runs `setup.sh` — symlinks, Flatpaks, toolbox creation, fonts, Neovim user-local binary/config
+3. Runs `setup.sh` — symlinks, Flatpaks, toolbox creation, fonts, Neovim config (binary from the package manager)
 4. Runs `packages.sh` — installs system packages via rpm-ostree
 
 For a disposable end-to-end validation VM:
@@ -230,7 +230,10 @@ AMD GPU: mesa-va-drivers is already in Fedora Atomic base — no extra package n
 fallback) is **not** in Fedora's repos, so it is installed user-local from its
 GitHub release by `scripts/setup-yazi.sh` (into `~/.local/opt/yazi-<ver>` with
 `~/.local/bin/{yazi,ya}` symlinks) — no rpm-ostree layer, no reboot. PDF previews
-use `poppler-utils`, already present in the Fedora base.
+use `poppler-utils`, already present in the Fedora base. yazi has no self-updater
+and is in no repo, so it self-registers a manifest (`~/.local/share/dotfiles-updates/yazi`)
+and is the one tool tracked by the **User-local apps** source of the update module
+(see *Waybar → Updates indicator*); updating re-runs `setup-yazi.sh`.
 
 **Zed** (GUI code editor) is installed the same user-local way by
 `scripts/setup-zed.sh` (official upstream binary from `zed-industries/zed`,
@@ -238,7 +241,9 @@ into `~/.local/opt/zed-<ver>` with a `~/.local/bin/zed` symlink, `.desktop` and
 icons). It is **not** a Flatpak: the Flathub `dev.zed.Zed` build is an unofficial
 community wrapper. Zed is an *additional* GUI editor launched on demand — no
 autostart, no workspace assignment, no keybinding; Neovim stays the terminal
-editor and `$EDITOR`. The version is discovered (latest stable) at runtime.
+editor and `$EDITOR`. The version is discovered (latest stable) at runtime. Zed
+**self-updates** via its built-in updater (downloads from `zed.dev`, applies with
+`rsync`), so it is deliberately *not* tracked by the update module.
 
 ### Layer 2: Flatpak (GUI apps)
 
@@ -465,8 +470,8 @@ Both installed to `~/.local/share/fonts/` by `setup.sh`.
 
 Neovim is installed in two layers:
 
-- Fedora `neovim` rpm remains layered as a fallback.
-- `scripts/setup-neovim-config.sh` installs the official upstream Neovim `v0.12.1` binary to a versioned directory under `~/.local/opt/`, points `~/.local/opt/nvim-linux-x86_64` and `~/.local/bin/nvim` at the active release, and syncs plugins to Chris Titus Tech's `nvim-pack-lock.json`.
+- Neovim comes from the OS package manager: `neovim` rpm on the host (`packages.sh` → rpm-ostree), `dnf` in toolbox `damianf`, `apt` in container `damianu`. It is updated by the normal system/container update flow (no user-local pinned tarball).
+- `scripts/setup-neovim-config.sh` manages only the *config*: it initialises the submodule, symlinks `~/.config/nvim`, removes any leftover user-local Neovim from the old setup (a stray `~/.local/bin/nvim` would shadow the packaged one), and best-effort syncs plugins to Chris Titus Tech's `nvim-pack-lock.json` (the config's `vim.pack` needs Neovim 0.12+).
 
 The active config is Chris Titus Tech's `titus-kickstart`, pinned as a git submodule at `nvim/christitustech`:
 
@@ -477,7 +482,7 @@ The active config is Chris Titus Tech's `titus-kickstart`, pinned as a git submo
 Do not run Chris's `lin-depend.sh` on the Fedora Atomic host because it uses mutable-distro package managers such as `dnf` directly. Instead, keep its dependency list represented in this repo:
 
 - host dependencies in `packages.sh`
-- symlink, upstream Neovim binary, and plugin lockfile sync in `scripts/setup-neovim-config.sh`
+- config symlink and plugin lockfile sync in `scripts/setup-neovim-config.sh` (the binary itself comes from the package manager)
 - `markdownlint-cli2` in both dev container setup scripts via the shared `~/.npm-global` prefix
 - checks in `scripts/verify.sh`
 
@@ -713,7 +718,7 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 - [x] Fonts (JetBrainsMono Nerd Font, Font Awesome)
 - [x] All Flatpak apps installed via setup.sh (Vivaldi, mpv, VSCode, Obsidian, Bitwarden, Thunderbird, LibreOffice, Spotify, OBS, Kdenlive, JDownloader, Sticky)
 - [x] All system packages via packages.sh (rpm-ostree)
-- [x] Neovim 0.12.1 user-local binary with Chris Titus Tech `titus-kickstart` config
+- [x] Neovim from the OS package manager (rpm-ostree/dnf/apt) with Chris Titus Tech `titus-kickstart` config
 - [x] PWA shortcuts (Claude AI, ChatGPT, WhatsApp)
 - [x] toolbox `damianf` with node, npm, gh, Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT
 - [x] Claude Code settings.json symlinked from dotfiles

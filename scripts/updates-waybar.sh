@@ -58,6 +58,18 @@ compute_and_cache() {
         total=$(( total + container_warn ))
     fi
 
+    # User-local apps (GitHub-release tools without a package/self updater, e.g. yazi)
+    local ul_rows ul; ul_rows="$(userlocal_update_rows)"
+    ul="$(printf '%s' "$ul_rows" | grep -c . || true)"
+    if [[ "$ul" -gt 0 ]]; then
+        lines+=("User-local apps: $ul update(s)")
+        while IFS=$'\t' read -r uname ucur unew; do
+            [[ -z "$uname" ]] && continue
+            lines+=("  $uname: $ucur → $unew")
+        done <<< "$ul_rows"
+        total=$(( total + ul ))
+    fi
+
     # Fedora OS (last-known-good cache; stale fallback when repo offline)
     local os_fresh os_raw os_state stale_note=""
     os_fresh="$(os_refresh_cache)"

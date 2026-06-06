@@ -294,7 +294,7 @@ if host toolbox list 2>/dev/null | grep -qw "$TOOLBOX_CONTAINER"; then
     check_toolbox_tool "deepseek" "deepseek (DeepSeek TUI)"
     check_toolbox_tool "sgpt"   "sgpt (ShellGPT)"
     check_toolbox_tool "git"    "git"
-    check_toolbox_tool "nvim"   "nvim (Neovim user-local binary)"
+    check_toolbox_tool "nvim"   "nvim (Neovim, from dnf)"
     check_toolbox_tool "btop"   "btop (process monitor)"
     check_toolbox_tool "duf"    "duf (disk usage overview)"
     check_toolbox_tool "bat"    "bat (pager with syntax highlighting)"
@@ -393,7 +393,7 @@ if host podman container exists "$UBUNTU_DEV_CONTAINER" 2>/dev/null; then
     check_ubuntu_dev_tool "deepseek" "deepseek (DeepSeek TUI)"
     check_ubuntu_dev_tool "sgpt"   "sgpt (ShellGPT)"
     check_ubuntu_dev_tool "git"    "git"
-    check_ubuntu_dev_tool "nvim"   "nvim (Neovim user-local binary)"
+    check_ubuntu_dev_tool "nvim"   "nvim (Neovim, from apt)"
     check_ubuntu_dev_tool "btop"   "btop (process monitor)"
     check_ubuntu_dev_tool "duf"    "duf (disk usage overview)"
     check_ubuntu_dev_tool "bat"    "bat (pager with syntax highlighting)"
@@ -496,16 +496,22 @@ fi
 # ── 5c. Neovim ───────────────────────────────────────────────────────────
 section "5c. Neovim"
 
-if [[ -x "$HOME/.local/bin/nvim" ]]; then
-    NVIM_LINE=$("$HOME/.local/bin/nvim" --version | head -n1)
-    if echo "$NVIM_LINE" | grep -q "v0.12.1"; then
-        pass "Neovim user-local latest pinned binary ($NVIM_LINE)"
-    else
-        warn "Neovim user-local binary found, but expected v0.12.1: $NVIM_LINE"
+# Neovim now comes from the package manager (rpm-ostree/dnf/apt), so check for a
+# packaged nvim on PATH — and warn if a stale user-local binary lingers, since it
+# would shadow the packaged one.
+NVIM_ON_PATH="$(command -v nvim || true)"
+if [[ -n "$NVIM_ON_PATH" ]]; then
+    NVIM_LINE=$("$NVIM_ON_PATH" --version | head -n1)
+    pass "Neovim from package manager ($NVIM_ON_PATH — $NVIM_LINE)"
+    if echo "$NVIM_LINE" | grep -qvE "v0\.(1[2-9]|[2-9][0-9])"; then
+        warn "Neovim < 0.12 — Chris Titus Tech config uses vim.pack (needs 0.12+): $NVIM_LINE"
     fi
 else
-    fail "Neovim user-local binary missing (~/.local/bin/nvim)" \
-         "bash ~/dotfiles-sway/scripts/setup-neovim-config.sh"
+    fail "Neovim not found on PATH" \
+         "install it via the package manager (dnf/apt/rpm-ostree), then: bash ~/dotfiles-sway/scripts/setup-neovim-config.sh"
+fi
+if [[ -L "$HOME/.local/bin/nvim" || -e "$HOME/.local/bin/nvim" ]]; then
+    warn "Stale user-local ~/.local/bin/nvim present — it shadows the packaged nvim; run setup-neovim-config.sh to remove it"
 fi
 
 if [[ -f "$HOME/dotfiles-sway/nvim/christitustech/titus-kickstart/init.lua" ]]; then

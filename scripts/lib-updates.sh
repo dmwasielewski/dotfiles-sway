@@ -198,3 +198,69 @@ container_is_stale() {                 # exit 0 = stale (needs attention)
     local d=$(( ( $(date +%s) - e ) / 86400 ))
     [[ "$d" -ge "$CONTAINER_STALE_DAYS" ]]
 }
+
+# ── User-local apps (GitHub-release tools without a package or self updater) ─
+# Most tools are covered elsewhere: packaged ones by rpm-ostree/dnf/apt, Flatpaks
+# by flatpak, and some (e.g. zed) self-update. What is left are GitHub-release
+# binaries that are in no distro repo AND have no self-updater (e.g. yazi). Each
+# such tool self-registers a manifest when its setup script installs it, so this
+# logic stays generic — it discovers whatever manifests exist, with no tool names
+# hardcoded. Manifest is key=value: name, repo (owner/name), installed_version,
+# updater (path relative to the dotfiles repo).
+USERLOCAL_MANIFEST_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles-updates"
+USERLOCAL_TAG_CACHE="$CACHE_DIR/userlocal-tags"   # repo→tag, last-known-good for offline
+
+userlocal_manifests() {                # paths of manifest files, one per tool
+    [[ -d "$USERLOCAL_MANIFEST_DIR" ]] || return 0
+    find "$USERLOCAL_MANIFEST_DIR" -maxdepth 1 -type f 2>/dev/null | sort
+}
+_ul_field() { grep -m1 "^$2=" "$1" 2>/dev/null | cut -d= -f2-; }   # $1=manifest $2=key
+
+# Latest release tag for a repo, cached as last-known-good with a 3h TTL so the
+# menu/indicator don't hammer the GitHub API on every redraw. Echoes the tag, or
+# the cached value when GitHub is unreachable, or "" if never seen — so we never
+# falsely claim "up to date" while offline.
+userlocal_latest_tag() {               # $1=repo
+    local repo="$1" cache_f json tag age
+    cache_f="$USERLOCAL_TAG_CACHE/$(printf '%s' "$repo" | tr '/' '_')"
+    if [[ -f "$cache_f" ]]; then
+        age=$(( $(date +%s) - $(stat -c %Y "$cache_f" 2>/dev/null || echo 0) ))
+        [[ "$age" -lt 10800 ]] && { cat "$cache_f"; return; }
+    fi
+    # Capture before parsing — piping curl into grep -m1 trips SIGPIPE under pipefail.
+    json="$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null)"
+    tag="$(printf '%s' "$json" | grep -m1 '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')"
+    if [[ -n "$tag" ]]; then
+        mkdir -p "$USERLOCAL_TAG_CACHE"; printf '%s' "$tag" > "$cache_f"
+        printf '%s' "$tag"; return
+    fi
+    cat "$cache_f" 2>/dev/null          # offline → last known (even past the TTL)
+}
+
+# Is $2 a strictly newer version than $1? (a leading "v" is ignored)
+_ul_newer() {
+    local a="${1#v}" b="${2#v}"
+    [[ "$a" != "$b" && "$(printf '%s\n%s\n' "$a" "$b" | sort -V | tail -1)" == "$b" ]]
+}
+
+# Outdated user-local tools as "name<TAB>installed<TAB>latest".
+userlocal_update_rows() {
+    local m name repo inst latest
+    while IFS= read -r m; do
+        [[ -z "$m" ]] && continue
+        name="$(_ul_field "$m" name)"; repo="$(_ul_field "$m" repo)"
+        inst="$(_ul_field "$m" installed_version)"
+        [[ -z "$repo" || -z "$inst" ]] && continue
+        latest="$(userlocal_latest_tag "$repo")"
+        [[ -z "$latest" ]] && continue           # unknown/offline → don't flag
+        _ul_newer "$inst" "$latest" && printf '%s\t%s\t%s\n' "${name:-$repo}" "$inst" "${latest#v}"
+    done < <(userlocal_manifests)
+}
+userlocal_count() { userlocal_update_rows | grep -c . || true; }
+
+# Absolute path of a manifest's updater script, resolved against the dotfiles repo.
+userlocal_updater_path() {             # $1=manifest path
+    local rel; rel="$(_ul_field "$1" updater)"
+    [[ -z "$rel" ]] && return 1
+    printf '%s/%s' "${DOTFILES:-$HOME/dotfiles-sway}" "$rel"
+}
