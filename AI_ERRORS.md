@@ -294,6 +294,19 @@ or is called by `bootstrap.sh` which prints the summary.
 **Fix:** Wrapper script at `scripts/deepseek-wrapper.sh` sets `NO_ANIMATIONS=1` and
 `--no-mouse-capture`. Do NOT remove these flags.
 
+### DeepSeek TUI stopped launching — npm package renamed to `codewhale`
+**Problem:** The `deepseek` command died with `real binary not found:
+…/deepseek-tui/bin/deepseek.js`. The npm package `deepseek-tui` was **renamed to
+`codewhale`** (same author, v0.8.x); the old name is now an empty deprecation
+stub that ships only a `postinstall` notice — no binary. A routine `npm update`
+pulled that stub, and the wrapper's **hardcoded internal path** silently broke.
+**Fix:** `npm uninstall -g deepseek-tui && npm install -g codewhale`. Setup
+scripts now install `codewhale`. The wrapper resolves `codewhale` /
+`codewhale-tui` **on PATH** instead of a hardcoded `…/bin/<name>.js`, so a future
+rename will not break it the same way. `deepseek` / `deepseek-tui` stay as
+aliases. **Lesson:** never point a launcher at a package's internal file path —
+go through the command the package puts on PATH.
+
 ### Ubuntu 26.04 distrobox: apt HTTP pipelining 400 errors
 **Problem:** Fresh Distrobox setup from `ubuntu:26.04` gets HTTP 400 from apt archives
 with pipelining enabled.

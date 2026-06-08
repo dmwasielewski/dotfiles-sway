@@ -90,16 +90,16 @@ run_step "TOOLBOX_NPM_PREFIX" "Configuring npm prefix (~/.npm-global)" \
     '
 
 # ── Install AI coding CLIs ───────────────────────────────────────────────
-run_step "AI_CLI_TOOLS_INSTALLED" "Installing Claude Code, OpenAI Codex CLI, DeepSeek TUI, and markdownlint-cli2" \
+run_step "AI_CLI_TOOLS_INSTALLED" "Installing Claude Code, OpenAI Codex CLI, CodeWhale (deepseek), and markdownlint-cli2" \
     toolbox run --container "$CONTAINER" bash -c '
         set -eo pipefail
-        PATH="$HOME/.npm-global/bin:$PATH" npm install -g @anthropic-ai/claude-code @openai/codex deepseek-tui markdownlint-cli2
+        PATH="$HOME/.npm-global/bin:$PATH" npm install -g @anthropic-ai/claude-code @openai/codex codewhale markdownlint-cli2
     '
 step_done "CLAUDE_CODE_INSTALLED"
 step_done "CODEX_CLI_INSTALLED"
 step_done "DEEPSEEK_TUI_INSTALLED"
 
-run_step "DEEPSEEK_TUI_WRAPPER" "Installing DeepSeek TUI low-motion wrapper" \
+run_step "DEEPSEEK_TUI_WRAPPER" "Installing CodeWhale (deepseek) low-motion wrapper" \
     toolbox run --container "$CONTAINER" bash -c '
         set -eo pipefail
         mkdir -p ~/.local/bin ~/.npm-global/bin

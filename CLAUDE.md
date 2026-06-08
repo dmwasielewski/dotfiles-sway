@@ -288,7 +288,7 @@ Normal version drift is expected during those migrations. Fedora 44, for example
 | `gh` | GitHub CLI |
 | `claude` (`@anthropic-ai/claude-code`) | Claude Code CLI |
 | `codex` (`@openai/codex`) | OpenAI Codex CLI |
-| `deepseek` (`deepseek-tui`) | DeepSeek TUI |
+| `deepseek` (`codewhale`) | CodeWhale TUI — npm package renamed from `deepseek-tui`; `deepseek` kept as an alias |
 | `sgpt` (`shell-gpt`) | ShellGPT terminal assistant |
 | `ccstatusline` | Claude Code Waybar status (bundled with claude-code) |
 | `faster-whisper` | Local Whisper AI speech recognition (voice typing) |
@@ -312,7 +312,7 @@ This is the Ubuntu userland equivalent of the Fedora toolbox. It intentionally m
 | `gh` | GitHub CLI |
 | `claude` (`@anthropic-ai/claude-code`) | Claude Code CLI |
 | `codex` (`@openai/codex`) | OpenAI Codex CLI |
-| `deepseek` (`deepseek-tui`) | DeepSeek TUI |
+| `deepseek` (`codewhale`) | CodeWhale TUI — npm package renamed from `deepseek-tui`; `deepseek` kept as an alias |
 | `sgpt` (`shell-gpt`) | ShellGPT terminal assistant |
 | `faster-whisper` | Local Whisper AI speech recognition library |
 | `markdownlint-cli2` | Markdown linting used by Chris Titus Tech's Neovim config |
@@ -608,11 +608,22 @@ First use requires interactive login:
 codex login
 ```
 
-### DeepSeek TUI
+### DeepSeek TUI → CodeWhale
 
-DeepSeek TUI is launched through wrapper entries in `~/.local/bin` and `~/.npm-global/bin`. The wrapper calls the npm package entry point directly, sets `NO_ANIMATIONS=1`, and passes `--no-mouse-capture` to reduce foot/Sway repaint flicker.
+The terminal AI formerly published on npm as `deepseek-tui` was **renamed to
+`codewhale`** at v0.8.x. The old `deepseek-tui` package is now an empty
+deprecation stub with no binary, so a wrapper that pointed at its internal path
+silently broke. Setup now installs `codewhale`; the `deepseek` / `deepseek-tui`
+command names are kept as aliases through `scripts/deepseek-wrapper.sh`.
 
-`foot/foot.ini` also sets `damage-whole-window=yes` to reduce rare full-window DeepSeek TUI repaint flicker when the terminal is maximized.
+The wrapper resolves its target (`codewhale` / `codewhale-tui`) on PATH — never a
+hardcoded internal path — sets `NO_ANIMATIONS=1`, and passes `--no-mouse-capture`
+to reduce foot/Sway repaint flicker. It is symlinked into `~/.local/bin` and
+`~/.npm-global/bin`. The plain `codewhale` command (from npm's own bin) also
+works directly, just without the flicker flags.
+
+`foot/foot.ini` also sets `damage-whole-window=yes` to reduce rare full-window
+TUI repaint flicker when the terminal is maximized.
 
 ### ShellGPT
 

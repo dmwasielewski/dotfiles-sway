@@ -124,13 +124,13 @@ run_step "UBUNTU_DEV_NPM_PREFIX" "Configuring npm prefix (~/.npm-global)" \
         printf 'prefix=%s\n' \"\$HOME/.npm-global\" >> ~/.npmrc"
 
 # ── Install AI coding CLIs ───────────────────────────────────────────────
-run_step "UBUNTU_DEV_AI_CLI_TOOLS" "Installing Claude Code, OpenAI Codex CLI, DeepSeek TUI, and markdownlint-cli2" \
-    ubox "PATH=\"\$HOME/.npm-global/bin:\$PATH\" npm install -g @anthropic-ai/claude-code @openai/codex deepseek-tui markdownlint-cli2"
+run_step "UBUNTU_DEV_AI_CLI_TOOLS" "Installing Claude Code, OpenAI Codex CLI, CodeWhale (deepseek), and markdownlint-cli2" \
+    ubox "PATH=\"\$HOME/.npm-global/bin:\$PATH\" npm install -g @anthropic-ai/claude-code @openai/codex codewhale markdownlint-cli2"
 step_done "UBUNTU_DEV_CLAUDE_CODE_INSTALLED"
 step_done "UBUNTU_DEV_CODEX_CLI_INSTALLED"
 step_done "UBUNTU_DEV_DEEPSEEK_TUI_INSTALLED"
 
-run_step "UBUNTU_DEV_DEEPSEEK_WRAPPER" "Installing DeepSeek TUI low-motion wrapper" \
+run_step "UBUNTU_DEV_DEEPSEEK_WRAPPER" "Installing CodeWhale (deepseek) low-motion wrapper" \
     ubox "mkdir -p ~/.local/bin ~/.npm-global/bin &&
         ln -sf \"\$HOME/dotfiles-sway/scripts/deepseek-wrapper.sh\" ~/.local/bin/deepseek &&
         ln -sf \"\$HOME/dotfiles-sway/scripts/deepseek-wrapper.sh\" ~/.local/bin/deepseek-tui &&

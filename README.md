@@ -721,7 +721,7 @@ Host (rpm-ostree immutable)
 │   ├─ gh (GitHub CLI)
 │   ├─ claude (Claude Code)
 │   ├─ codex (OpenAI Codex CLI)
-│   ├─ deepseek (DeepSeek TUI)
+│   ├─ deepseek (CodeWhale TUI, formerly deepseek-tui)
 │   ├─ sgpt (ShellGPT terminal assistant)
 │   ├─ ccstatusline (Claude Code Waybar integration)
 │   ├─ faster-whisper (local Whisper AI for voice typing)
@@ -737,7 +737,7 @@ Host (rpm-ostree immutable)
 │   ├─ gh (GitHub CLI)
 │   ├─ claude (Claude Code)
 │   ├─ codex (OpenAI Codex CLI)
-│   ├─ deepseek (DeepSeek TUI)
+│   ├─ deepseek (CodeWhale TUI, formerly deepseek-tui)
 │   ├─ sgpt (ShellGPT terminal assistant)
 │   ├─ markdownlint-cli2
 │   ├─ faster-whisper
@@ -802,15 +802,16 @@ claude
 codex
 ```
 
-### Run DeepSeek TUI
+### Run the DeepSeek/CodeWhale TUI
 ```bash
 # Inside damianf container
-deepseek
+deepseek        # alias — the npm package was renamed deepseek-tui → codewhale
+# codewhale     # the new command name also works directly
 ```
 
-`~/.local/bin/deepseek`, `~/.local/bin/deepseek-tui`, and the matching `~/.npm-global/bin/*` entries wrap the npm-installed binaries with `NO_ANIMATIONS=1` and `--no-mouse-capture` to avoid foot/Sway repaint flicker.
+The npm package `deepseek-tui` was **renamed to `codewhale`** at v0.8.x. Setup installs `codewhale`; `~/.local/bin/deepseek`, `~/.local/bin/deepseek-tui` and the matching `~/.npm-global/bin/*` entries are aliases that wrap it with `NO_ANIMATIONS=1` and `--no-mouse-capture` to avoid foot/Sway repaint flicker.
 
-`foot/foot.ini` also enables `damage-whole-window=yes`, which reduces rare full-window DeepSeek TUI repaint flicker when the terminal is maximized.
+`foot/foot.ini` also enables `damage-whole-window=yes`, which reduces rare full-window TUI repaint flicker when the terminal is maximized.
 
 ### Terminal utility tools
 
