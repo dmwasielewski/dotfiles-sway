@@ -1,7 +1,7 @@
 #!/bin/bash
 # super+Shift+q — kill the ENTIRE focused application, not just its window.
 # A window "close" only asks one surface to go away; multi-process apps
-# (Chromium/Electron/Tauri: Vivaldi, Obsidian, VSCode, whispering-open…) keep a
+# (Chromium/Electron/Tauri: Firefox, Obsidian, VSCode, whispering-open…) keep a
 # master + helper processes alive after that, and some catch SIGTERM to hide to a
 # tray instead of quitting. So we terminate the focused process AND its whole
 # subtree, then escalate to SIGKILL for anything that ignored SIGTERM — nothing is

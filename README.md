@@ -7,7 +7,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 ### Window manager & UI
 - Sway window manager config (borders, keybindings, idle/lock, screenshots, touchpad)
 - Waybar status bar (bottom, muted dark theme, colour thresholds for CPU/RAM/temp/battery, Claude Code status, NordVPN toggle, AdGuard toggle, power menu)
-- Autostart layout: terminal on ws1, Firefox on ws2, Thunderbird on ws3, Obsidian on ws4, Claude/ChatGPT PWA on ws5
+- Autostart layout: terminal on ws1, Firefox on ws2, Thunderbird on ws3, Obsidian on ws4
 - Foot terminal config
 - Shared Bash prompt/aliases: host prompt in green, `damianf` prompt in cyan, `damianu` Distrobox prompt in cyan with package icon, `security` Distrobox prompt in red, `damianf`/`damianu` entry shortcuts, plus coloured `ls`/`ll`/`la` aliases
 - Mako notification daemon (11s auto-dismiss)
@@ -16,8 +16,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Black solid wallpaper
 
 ### Browser
-- Firefox — main browser (ships in the Fedora Sway Atomic base image; the system default), opens on ws2
-- Vivaldi (Flatpak) — hosts the Claude/ChatGPT PWAs on ws5
+- Firefox — main browser (ships in the Fedora Sway Atomic base image; the system default), opens on ws2. Claude, ChatGPT and WhatsApp are used as ordinary Firefox tabs/bookmarks.
 
 ### Applications (Flatpak)
 - VSCode — code editor
@@ -29,11 +28,6 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - mpv — video player
 - JDownloader — download manager
 - Sticky — desktop sticky notes (com.vixalien.sticky)
-
-### PWA shortcuts (Mod+D launcher)
-- Claude AI — opens as minimal window without browser UI
-- ChatGPT — opens as minimal window without browser UI
-- WhatsApp — opens as minimal window without browser UI
 
 ### System
 - `damianf` toolbox container (Fedora dev environment, versioned with the host unless overridden)
@@ -291,11 +285,9 @@ Solid black (`#000000`) — no image, no distractions.
 | 2 | Firefox browser |
 | 3 | Thunderbird |
 | 4 | Obsidian |
-| 5 | Claude AI PWA + ChatGPT PWA |
-| 9 | WhatsApp PWA |
 
 Apps are launched by `exec` lines in `sway/config` and pinned to workspaces by
-`assign`/`for_window` rules. Thunderbird is started via
+`assign` rules. Thunderbird is started via
 `scripts/launch-thunderbird.sh`, which discovers the installed Thunderbird
 flatpak at runtime (regular or `_esr` variant) instead of hardcoding an app ID —
 Flathub deprecated the plain `org.mozilla.Thunderbird` ID in favour of
@@ -309,7 +301,7 @@ Flathub deprecated the plain `org.mozilla.Thunderbird` ID in favour of
 |---|---|
 | `Mod+Return` | Open terminal (foot) |
 | `Mod+D` | Application launcher (rofi) |
-| `Mod+Q` | Close focused **window** only (e.g. one Vivaldi Settings window — the rest of the app keeps running) |
+| `Mod+Q` | Close focused **window** only (e.g. one browser Settings window — the rest of the app keeps running) |
 | `Mod+Shift+Q` | Close the whole **app** (terminates the process, so Chromium/Electron apps don't linger) |
 | `Mod+Shift+C` | Reload Sway config |
 | `Mod+Shift+E` | Exit Sway session |
@@ -357,7 +349,7 @@ Flathub deprecated the plain `org.mozilla.Thunderbird` ID in favour of
 #### Autostart trigger
 | Shortcut | Action |
 |---|---|
-| `Mod+Shift+S` | Re-run autostart script (Firefox + Claude PWA + ChatGPT PWA + Obsidian) |
+| `Mod+Shift+S` | Re-run autostart script (Firefox + Obsidian) |
 
 #### File manager (yazi — in-app, not Sway)
 | Shortcut | Action |
@@ -492,7 +484,7 @@ dotfiles-sway/
 ├── mako/                    # Mako notification config
 ├── claude/
 │   └── settings.json        # Claude Code settings (plugins, statusline) → symlinked to ~/.claude/settings.json
-├── applications/            # Desktop shortcuts (Claude AI, ChatGPT, WhatsApp, Whispering Open)
+├── applications/            # Desktop shortcuts (Whispering Open)
 ├── nvim/
 │   └── christitustech       # Git submodule: ChrisTitusTech/neovim, config lives in titus-kickstart/
 ├── .githooks/
@@ -500,8 +492,7 @@ dotfiles-sway/
 ├── scripts/
 │   ├── lib-install.sh                 # Shared helpers: state tracking, run_step()
 │   ├── verify.sh                      # Post-install verification — checks all components
-│   ├── autostart.sh                   # Sway autostart: Firefox, Claude PWA, ChatGPT PWA, Obsidian
-│   ├── fix-vivaldi-profiles.sh        # Fix Vivaldi crash/session recovery dialog
+│   ├── autostart.sh                   # Sway autostart: Firefox, Obsidian
 │   ├── check-hardware.sh              # Hardware check (GPU, VA-API, audio, ...) — writes state
 │   ├── setup-kvm.sh                   # KVM/QEMU setup (libvirtd, groups, network) — writes state
 │   ├── setup-neovim-config.sh         # Neovim 0.12.1 + Chris Titus Tech config symlink
@@ -714,18 +705,6 @@ zed filename.txt   # open a file
 
 ---
 
-## Vivaldi profile recovery
-
-If Vivaldi shows Session Recovery dialog after reboot, the crash flag fix runs automatically on every sway start via `scripts/fix-vivaldi-profiles.sh`. The script writes `Preferences` atomically and keeps a one-time `*.bak-before-dotfiles` backup beside each repaired file.
-
-To fix manually (Vivaldi must be closed first):
-```bash
-pkill -f vivaldi; sleep 2
-bash ~/dotfiles-sway/scripts/fix-vivaldi-profiles.sh
-```
-
----
-
 ## Developer ecosystem
 
 ### Architecture
@@ -733,7 +712,7 @@ bash ~/dotfiles-sway/scripts/fix-vivaldi-profiles.sh
 Host (rpm-ostree immutable)
 │
 ├─ Flatpak apps
-│   └─ User Flatpaks from Flathub: Obsidian, Vivaldi, Thunderbird, VSCode, Bitwarden, Spotify, OBS, Kdenlive, mpv, JDownloader
+│   └─ User Flatpaks from Flathub: Obsidian, Thunderbird, VSCode, Bitwarden, Spotify, OBS, Kdenlive, mpv, JDownloader
 │
 ├─ toolbox: damianf (Fedora version follows the host by default) — dev/DevOps
 │   ├─ node 22

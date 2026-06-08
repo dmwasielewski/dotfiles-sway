@@ -73,14 +73,11 @@ dotfiles-sway/
 ├── foot/foot.ini                      ← Foot terminal config
 ├── mako/config                        ← Mako notification daemon config
 ├── applications/
-│   ├── claude-ai.desktop              ← Claude AI PWA shortcut
-│   ├── chatgpt.desktop                ← ChatGPT PWA shortcut
-│   └── whatsapp.desktop               ← WhatsApp PWA shortcut
+│   └── whispering-open.desktop        ← Whispering Open launcher
 └── scripts/
     ├── lib-install.sh                 ← Shared helpers: state tracking, run_step()
     ├── verify.sh                      ← Full post-install verification — checks every component
     ├── autostart.sh                   ← Sway autostart: opens apps on correct workspaces
-    ├── fix-vivaldi-profiles.sh        ← Fixes Vivaldi crash/session recovery dialog on start
     ├── check-hardware.sh              ← Verifies VA-API, GPU, KVM after reboot — writes state
     ├── setup-kvm.sh                   ← KVM/QEMU setup (libvirtd, user groups, NAT network) — writes state
     ├── setup-neovim-config.sh         ← Neovim Chris Titus Tech config + plugin sync (binary from the package manager)
@@ -183,7 +180,7 @@ bash ~/dotfiles-sway/scripts/setup-security-container.sh # security distrobox
 - Set `ANTHROPIC_API_KEY` in private `~/.bashrc.d/ai-keys.bash`
 - Pair Bluetooth devices manually via `bluetoothctl`
 - Set up virtual machines — see KVM section below
-- Log in to: Vivaldi, Bitwarden, Obsidian, Spotify, GitHub (gh auth login)
+- Log in to: Bitwarden, Obsidian, Spotify, GitHub (gh auth login)
 
 ---
 
@@ -251,7 +248,6 @@ Managed by `setup.sh`. Installed from Flathub as user Flatpaks (`--user`) to avo
 
 | App | Flatpak ID | Purpose |
 |---|---|---|
-| Vivaldi | `com.vivaldi.Vivaldi` | Hosts the Claude/ChatGPT PWAs (ws5) — no longer the main browser |
 | VSCode | `com.visualstudio.code` | Code editor |
 | Obsidian | `md.obsidian.Obsidian` | Notes (ws3) |
 | Bitwarden | `com.bitwarden.desktop` | Password manager |
@@ -263,7 +259,7 @@ Managed by `setup.sh`. Installed from Flathub as user Flatpaks (`--user`) to avo
 | Sticky | `com.vixalien.sticky` | Desktop sticky notes |
 
 Notes:
-- **Main browser is Firefox**, which ships in the Fedora Sway Atomic **base image** (RPM `firefox`, binary `/usr/bin/firefox`, Wayland `app_id="org.mozilla.firefox"`) — it is not a Flatpak and needs no install step. It is launched on Sway start (`exec firefox`), pinned to ws2, and set as the system default via `xdg-settings` in `setup.sh`. Vivaldi remains installed only to host the Claude/ChatGPT PWAs.
+- **Main browser is Firefox**, which ships in the Fedora Sway Atomic **base image** (RPM `firefox`, binary `/usr/bin/firefox`, Wayland `app_id="org.mozilla.firefox"`) — it is not a Flatpak and needs no install step. It is launched on Sway start (`exec firefox`), pinned to ws2, and set as the system default via `xdg-settings` in `setup.sh`. Claude, ChatGPT and WhatsApp are used as ordinary Firefox tabs/bookmarks — there is no second browser and no PWA launchers.
 - `pavucontrol` is in Fedora Atomic base — no separate install needed.
 - Thunderbird is installed from Flathub. NOTE: the plain `org.mozilla.Thunderbird` ID is end-of-life and rebased to `org.mozilla.thunderbird_esr` — Flathub now ships only the ESR build (no separate "release/feature" channel; for that you'd need Mozilla's tarball or an RPM). Autostart uses `scripts/launch-thunderbird.sh`, which discovers whichever Thunderbird flatpak is installed at runtime (never hardcode the ID). Account setup is manual (OAuth).
 - Thunderbird profile config (`user.js`, `userChrome.css`, `userContent.css`) is stored in `thunderbird/` and applied by `scripts/setup-thunderbird.sh` after first launch.
@@ -404,8 +400,6 @@ Config is in `sway/config.d/90-swayidle.conf` (overrides Fedora's system default
 | 1 | Foot terminal |
 | 2 | Firefox browser |
 | 3 | Obsidian |
-| 4 | Claude AI PWA + ChatGPT PWA |
-| 9 | WhatsApp PWA |
 
 `Mod+Shift+S` re-runs the autostart script.
 
@@ -492,14 +486,10 @@ Do not add `golang` or `luarocks` to the host layer just because Chris's `lin-de
 
 ---
 
-## PWA shortcuts (applications/)
+## Application launchers (applications/)
 
-Three `.desktop` files that open web apps as minimal Vivaldi windows (no browser UI):
-- Claude AI → `claude.ai`
-- ChatGPT → `chatgpt.com`
-- WhatsApp → `web.whatsapp.com`
-
-Symlinked to `~/.local/share/applications/` by `setup.sh`.
+Claude, ChatGPT and WhatsApp are no longer separate PWA windows — they are used as
+ordinary Firefox tabs/bookmarks, so there are no `.desktop` shortcuts for them.
 
 ### Whispering Open launcher
 
@@ -516,8 +506,6 @@ release does not break a fresh system install.
 
 | Issue | Fix |
 |---|---|
-| Vivaldi shows Session Recovery dialog on start | `fix-vivaldi-profiles.sh` runs automatically on every Sway start |
-| Vivaldi crash flag stuck | `pkill -f vivaldi; sleep 2; bash ~/dotfiles-sway/scripts/fix-vivaldi-profiles.sh` |
 | virtiofs not working in Windows 11 | Check VirtioFsSvc service is running in Windows; requires WinFSP |
 | Security container missing after OS reinstall | Run `setup-security-container.sh` — distrobox must be installed first (packages.sh + reboot) |
 | Bluetooth GUI applet has connection issues | Use `bluetoothctl` CLI instead |
@@ -699,12 +687,9 @@ ShellGPT API configuration is automated by `scripts/configure-shellgpt.sh` from 
 
 ## ChatGPT
 
-ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Terminal access to OpenAI Codex is provided by the `codex` CLI in the `damianf` toolbox.
+ChatGPT is used as an ordinary Firefox tab/bookmark alongside Claude Code. Terminal access to OpenAI Codex is provided by the `codex` CLI in the `damianf` toolbox.
 
-- **Shortcut:** `applications/chatgpt.desktop` — symlinked to `~/.local/share/applications/`
-- **Autostart:** opens on workspace 4 alongside Claude AI PWA
-- **Launcher:** accessible via `Mod+D` (rofi) as "ChatGPT"
-- **No installation needed** — it's a web PWA opened in Vivaldi
+- **No installation needed** — it's a web page opened in Firefox; there is no `.desktop` launcher or PWA window any more.
 
 ---
 
@@ -716,10 +701,9 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 - [x] Mako notifications (11s auto-dismiss)
 - [x] Clipboard manager (clipman + rofi)
 - [x] Fonts (JetBrainsMono Nerd Font, Font Awesome)
-- [x] All Flatpak apps installed via setup.sh (Vivaldi, mpv, VSCode, Obsidian, Bitwarden, Thunderbird, LibreOffice, Spotify, OBS, Kdenlive, JDownloader, Sticky)
+- [x] All Flatpak apps installed via setup.sh (mpv, VSCode, Obsidian, Bitwarden, Thunderbird, LibreOffice, Spotify, OBS, Kdenlive, JDownloader, Sticky)
 - [x] All system packages via packages.sh (rpm-ostree)
 - [x] Neovim from the OS package manager (rpm-ostree/dnf/apt) with Chris Titus Tech `titus-kickstart` config
-- [x] PWA shortcuts (Claude AI, ChatGPT, WhatsApp)
 - [x] toolbox `damianf` with node, npm, gh, Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT
 - [x] Claude Code settings.json symlinked from dotfiles
 - [x] Claude Code plugins auto-installed (superpowers, code-simplifier, context7)
@@ -727,7 +711,6 @@ ChatGPT is used as a PWA (web app without browser UI) alongside Claude Code. Ter
 - [x] KVM/QEMU setup script
 - [x] Windows 11 Pro VM installed and running
 - [x] Hardware check script (VA-API, GPU, KVM)
-- [x] Vivaldi profile crash fix (auto on Sway start)
 - [x] Firewall baseline (public zone, SSH + mDNS only)
 - [x] Gitleaks installed as a required host package with repo pre-push secret scanning
 - [x] bootstrap.sh — single entry point for fresh install, with step-by-step error tracking
@@ -934,7 +917,6 @@ These require human interaction — document them so nothing is forgotten after 
 | Thunderbird extensions | In-app → Add-ons Manager → search by name (see thunderbird-section) |
 | Thunderbird profile config | Run `bash ~/dotfiles-sway/scripts/setup-thunderbird.sh` after first Thunderbird launch |
 | Bitwarden / Obsidian / Spotify login | In-app after Flatpak install |
-| Vivaldi: sign in, restore bookmarks/extensions | In-app after Flatpak install |
 
 NordVPN notes:
 - `scripts/setup-nordvpn.sh` installs the CLI, enables `nordvpnd`, and symlinks the Waybar toggle helper.

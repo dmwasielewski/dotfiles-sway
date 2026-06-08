@@ -4,7 +4,7 @@
 
 **Trap 1 — Only checking `--user` scope.** Apps may be installed in `--user`,
 `--system`, or custom installations. Hardcoding `--user` misses everything
-installed system-wide (Vivaldi, VSCode, Spotify, Bitwarden, OBS … were all
+installed system-wide (VSCode, Spotify, Bitwarden, OBS … were all
 `system`). Discover installations dynamically with
 `flatpak list --columns=installation | sort -u`, map each to its scope flag
 (`user`→`--user`, `system`→`--system`, else `--installation=NAME`), and query
@@ -19,7 +19,7 @@ The real test is the **commit hash**, not the version string:
 labels these as `(rebuild)` so they don't look broken.
 
 **Trap 3 — Browser flatpaks nag about a "newer version" that flatpak can't see.**
-Vivaldi / Chrome / Firefox have their OWN in-app update checkers that compare
+Chrome / Firefox have their OWN in-app update checkers that compare
 against the vendor website, which is always a few days ahead of the Flathub
 package. The in-app nag persists even when the flatpak is fully up to date, and
 it CANNOT be acted on (flatpak is read-only). This is **not a bug** and not
@@ -81,33 +81,14 @@ whether a reboot is warranted. Return three states, not two: `0` staged (offer
 reboot), `2` nothing changed (no reboot prompt), `1` failed. Never infer "staged"
 from the upgrade command's exit code alone.
 
-## Vivaldi (multi-profile browser) — hard kill can open an empty profile
-
-Vivaldi runs the main browser and each PWA (Claude, ChatGPT) as SEPARATE
-profiles (`--profile-directory=`). A hard kill (SIGKILL) while a PWA window was
-last-focused leaves `profile.last_used` in `…/config/vivaldi/Local State`
-pointing at that PWA profile, so the next launch opens an EMPTY-looking profile.
-**The data is NOT lost** — it is intact in the `Default` profile
-(`…/config/vivaldi/Default/{Bookmarks,History,Login Data}`). Do not panic or
-delete anything.
-
-Fixes:
-- Launch the main browser with `--profile-directory=Default` (done in
-  `autostart.sh`) so it always opens the main profile regardless of last_used.
-- To recover after it happened: fully close Vivaldi, then set
-  `profile.last_used` (and `last_active_profiles`) back to `"Default"` in
-  `Local State` (back it up first) and remove stale `Singleton*` lock files.
-- Prefer SIGTERM (graceful) over SIGKILL where possible; only escalate to
-  SIGKILL for apps that refuse to die.
-
 **Trap 5 — "I closed the app but it still shows the old version after update."**
 A running app keeps the OLD version in memory until its background process is
 killed. Closing the window — including Sway's `Alt+Shift+Q` (`kill`, which only
 closes the window/surface) — does NOT stop Chromium/Electron master processes
-(Vivaldi, VSCode, Obsidian…). They keep a background master process alive, and
+(VSCode, Obsidian…). They keep a background master process alive, and
 reopening attaches to it. **Proof technique:** `ps -eo pid,lstart,cmd | grep
-vivaldi` shows the process start time (predating the update) and the crashpad
-`ver=7.8.3925.81` annotation reveals the actually-running version, while
+<app>` shows the process start time (predating the update) and the crashpad
+`ver=…` annotation reveals the actually-running version, while
 `flatpak info … Version:` shows the (newer) on-disk version. This is NOT an
 update-tooling bug. Fix: `flatpak kill <app-id>` then relaunch. The update menu
 now detects running apps with pending updates and offers to close them first.

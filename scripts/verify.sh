@@ -102,9 +102,6 @@ check_symlink "foot/foot.ini"        "$HOME/.config/foot/foot.ini"
 check_symlink "mako/config"          "$HOME/.config/mako/config"
 check_symlink ".bashrc"              "$HOME/.bashrc"
 check_symlink "claude/settings.json" "$HOME/.claude/settings.json"
-check_symlink "claude-ai.desktop"    "$HOME/.local/share/applications/claude-ai.desktop"
-check_symlink "chatgpt.desktop"      "$HOME/.local/share/applications/chatgpt.desktop"
-check_symlink "whatsapp.desktop"     "$HOME/.local/share/applications/whatsapp.desktop"
 check_symlink "whispering-open.desktop" "$HOME/.local/share/applications/whispering-open.desktop"
 check_symlink "nvim Chris Titus Tech config" "$HOME/.config/nvim"
 check_symlink "power-menu"                 "$HOME/.local/bin/power-menu"
@@ -227,7 +224,6 @@ else
 fi
 
 declare -A FLATPAKS=(
-    ["com.vivaldi.Vivaldi"]="Vivaldi (default browser)"
     ["com.visualstudio.code"]="VSCode"
     ["md.obsidian.Obsidian"]="Obsidian"
     ["org.libreoffice.LibreOffice"]="LibreOffice"
@@ -711,7 +707,6 @@ echo    "     • NordVPN — run nordvpn login, or use nordvpn login --token <t
 echo    "       Daily use: nordvpn connect | nordvpn status | nordvpn disconnect"
 echo    "     • AdGuard for Linux — adguard-cli activate && adguard-cli configure && adguard-cli start"
 echo    "       Daily use: adguard-cli status | adguard-cli start | adguard-cli stop"
-echo    "     • Vivaldi — log in, restore bookmarks/extensions"
 
 # ── Summary ───────────────────────────────────────────────────────────────
 echo ""

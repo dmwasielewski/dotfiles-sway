@@ -43,9 +43,6 @@ mkdir -p ~/.config/yazi
 ln -sf "$DOTFILES/yazi/keymap.toml"                           ~/.config/yazi/keymap.toml
 ln -sf "$DOTFILES/environment.d/locale.conf"            ~/.config/environment.d/locale.conf
 ln -sf "$DOTFILES/.bashrc"                                    ~/.bashrc
-ln -sf "$DOTFILES/applications/claude-ai.desktop"             ~/.local/share/applications/claude-ai.desktop
-ln -sf "$DOTFILES/applications/chatgpt.desktop"               ~/.local/share/applications/chatgpt.desktop
-ln -sf "$DOTFILES/applications/whatsapp.desktop"              ~/.local/share/applications/whatsapp.desktop
 ln -sf "$DOTFILES/applications/whispering-open.desktop"       ~/.local/share/applications/whispering-open.desktop
 ln -sf "$DOTFILES/claude/settings.json"                        ~/.claude/settings.json
 mkdir -p ~/.local/bin
@@ -138,7 +135,6 @@ install_flatpak_app() {
     fi
 }
 
-install_flatpak_app com.vivaldi.Vivaldi
 install_flatpak_app io.mpv.Mpv
 install_flatpak_app com.visualstudio.code
 install_flatpak_app com.bitwarden.desktop

@@ -130,7 +130,7 @@ input "type:touchpad" {
     bindsym --release    Alt+Shift+d exec kill -RTMIN+2 $(pgrep -x whispering-open)
 
     # Close just the focused WINDOW (Sway's native close request). Use this for a
-    # secondary window like a Vivaldi "Settings" window — it closes only that
+    # secondary window like a browser "Settings" window — it closes only that
     # window and leaves the rest of the app running. Pairs with $mod+Shift+q below.
     bindsym $mod+q kill
 
@@ -318,11 +318,7 @@ assign [app_id="foot"] workspace number 1
 # Match any Thunderbird variant (regular or _esr) — case-insensitive, so a
 # variant swap never breaks workspace routing again.
 assign [app_id="(?i)^org\.mozilla\.thunderbird.*"] workspace number 3
-for_window [app_id="vivaldi-chatgpt.com__-Claude"] move to workspace number 5
-for_window [app_id="vivaldi-claude.ai__-Claude"] move to workspace number 5
 assign [title=".*Obsidian.*"] workspace number 4
 assign [app_id="org.mozilla.firefox"] workspace number 2
 
-# ── Other apps ──
-assign [title=".*WhatsApp.*"] workspace number 9
 exec_always systemctl --user import-environment LC_TIME
