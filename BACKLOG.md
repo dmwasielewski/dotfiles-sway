@@ -52,9 +52,18 @@ network `default`, while the repo manages `dotfiles-nat`. **Do:** parameterise t
 network (default to the repo-managed one after checking it's active), add
 reboot/reconnect, then run phase 2 + a verification profile before declaring success.
 
-### 🟠 6. Harden the kickstart
-- `clearpart --all` with automatic partitioning can erase every visible disk → template an explicit disk + `ignoredisk --only-use=`.
-- Plaintext password `damian` + unrestricted passwordless `wheel` sudo + SSH open → lock password auth, rely on injected SSH key, scope sudo to provisioning and remove it after.
+### 🟠 6. Harden the kickstart — ✅ DONE (partial, 2026-06-11)
+**Fixed:** plaintext password `damian` removed — `rootpw --lock` + a no-password
+account reachable only by the injected SSH key (the VM script already logs in by
+key). Destructive partitioning constrained to the single virtio disk via
+`ignoredisk --only-use=vda` + `clearpart --drives=vda`, so it can never erase
+extra disks on multi-disk hardware. Header now marks the file as the
+disposable, isolated validation VM (not a general installer).
+**Still TODO:** passwordless `wheel` sudo is kept because bootstrap runs unattended
+over SSH (no TTY); it is acceptable only on this isolated, key-only, disposable VM.
+Scoping it to provisioning commands and dropping it afterwards needs the
+orchestrator (item 1). Parser-validate the rendered kickstart once ksvalidator is
+available (item 9).
 
 ### 🟠 7. Replace ad-hoc state with versioned, input-aware state
 `lib-install.sh` stores only a key + label. **Do:** record phase version, repo
