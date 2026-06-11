@@ -7,11 +7,22 @@ if [[ -f "$DOTFILES/scripts/lib-install.sh" ]]; then
     setup_logging "setup.sh"
 fi
 
-# Check dependencies
-if ! command -v unzip &>/dev/null; then
-    echo "ERROR: unzip not found. Install it first: sudo rpm-ostree install unzip, then reboot."
-    exit 1
-fi
+# Extract a zip with `unzip` when present, else fall back to python3's stdlib
+# zipfile module (python3 ships in the Fedora base image). Phase-1 setup must NOT
+# hard-depend on `unzip`: it is only layered later by packages.sh, so a fresh base
+# image without it would otherwise never reach the step that installs it.
+extract_zip() {
+    local zip="$1" dest="$2"
+    mkdir -p "$dest"
+    if command -v unzip &>/dev/null; then
+        unzip -oq "$zip" -d "$dest"
+    elif command -v python3 &>/dev/null; then
+        python3 -m zipfile -e "$zip" "$dest"
+    else
+        echo "WARNING: neither unzip nor python3 available — cannot extract $zip" >&2
+        return 1
+    fi
+}
 
 echo "==> Creating config directories..."
 mkdir -p ~/.config/sway
@@ -163,7 +174,7 @@ if ls ~/.local/share/fonts/JetBrainsMono/*.ttf >/dev/null 2>&1; then
     echo "==> JetBrainsMono Nerd Font already installed — skipping download"
 else
     curl -fL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip -o JetBrainsMono.zip
-    unzip -oq JetBrainsMono.zip -d ~/.local/share/fonts/JetBrainsMono
+    extract_zip JetBrainsMono.zip ~/.local/share/fonts/JetBrainsMono
     rm -f JetBrainsMono.zip
     fc-cache -fv
 fi
@@ -177,7 +188,7 @@ else
         echo "WARNING: Could not resolve Font Awesome download URL — skipping. Install manually from https://fontawesome.com"
     else
         curl -fL "$FA_URL" -o FontAwesome.zip
-        unzip -oq FontAwesome.zip -d ~/.local/share/fonts/FontAwesome
+        extract_zip FontAwesome.zip ~/.local/share/fonts/FontAwesome
         find ~/.local/share/fonts/FontAwesome -mindepth 2 -type f \( -name '*.otf' -o -name '*.ttf' \) -exec cp -f {} ~/.local/share/fonts/FontAwesome/ \;
         rm -f FontAwesome.zip
         fc-cache -fv

@@ -173,7 +173,7 @@ for tool in node npm gh claude codex deepseek sgpt git btop duf bat ncdu rg fzf 
         echo -e "  ${GREEN}✓${NC} $tool"
     else
         echo -e "  ${RED}✗${NC} $tool — MISSING"
-        ((VERIFY_FAIL++))
+        VERIFY_FAIL=$((VERIFY_FAIL + 1))
     fi
 done
 

@@ -190,7 +190,7 @@ for tool in node npm gh claude codex deepseek sgpt git btop duf bat ncdu rg fzf 
         echo -e "  ${GREEN}✓${NC} $tool"
     else
         echo -e "  ${RED}✗${NC} $tool — MISSING"
-        ((VERIFY_FAIL++))
+        VERIFY_FAIL=$((VERIFY_FAIL + 1))
     fi
 done
 
@@ -198,14 +198,14 @@ if distrobox enter --name "$CONTAINER" -- bash -lc 'PATH="$HOME/.npm-global/bin:
     echo -e "  ${GREEN}✓${NC} markdownlint-cli2"
 else
     echo -e "  ${RED}✗${NC} markdownlint-cli2 — MISSING"
-    ((VERIFY_FAIL++))
+    VERIFY_FAIL=$((VERIFY_FAIL + 1))
 fi
 
 if distrobox enter --name "$CONTAINER" -- python3 -c "import faster_whisper" &>/dev/null 2>&1; then
     echo -e "  ${GREEN}✓${NC} faster-whisper"
 else
     echo -e "  ${RED}✗${NC} faster-whisper — MISSING"
-    ((VERIFY_FAIL++))
+    VERIFY_FAIL=$((VERIFY_FAIL + 1))
 fi
 
 if [[ $VERIFY_FAIL -eq 0 ]]; then

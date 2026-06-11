@@ -736,11 +736,9 @@ ChatGPT is used as an ordinary Firefox tab/bookmark alongside Claude Code. Termi
 
 ## What is planned / in progress
 
-- [ ] Windows Server 2022 VM — Active Directory lab (Sysadmin AD Lab project)
-- [ ] Kali Linux VM
-- [ ] virtiofs fully working in Windows 11 (VirtioFsSvc setup)
-- [ ] `gh auth login` automation
-- [ ] Full idempotency audit across setup.sh, packages.sh, and post-reboot scripts — each step should detect pre-existing resources and continue cleanly
+**The single backlog lives in [`BACKLOG.md`](BACKLOG.md)** — all open work (install-pipeline
+fixes, planned VMs/features, small items) is tracked there. Do not start a parallel
+TODO list here; add new items to `BACKLOG.md`.
 
 ## Optional lab tools (run manually — not part of bootstrap)
 

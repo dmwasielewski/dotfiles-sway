@@ -474,7 +474,7 @@ fi
 if host which iptables &>/dev/null 2>&1; then
     pass "iptables present for AdGuard auto mode"
 else
-    fail "iptables  MISSING (required by AdGuard auto mode)" "bash ~/dotfiles-sway/packages.sh && systemctl reboot"
+    fail "iptables  MISSING (required by AdGuard auto mode)" "sudo rpm-ostree install iptables-nft && systemctl reboot   # iptables-nft ships in the Fedora Sway Atomic base; layer it only if a stripped base lacks it"
 fi
 
 if host adguard-cli status >/dev/null 2>&1; then
@@ -747,3 +747,12 @@ else
 fi
 
 echo ""
+
+# Exit nonzero when any required check failed, so automation / a phase handoff /
+# anyone checking $? sees a broken install as a failure instead of success.
+# (Warnings do not fail the run.) NOTE: until install profiles land (BACKLOG #3/#11),
+# optional/personal items still counted as FAIL will make this exit 1 too.
+if [[ $FAIL -gt 0 ]]; then
+    exit 1
+fi
+exit 0

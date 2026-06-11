@@ -15,7 +15,7 @@ echo "==> Layering system packages (reboot required after)..."
 # libva-utils - VA-API hardware acceleration tools
 # clipman     - clipboard history manager
 # distrobox   - Ubuntu container support
-# unzip       - required by setup.sh for font installation
+# unzip       - convenience for font installation (setup.sh falls back to python3 -m zipfile if absent)
 # qemu-kvm    - KVM virtualisation engine
 # libvirt     - virtualisation management daemon
 # libvirt-daemon-config-network - default NAT network for VMs

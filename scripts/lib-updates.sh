@@ -126,9 +126,12 @@ os_parse_pending() {                   # $1 = raw check text
 # so we must NOT claim the system is up to date.
 os_parse_state() {                     # $1 = raw check text
     if   printf '%s' "$1" | grep -q "AvailableUpdate:";                    then echo "pending"
-    elif printf '%s' "$1" | grep -qiE "no upgrade available|no updates available"; then echo "current"
+    elif printf '%s' "$1" | grep -qiE "no upgrade available|no updates available|no available updates"; then echo "current"
     elif printf '%s' "$1" | grep -qiE "error:|could not connect|cannot update repo"; then echo "unknown"
-    else echo "current"; fi
+    # Default to "unknown", never "current": unrecognised output (new rpm-ostree
+    # wording, auth/proxy failure, localised text) must not read as up to date.
+    # "unknown" degrades gracefully via the last-known-good OS cache.
+    else echo "unknown"; fi
 }
 os_parse_version() {                   # $1 = raw check text
     printf '%s\n' "$1" | awk -F": " '/^[[:space:]]*Version:/ {print $2; exit}'
