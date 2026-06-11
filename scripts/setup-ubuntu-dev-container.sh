@@ -162,9 +162,11 @@ fi
 # ── Install Claude Code plugins ──────────────────────────────────────────
 echo -e "\n${CYAN}==> Installing Claude Code plugins in '$CONTAINER'...${NC}"
 if ubox "PATH=\"\$HOME/.npm-global/bin:\$PATH\"
-    claude plugin install superpowers@claude-plugins-official --yes 2>/dev/null || true
-    claude plugin install code-simplifier@claude-plugins-official --yes 2>/dev/null || true
-    claude plugin install context7@claude-plugins-official --yes 2>/dev/null || true"; then
+    rc=0
+    for p in superpowers code-simplifier context7; do
+        claude plugin install \"\${p}@claude-plugins-official\" --yes || rc=1
+    done
+    exit \$rc"; then
     step_done "UBUNTU_DEV_CLAUDE_PLUGINS_INSTALLED"
 else
     step_failed "UBUNTU_DEV_CLAUDE_PLUGINS_INSTALLED"

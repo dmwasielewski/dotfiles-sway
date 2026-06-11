@@ -97,12 +97,29 @@ else
     step_failed "KVM_DEVICE_OK"
 fi
 
-step_done "KVM_SETUP_DONE"
+# Aggregate readiness must reflect the real components, not be hardcoded to done.
+# /dev/kvm is required for hardware acceleration; without it KVM is not ready.
+# (KVM_USER_GROUP and KVM_NETWORK_DOTFILES_NAT use run_step/step_done, which exit
+# on failure, so reaching here means they passed — but check them anyway so the
+# aggregate stays correct if the flow ever changes.)
+if [[ "$(step_get KVM_DEVICE_OK)" == "done" \
+   && "$(step_get KVM_USER_GROUP)" == "done" \
+   && "$(step_get KVM_NETWORK_DOTFILES_NAT)" == "done" ]]; then
+    step_done "KVM_SETUP_DONE"
+    KVM_OK=1
+else
+    step_failed "KVM_SETUP_DONE"
+    KVM_OK=0
+fi
 
 # ── Summary ──────────────────────────────────────────────────────────────
 echo ""
 echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BOLD} KVM ready!${NC}"
+if [[ "$KVM_OK" == "1" ]]; then
+    echo -e "${BOLD} KVM ready!${NC}"
+else
+    echo -e "${BOLD}${RED} KVM setup incomplete — /dev/kvm missing (enable AMD-V / Intel VT-x in BIOS), then re-run.${NC}"
+fi
 echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 echo -e " ${YELLOW}NOTE: Log out and back in for group changes to take effect.${NC}"

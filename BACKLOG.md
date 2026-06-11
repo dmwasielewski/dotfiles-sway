@@ -36,15 +36,25 @@ broken install as success. **Fixed:** it now `exit 1` when `FAIL > 0`, else `exi
 machine-readable output mode, so optional/personal components (e.g. the personal
 `win11` VM, lab tooling) don't invalidate the core install result. See item 11.
 
-### 🟠 4. Eliminate false "ready" state transitions
-Aggregate `*_READY=done` can be written while the component is unusable:
-- NordVPN marked ready from a *staged* package before the daemon/group exist (`setup-nordvpn.sh`).
-- security container marked ready after optional steps (enum4linux-ng, SecLists) only warn, yet `verify.sh` treats them as required failures.
-- Claude plugin install uses `|| true` then marks done; `verify.sh` treats missing plugins as failures.
-- KVM marks `KVM_SETUP_DONE=done` even when `/dev/kvm` is absent.
-**Do:** use staged/booted/configured/authenticated states; compute aggregate
-readiness from component states; classify required vs optional once and share it
-between setup and verify.
+### 🟠 4. Eliminate false "ready" state transitions — ✅ DONE (2026-06-11)
+Aggregate `*_READY=done` was written while the component could be unusable. Fixed:
+- **KVM** (`setup-kvm.sh`): `KVM_SETUP_DONE` is now computed from the component
+  states (requires `KVM_DEVICE_OK` = `/dev/kvm` present, plus user-group and
+  network); without `/dev/kvm` it is marked `failed` and the summary says so.
+- **NordVPN** (`setup-nordvpn.sh`): `NORDVPN_READY` is now derived from the real
+  end state (CLI on PATH + `nordvpnd` active + user in `nordvpn` group). On the
+  first pre-reboot run (package only staged) it is `pending`, not `done`.
+- **Claude plugins** (both container setups): dropped the per-plugin `|| true`
+  that guaranteed success; the install loop tracks an exit code so a real
+  network/auth/marketplace failure marks the aggregate `failed`.
+- **Security container** required-vs-optional aligned: `verify.sh` now treats
+  `enum4linux-ng` and SecLists as **optional warnings** (matching the setup's
+  `run_step_warn`), so the container is no longer reported broken for components
+  the setup itself installs best-effort.
+
+**Still open (broader):** full staged/booted/configured/authenticated state
+vocabulary and sharing one required-vs-optional manifest between setup and verify
+— folds into items 7 and 11.
 
 ### 🟠 5. VM validation through reboot + correct network
 `scripts/create-fedora-sway-vm.sh` validates only phase 1 and hardcodes libvirt

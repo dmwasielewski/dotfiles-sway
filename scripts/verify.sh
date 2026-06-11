@@ -596,13 +596,24 @@ if host podman container exists security 2>/dev/null; then
         fi
     }
 
+    # Optional tools the setup installs best-effort (run_step_warn). A miss is a
+    # warning, not a failure — this keeps verify consistent with the setup script,
+    # which does not mark the container un-ready when these are absent.
+    check_security_tool_optional() {
+        if host distrobox enter --name security -- which "$1" &>/dev/null 2>&1; then
+            pass "$1"
+        else
+            warn "$1  not installed (optional) — bash ~/dotfiles-sway/scripts/setup-security-container.sh"
+        fi
+    }
+
     check_security_tool "nmap"
     check_security_tool "gobuster"
     check_security_tool "hydra"
     check_security_tool "msfconsole"
     check_security_tool "sqlmap"
     check_security_tool "evil-winrm"
-    check_security_tool "enum4linux-ng"
+    check_security_tool_optional "enum4linux-ng"
     check_security_tool "ffuf"
     check_security_tool "wireshark"
     check_security_tool "cmake"
@@ -617,7 +628,7 @@ if host podman container exists security 2>/dev/null; then
     if host distrobox enter --name security -- test -d /opt/SecLists &>/dev/null 2>&1; then
         pass "SecLists (/opt/SecLists)"
     else
-        fail "SecLists  MISSING" "bash ~/dotfiles-sway/scripts/setup-security-container.sh"
+        warn "SecLists not installed (optional, ~1 GB) — bash ~/dotfiles-sway/scripts/setup-security-container.sh"
     fi
 else
     fail "Distrobox 'security'  NOT FOUND" "bash ~/dotfiles-sway/scripts/setup-security-container.sh"

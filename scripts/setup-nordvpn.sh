@@ -162,7 +162,20 @@ else
     echo -e "${YELLOW}⚠ nordvpn group not present yet — finish login/reboot after the CLI install${NC}"
 fi
 
-step_done "NORDVPN_READY"
+# Aggregate readiness reflects the real end state instead of being hardcoded to
+# done. NordVPN is layered via rpm-ostree, so on the first (pre-reboot) run the
+# command, daemon and group typically do not exist yet — that is "pending"
+# (finish the reboot/login and re-run), NOT "ready".
+nordvpn_ready=1
+command -v nordvpn >/dev/null 2>&1 || nordvpn_ready=0
+systemctl is-active --quiet nordvpnd 2>/dev/null || nordvpn_ready=0
+id -nG "$USER" 2>/dev/null | tr ' ' '\n' | grep -qx nordvpn || nordvpn_ready=0
+if [[ "$nordvpn_ready" == "1" ]]; then
+    step_done "NORDVPN_READY"
+else
+    step_save "NORDVPN_READY" "pending"
+    echo -e "${YELLOW}⚠ NordVPN not fully ready yet (CLI/daemon/group pending) — finish the reboot/login, then re-run this script.${NC}"
+fi
 
 echo ""
 echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

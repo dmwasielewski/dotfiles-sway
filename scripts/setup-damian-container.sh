@@ -139,14 +139,16 @@ fi
 # ── Install Claude Code plugins ──────────────────────────────────────────
 echo -e "\n${CYAN}==> Installing Claude Code plugins...${NC}"
 toolbox run --container "$CONTAINER" bash -c '
-    set -eo pipefail
+    set -uo pipefail
     PATH="$HOME/.npm-global/bin:$PATH"
-    claude plugin install superpowers@claude-plugins-official --yes 2>/dev/null || true
-    claude plugin install code-simplifier@claude-plugins-official --yes 2>/dev/null || true
-    claude plugin install context7@claude-plugins-official --yes 2>/dev/null || true
+    rc=0
+    for p in superpowers code-simplifier context7; do
+        claude plugin install "${p}@claude-plugins-official" --yes || rc=1
+    done
+    exit $rc
 ' && step_done "CLAUDE_PLUGINS_INSTALLED" \
   || { step_failed "CLAUDE_PLUGINS_INSTALLED"
-       echo -e "${YELLOW}⚠ Plugins: install manually after entering the container:${NC}"
+       echo -e "${YELLOW}⚠ One or more plugins failed to install — finish manually:${NC}"
        echo -e "  toolbox enter $CONTAINER"
        echo -e "  claude plugin install superpowers@claude-plugins-official --yes"
      }
