@@ -1,0 +1,15 @@
+[[secret]]
+source = "ai/anthropic.key"
+action = "env"
+name   = "ANTHROPIC_API_KEY"
+
+[[secret]]
+source = "ai/gemini.key"
+action = "file"
+dest   = "~/.config/voice-type/gemini-api-key"
+mode   = "0600"
+
+[[secret]]
+source = "vpn/nordvpn-token"
+action = "command"
+command = "nordvpn login --token {value}"
