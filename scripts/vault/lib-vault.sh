@@ -30,3 +30,29 @@ vault_list() {
         ! -name 'README.md' ! -path './install/*' \
         | sed 's|^\./||' | sort )
 }
+
+# Map a secret filename to its conventional env var name.
+# anthropic.key -> ANTHROPIC_API_KEY ; github-token -> GITHUB_TOKEN
+vault_env_varname() { # $1 = filename (e.g. anthropic.key, github-token)
+    local base="${1%.key}"
+    base="${base//-/_}"
+    local upper; upper="$(printf '%s' "$base" | tr '[:lower:]' '[:upper:]')"
+    case "$upper" in
+        *_TOKEN) printf '%s' "$upper" ;;
+        *)       printf '%s_API_KEY' "$upper" ;;
+    esac
+}
+
+# Print `export NAME='value'` lines for every secret in a group dir. Use as:
+#   eval "$(vault env ai)"
+vault_env() { # $1 = group (subdirectory)
+    local dir="$VAULT_MOUNT/$1"
+    [[ -d "$dir" ]] || { echo "vault: no such group: $1" >&2; return 1; }
+    local f name val
+    for f in "$dir"/*; do
+        [[ -f "$f" ]] || continue
+        name="$(vault_env_varname "$(basename "$f")")"
+        val="$(cat "$f")"
+        printf "export %s='%s'\n" "$name" "$val"
+    done
+}
