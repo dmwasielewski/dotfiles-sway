@@ -22,6 +22,14 @@ echo "Type the device path EXACTLY ($dev) to confirm destruction:"
 read -r confirm
 [[ "$confirm" == "$dev" ]] || { echo "aborted"; exit 1; }
 
+# Unmount any currently-mounted partitions of the target (e.g. an auto-mounted
+# vfat) so partitioning doesn't fail on a busy device.
+while read -r name mp; do
+    [[ -n "$mp" ]] || continue
+    echo "unmounting /dev/$name ($mp)"
+    umount "/dev/$name" 2>/dev/null || umount -l "/dev/$name" 2>/dev/null || true
+done < <(lsblk -rno NAME,MOUNTPOINT "$dev" | tail -n +2)
+
 # Single GPT partition, named for label-based discovery.
 parted -s "$dev" mklabel gpt
 parted -s "$dev" mkpart "$VAULT_PARTLABEL" ext4 1MiB 100%
