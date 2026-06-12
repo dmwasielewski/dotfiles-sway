@@ -100,8 +100,8 @@ failures exit nonzero.
 - ✅ **`((VERIFY_FAIL++))` under `set -e`** kills the container setup scripts at the first missing tool (post-increment returns 1 when the prior value is 0). **Fixed** → `VERIFY_FAIL=$((VERIFY_FAIL + 1))` in both setup scripts.
 - ✅ **`lib-updates.sh` classified unknown rpm-ostree output as "current".** **Fixed** → the catch-all now returns `unknown` (degrades gracefully via the last-known-good cache) instead of falsely claiming up-to-date.
 - ✅ **AdGuard `iptables` remediation was a no-op** (`verify.sh` said "run packages.sh", which doesn't install it). On Fedora Sway Atomic 44 `iptables` (iptables-nft) is in the **base image**, so it must not be layered. **Fixed** → remediation now points at the real recovery (`sudo rpm-ostree install iptables-nft && systemctl reboot`) for the unlikely base without it.
-- 🟡 README claims "all scripts are safe to rerun and skip completed steps" — false; `run_step` re-executes and overwrites state, `setup.sh` force-replaces `~/.bashrc`. Fix the claim or implement true idempotent convergence.
-- 🟡 Several noncritical failures are swallowed without state (`setup.sh` yazi/Zed, Podman socket/cgroup; corrupt configs). Use `run_step_warn` consistently and have verify check every warning-only capability.
+- ✅ **README idempotency claim corrected** (2026-06-11) — the "all scripts are safe to rerun and skip completed steps" line now honestly says re-running re-executes most steps and overwrites state (no state-driven resume; some steps are destructive on rerun). True idempotent convergence is still items 1 & 7.
+- ✅ **Swallowed failures now recorded** (2026-06-11) — `setup.sh` yazi, Zed, the Podman socket and cgroup delegation use `run_step_warn` / explicit `step_done`/`step_failed`, so they appear in the install-state summary instead of vanishing into a plain echo. **Still TODO:** have `verify.sh` check every warning-only capability it claims is installed.
 
 ### 🟡 11. Verification: separate required / optional / personal / test-only
 `verify.sh` mixes a personal `win11` VM, lab tooling, credentials, GUI apps and
@@ -124,7 +124,7 @@ declarative profiles + capability groups; add non-destructive behavioural checks
 
 ## Small open items
 
-- **yazi**: optional Sway keybind (`Mod+…` → `foot -e yazi`) — not bound yet (pick a non-conflicting key first); optional shell hook to `cd` into yazi's last dir on exit.
+- **yazi**: ✅ Sway keybind bound — `Mod+Y` opens yazi in a new foot terminal (2026-06-11). Still optional: a shell hook to `cd` into yazi's last dir on exit.
 - **NordVPN**: a stale `NORDVPN_REPO=failed` lingers in the install-state file from a day the repo was unreachable — clear with `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh`.
 - **Thunderbird**: after message filters are recreated and tested manually, add `msgFilterRules.dat` to repo automation as symlinked profile files with one-time backups.
 

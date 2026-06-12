@@ -86,15 +86,13 @@ bash "$DOTFILES/scripts/setup-neovim-config.sh"
 
 # yazi is not in Fedora's repos, so install it user-local from its GitHub release
 # (no root/reboot). ffmpegthumbnailer for previews comes from packages.sh.
-echo "==> Setting up yazi..."
-bash "$DOTFILES/scripts/setup-yazi.sh" || echo "    (yazi install skipped/failed — see output above)"
+run_step_warn "YAZI_INSTALLED" "Setting up yazi" bash "$DOTFILES/scripts/setup-yazi.sh"
 
 # Zed (GUI editor) is not in Fedora's repos and the Flathub build is an unofficial
 # wrapper, so install the official upstream binary user-local from its GitHub
 # release (no root/reboot). Launched on demand — no autostart/keybinding; Neovim
 # stays the terminal editor. The asset is ~140 MB, so this can take a while.
-echo "==> Setting up Zed..."
-bash "$DOTFILES/scripts/setup-zed.sh" || echo "    (Zed install skipped/failed — see output above)"
+run_step_warn "ZED_INSTALLED" "Setting up Zed" bash "$DOTFILES/scripts/setup-zed.sh"
 
 # Use versioned git hooks from this repo, including the gitleaks pre-push check.
 if git -C "$DOTFILES" rev-parse --is-inside-work-tree &>/dev/null; then
@@ -116,19 +114,22 @@ fi
 # Container engine for the dev containers (Podman/kind cannot run nested
 # inside a rootless toolbox/distrobox, so the containers use the HOST engine
 # as a remote — see containers.conf.d written by the container setup scripts).
-echo "==> Enabling host Podman socket for dev containers..."
-systemctl --user enable --now podman.socket 2>/dev/null || \
-    echo "    (could not enable podman.socket — enable it manually with: systemctl --user enable --now podman.socket)"
+run_step_warn "PODMAN_SOCKET" "Enabling host Podman socket for dev containers" \
+    systemctl --user enable --now podman.socket
 
 # Rootless kind needs cpuset (and cpu) cgroup delegation for the user manager.
-if [[ ! -f /etc/systemd/system/user@.service.d/delegate.conf ]]; then
+if [[ -f /etc/systemd/system/user@.service.d/delegate.conf ]]; then
+    step_done "CGROUP_DELEGATION"
+else
     echo "==> Adding cgroup delegation for rootless kind (needs sudo)..."
     if sudo mkdir -p /etc/systemd/system/user@.service.d && \
        printf '[Service]\nDelegate=cpu cpuset io memory pids\n' | sudo tee /etc/systemd/system/user@.service.d/delegate.conf >/dev/null; then
         sudo systemctl daemon-reload
         echo "    ✓ Delegation set — takes effect after the next login."
+        step_done "CGROUP_DELEGATION"
     else
         echo "    ⚠ Could not write delegation — kind clusters may fail until you add it."
+        step_failed "CGROUP_DELEGATION"
     fi
 fi
 

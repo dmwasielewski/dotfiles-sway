@@ -214,7 +214,7 @@ For this disposable validation VM, the kickstart uses `ostreesetup --nogpg` beca
 - Install state from `~/.dotfiles-install-state` (written by each script)
 - Install log from `~/.dotfiles-install.log` with date/time on every line
 
-If anything failed during installation, re-run the relevant script — all scripts are safe to run multiple times and will skip already-completed steps.
+If anything failed during installation, re-run the relevant script. Re-running is supported: many steps detect existing resources and skip (toolbox, Flatpaks, fonts, cloned repos), but the framework does **not** resume from saved state — most steps simply execute again and overwrite their state entry, and a few are deliberately destructive on rerun (e.g. `setup.sh` replaces `~/.bashrc` with the repo symlink). Expect repeated work rather than a pure resume. (A real state-driven resume is tracked in `BACKLOG.md`, items 1 and 7.)
 
 ### Troubleshooting install failures
 
@@ -300,6 +300,7 @@ Flathub deprecated the plain `org.mozilla.Thunderbird` ID in favour of
 | Shortcut | Action |
 |---|---|
 | `Mod+Return` | Open terminal (foot) |
+| `Mod+Y` | Open yazi (terminal file manager) in a new terminal |
 | `Mod+D` | Application launcher (rofi) |
 | `Mod+Q` | Close focused **window** only (e.g. one browser Settings window — the rest of the app keeps running) |
 | `Mod+Shift+Q` | Close the whole **app** (terminates the process, so Chromium/Electron apps don't linger) |

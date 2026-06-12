@@ -407,6 +407,7 @@ Config is in `sway/config.d/90-swayidle.conf` (overrides Fedora's system default
 | Shortcut | Action |
 |---|---|
 | `Mod+Return` | Terminal (foot) |
+| `Mod+Y` | yazi (terminal file manager) in a new terminal |
 | `Mod+D` | App launcher (rofi) |
 | `Mod+C` | Clipboard history (clipman + rofi) |
 | `Mod+Shift+Q` | Fully close focused app (SIGTERM to its process, not just the window — so Chromium/Electron apps don't linger in the background; `scripts/close-focused-app.sh`) |
