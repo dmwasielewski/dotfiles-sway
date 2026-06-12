@@ -24,7 +24,9 @@ case "$cmd" in
         sudo cryptsetup open "$dev" "$VAULT_MAPPER"
         mkdir -p "$VAULT_MOUNT"; chmod 700 "$VAULT_MOUNT"
         sudo mount "/dev/mapper/$VAULT_MAPPER" "$VAULT_MOUNT"
-        sudo chown "$USER:$USER" "$VAULT_MOUNT"
+        # Take ownership of the whole tree: the scaffold may have been created by
+        # root during setup, so chown -R ensures the normal user can edit secrets.
+        sudo chown -R "$USER:$USER" "$VAULT_MOUNT"
         echo "vault: unlocked at $VAULT_MOUNT" ;;
     lock)
         mountpoint -q "$VAULT_MOUNT" && sudo umount "$VAULT_MOUNT"

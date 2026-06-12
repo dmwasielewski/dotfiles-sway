@@ -72,6 +72,9 @@ Backup (B2):
   clone-vault.sh ~/.vault /run/media/$USER/VAULT2   # second LUKS USB
 README
 chmod -R go-rwx "$mnt"
+# If invoked via sudo, hand the scaffold to the real user so they can edit it.
+# (When run from a raw root shell, `vault unlock` chowns the tree on first mount.)
+[[ -n "${SUDO_USER:-}" ]] && chown -R "$SUDO_USER:$SUDO_USER" "$mnt"
 
 umount "$mnt"; rmdir "$mnt"
 cryptsetup close "$VAULT_MAPPER"
