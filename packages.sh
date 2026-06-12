@@ -37,7 +37,9 @@ echo "==> Layering system packages (reboot required after)..."
 #             which is already in the Fedora base; yazi itself is NOT in Fedora repos
 #             and is installed user-local via scripts/setup-yazi.sh, not here).
 #             yazi previews images directly via foot's sixel support.
-PACKAGES="mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer virt-install bridge-utils wtype alsa-utils neovim gitleaks ripgrep fd-find fzf wl-clipboard python3-virtualenv ShellCheck libwebp-tools nodejs npm make webkit2gtk4.1 ffmpegthumbnailer"
+# age         - file encryption for the secrets vault's repo backup (vault.age).
+#             cryptsetup (LUKS2 for the vault) is already in the base image.
+PACKAGES="mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer virt-install bridge-utils wtype alsa-utils neovim gitleaks ripgrep fd-find fzf wl-clipboard python3-virtualenv ShellCheck libwebp-tools nodejs npm make webkit2gtk4.1 ffmpegthumbnailer age"
 
 # Intel GPU check
 if lspci | grep -qi "Intel.*Graphics"; then
