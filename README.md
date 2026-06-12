@@ -924,6 +924,34 @@ The `custom/claude` Waybar module changes colour based on Claude Code state:
 
 ---
 
+## Secrets vault (encrypted USB)
+
+A permanent, LUKS2-encrypted USB drive holds all API keys and tokens (AI services,
+GitHub, VPN, SSH …) — one file per secret. It is the day-to-day source of truth for
+keys **and** the single source the install consumes. Tooling lives in
+`scripts/vault/`; the secrets themselves never enter any repo.
+
+Day-to-day:
+
+```bash
+scripts/vault/vault unlock          # cryptsetup open + mount (asks the passphrase once)
+scripts/vault/vault get ai/anthropic.key
+scripts/vault/vault list
+eval "$(scripts/vault/vault env ai)" # load a group into the current shell, on demand
+scripts/vault/vault lock
+```
+
+- **Layout:** `ai/`, `dev/` (github-token, `ssh/`), `vpn/`, `accounts/`, `install/manifest.toml`. One file = one secret; add a file to add a secret.
+- **Device discovery:** by GPT `PARTLABEL=vault`, never a hardcoded `/dev/sdX`.
+- **Install use:** the orchestrator unlocks once, plants every secret named in `install/manifest.toml` (`env` / `file` / `command` actions), copies post-reboot secrets to a `0600` on-disk staging dir, and frees the USB — reboots no longer need it.
+- **Backup (B2):** `clone-vault.sh` to a second LUKS USB, plus `backup-vault.sh` → `vault.age` (age ciphertext) committed to a **private** `dotfiles-secrets` repo guarded by `vault-precommit-guard.sh` (only `vault.age` may be committed).
+- **Setup:** `sudo scripts/vault/setup-vault-usb.sh /dev/sdX` (destructive; re-confirms the device and requires typing its path). `cryptsetup`/`parted` ship in the Fedora base; `age` is layered via `packages.sh`.
+
+Design + plan: `docs/superpowers/specs/2026-06-12-secrets-vault-design.md`,
+`docs/superpowers/plans/2026-06-12-secrets-vault.md`.
+
+---
+
 ## KVM Virtualisation
 
 QEMU/KVM installed via rpm-ostree — hardware-accelerated virtualisation using AMD-V.

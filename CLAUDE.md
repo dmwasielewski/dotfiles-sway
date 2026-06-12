@@ -626,6 +626,31 @@ works directly, just without the flicker flags.
 `foot/foot.ini` also sets `damage-whole-window=yes` to reduce rare full-window
 TUI repaint flicker when the terminal is maximized.
 
+## Secrets vault (encrypted USB)
+
+All API keys/tokens live on a LUKS2-encrypted USB, one file per secret, under
+`scripts/vault/` tooling. It is both the day-to-day key store and the single
+source the install consumes. **Secrets never enter any repo.**
+
+- `scripts/vault/vault` — `unlock|lock|status|get|list|env`. Device commands use
+  `sudo cryptsetup`; data commands (`get`/`list`/`env`) operate on `$VAULT_MOUNT`
+  and are unit-tested with plain files in `tests/vault/`.
+- `scripts/vault/lib-vault.sh` — shared config + device discovery **by GPT
+  `PARTLABEL=vault`** (never a hardcoded `/dev/sdX`) + the data layer.
+- `scripts/vault/setup-vault-usb.sh` — DESTRUCTIVE LUKS2 setup (parted + cryptsetup,
+  both in the Fedora base); re-confirms the device and requires typing its path.
+- `install/manifest.toml` (`env`/`file`/`command` actions) maps install-consumed
+  secrets to destinations — config, not logic; the orchestrator applies it via
+  `scripts/vault/vault-apply-manifest.sh` (parsed by `vault-parse-manifest.py`,
+  python3 `tomllib`).
+- Backup B2: `clone-vault.sh` (second LUKS USB) + `backup-vault.sh` → `vault.age`
+  (`age` ciphertext, layered via `packages.sh`) into a **private** `dotfiles-secrets`
+  repo guarded by `vault-precommit-guard.sh` (only `vault.age` may be committed).
+- Tests: `bash tests/vault/run.sh` (data layer, toolbox); `tests/vault/integration/`
+  is host-run against a loopback LUKS image (no real hardware).
+- Spec/plan: `docs/superpowers/specs/2026-06-12-secrets-vault-design.md`,
+  `docs/superpowers/plans/2026-06-12-secrets-vault.md`.
+
 ### ShellGPT
 
 ShellGPT is installed automatically by `scripts/setup-damian-container.sh` via `pip3 install --user "shell-gpt[litellm]"`.

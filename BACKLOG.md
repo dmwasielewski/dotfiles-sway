@@ -21,6 +21,10 @@ only reboots; `bootstrap.sh` ends at "reboot required" and prints manual command
 **Do:** a first-boot unit that clones the exact commit and runs phase 1, then a
 phase-2 unit that resumes after the new deployment boots; disable each unit only
 after its phase verifies. Keep secrets/logins as explicit manual gates.
+**Dependency ready:** the **encrypted secrets vault** the orchestrator consumes is
+built (`scripts/vault/`, spec `docs/superpowers/specs/2026-06-12-secrets-vault-design.md`,
+plan `docs/superpowers/plans/2026-06-12-secrets-vault.md`). The orchestrator unlocks
+it once and applies `install/manifest.toml`.
 
 ### 🔴 2. `setup.sh` no longer hard-depends on a to-be-layered package — ✅ DONE (2026-06-11)
 `setup.sh` exited if `unzip` was missing, but `packages.sh` (which layers `unzip`)
