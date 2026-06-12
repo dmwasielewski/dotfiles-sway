@@ -1,0 +1,42 @@
+#!/bin/bash
+set -uo pipefail
+HERE="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=scripts/vault/lib-vault.sh
+source "$HERE/lib-vault.sh"
+
+usage() { cat >&2 <<EOF
+vault <command>
+  unlock           cryptsetup open + mount the vault (asks passphrase)
+  lock             unmount + cryptsetup close
+  status           show locked/unlocked + mountpoint
+  get <path>       print one secret (e.g. ai/anthropic.key)
+  list             list secret paths (names only)
+  env <group>      print export lines for a group: eval "\$(vault env ai)"
+EOF
+}
+
+require_unlocked() { vault_is_unlocked || { echo "vault: locked — run 'vault unlock'" >&2; exit 1; }; }
+
+cmd="${1:-}"; shift || true
+case "$cmd" in
+    unlock)
+        dev="$(vault_device)"; [[ -n "$dev" ]] || { echo "vault: device not found (PARTLABEL=$VAULT_PARTLABEL)" >&2; exit 1; }
+        sudo cryptsetup open "$dev" "$VAULT_MAPPER"
+        mkdir -p "$VAULT_MOUNT"; chmod 700 "$VAULT_MOUNT"
+        sudo mount "/dev/mapper/$VAULT_MAPPER" "$VAULT_MOUNT"
+        sudo chown "$USER:$USER" "$VAULT_MOUNT"
+        echo "vault: unlocked at $VAULT_MOUNT" ;;
+    lock)
+        mountpoint -q "$VAULT_MOUNT" && sudo umount "$VAULT_MOUNT"
+        [[ -e "/dev/mapper/$VAULT_MAPPER" ]] && sudo cryptsetup close "$VAULT_MAPPER"
+        echo "vault: locked" ;;
+    status)
+        if vault_is_unlocked; then echo "unlocked at $VAULT_MOUNT"; else echo "locked"; fi ;;
+    # Data commands work against a real mount or, in tests, any populated
+    # $VAULT_MOUNT directory — so they don't require the device layer.
+    get)  [[ -d "$VAULT_MOUNT" ]] || require_unlocked; vault_get "${1:?path}";;
+    list) [[ -d "$VAULT_MOUNT" ]] || require_unlocked; vault_list ;;
+    env)  [[ -d "$VAULT_MOUNT" ]] || require_unlocked; vault_env "${1:?group}";;
+    ""|-h|--help) usage ;;
+    *) echo "vault: unknown command: $cmd" >&2; usage; exit 2 ;;
+esac
