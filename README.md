@@ -946,6 +946,7 @@ scripts/vault/vault lock
 - **Install use:** the orchestrator unlocks once, plants every secret named in `install/manifest.toml` (`env` / `file` / `command` actions), copies post-reboot secrets to a `0600` on-disk staging dir, and frees the USB — reboots no longer need it.
 - **Backup (B2):** `clone-vault.sh` to a second LUKS USB, plus `backup-vault.sh` → `vault.age` (age ciphertext) committed to a **private** `dotfiles-secrets` repo guarded by `vault-precommit-guard.sh` (only `vault.age` may be committed).
 - **Setup:** `sudo scripts/vault/setup-vault-usb.sh /dev/sdX` (destructive; re-confirms the device and requires typing its path). `cryptsetup`/`parted` ship in the Fedora base; `age` is layered via `packages.sh`.
+- **Unattended install:** on a fresh Fedora Sway Atomic, plug the vault USB and run `bash <(curl -fsSL https://raw.githubusercontent.com/dmwasielewski/dotfiles-sway/main/scripts/install-from-usb.sh)` — it clones the repo, unlocks the vault, and runs the orchestrator (one LUKS passphrase + one sudo password, then unattended through the reboot).
 
 Design + plan: `docs/superpowers/specs/2026-06-12-secrets-vault-design.md`,
 `docs/superpowers/plans/2026-06-12-secrets-vault.md`.
