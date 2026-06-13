@@ -64,3 +64,25 @@ for dep in d.get("deployments",[]):
 current_deployment_id() {
     rpm-ostree status --json 2>/dev/null | deployment_id_from_json
 }
+
+ORCH_SUDOERS=/etc/sudoers.d/10-dotfiles-provisioning
+
+# Pure: emit the scoped sudoers content for $1=user. Limited to the provisioning
+# commands the orchestrated scripts actually call unattended.
+provisioning_sudoers_content() {
+    local user="$1"
+    cat <<EOF
+# Temporary, written by the dotfiles orchestrator; removed in phase P3 (finalize).
+$user ALL=(ALL) NOPASSWD: /usr/bin/rpm-ostree, /usr/bin/systemctl, /usr/sbin/usermod, /usr/bin/mkdir, /usr/bin/tee
+EOF
+}
+
+# Privileged: install/remove the drop-in (validated with visudo -c before install).
+write_provisioning_sudoers() {
+    local tmp; tmp="$(mktemp)"
+    provisioning_sudoers_content "$USER" > "$tmp"
+    sudo install -m 0440 -o root -g root "$tmp" "$ORCH_SUDOERS"
+    rm -f "$tmp"
+    sudo visudo -cf "$ORCH_SUDOERS" >/dev/null
+}
+remove_provisioning_sudoers() { sudo rm -f "$ORCH_SUDOERS"; }
