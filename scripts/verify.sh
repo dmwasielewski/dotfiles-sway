@@ -31,6 +31,29 @@ fail()    { echo -e "  ${RED}✗${NC}  $1"; ((FAIL+=1)); FAILURES+=("$1"); FIXES
 warn()    { echo -e "  ${YELLOW}⚠${NC}  $1"; ((WARN+=1)); }
 section() { echo -e "\n${BOLD}${BLUE}━━━ $1 ━━━${NC}"; }
 
+PROFILE="full"
+for arg in "$@"; do
+    case "$arg" in
+        --profile=*) PROFILE="${arg#*=}" ;;
+        --profile)   PROFILE="__next__" ;;
+        *) [[ "$PROFILE" == "__next__" ]] && PROFILE="$arg" ;;
+    esac
+done
+case "$PROFILE" in phase1|post-reboot|full) ;; *) echo "unknown profile: $PROFILE" >&2; exit 2 ;; esac
+
+# Which section groups run in each profile.
+profile_includes() { # $1 profile, $2 section
+    case "$1" in
+        phase1)      [[ "$2" == base ]] ;;
+        post-reboot) [[ "$2" == base || "$2" == kvm || "$2" == containers ]] ;;
+        full)        return 0 ;;
+        *)           return 1 ;;
+    esac
+}
+
+# Allow sourcing (tests) to load functions without executing the checks.
+(return 0 2>/dev/null) && return 0
+
 # Detect if running inside a toolbox container
 IN_TOOLBOX=false
 [[ -f /run/.toolboxenv ]] && IN_TOOLBOX=true
@@ -267,6 +290,7 @@ else
     warn "Font Awesome — check ~/.local/share/fonts/FontAwesome/"
 fi
 
+if profile_includes "$PROFILE" containers; then
 # ── 5. Toolbox ────────────────────────────────────────────────────────────
 section "5. Toolbox '$TOOLBOX_CONTAINER' (dev environment)"
 
@@ -488,6 +512,7 @@ elif host systemctl list-unit-files adguard-*.service 2>/dev/null | grep -q '^ad
 else
     warn "AdGuard service unit not found — this CLI install may be using the root helper only; verify with adguard-cli status"
 fi
+fi  # end containers (Toolbox / Ubuntu distrobox / NordVPN / AdGuard)
 
 # ── 5c. Neovim ───────────────────────────────────────────────────────────
 section "5c. Neovim"
@@ -541,6 +566,7 @@ else
     warn "Git pre-push secret scan hook not configured — run: git -C ~/dotfiles-sway config core.hooksPath .githooks"
 fi
 
+if profile_includes "$PROFILE" containers; then
 # ── 5c. Voice typing ─────────────────────────────────────────────────────
 section "5c. Voice typing"
 
@@ -633,7 +659,9 @@ if host podman container exists security 2>/dev/null; then
 else
     fail "Distrobox 'security'  NOT FOUND" "bash ~/dotfiles-sway/scripts/setup-security-container.sh"
 fi
+fi  # end containers (Voice typing / security distrobox)
 
+if profile_includes "$PROFILE" kvm; then
 # ── 7. KVM / virtualisation ───────────────────────────────────────────────
 section "7. KVM / virtualisation"
 
@@ -703,6 +731,7 @@ if host ls /dev/dri/renderD128 &>/dev/null 2>&1; then
 else
     warn "/dev/dri/renderD128 not found"
 fi
+fi  # end kvm (KVM / VMs / Hardware)
 
 # ── 9. Manual steps reminder ──────────────────────────────────────────────
 section "9. Manual steps (require human interaction)"
