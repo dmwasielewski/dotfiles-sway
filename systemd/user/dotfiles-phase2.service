@@ -1,0 +1,13 @@
+[Unit]
+Description=dotfiles-sway install phase 2 (post-reboot resume)
+After=default.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/dotfiles-sway/orchestrate.sh resume
+# Do not fail the boot if a phase needs another login; the service stays enabled
+# and retries on the next start until orchestrate.sh disables it in finalize.
+SuccessExitStatus=0 75
+
+[Install]
+WantedBy=default.target
