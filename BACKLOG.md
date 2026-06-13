@@ -15,16 +15,21 @@ The audit's headline finding: the repo does **not** yet deliver the advertised
 run post-reboot scripts, and several steps report success before the component
 actually works. These are ordered by the audit's priority list.
 
-### 🔴 1. Resumable orchestrator + reboot handoff
-There is no kickstart→bootstrap or reboot→phase-2 continuation. `kickstarts/fedora-sway-atomic.ks`
-only reboots; `bootstrap.sh` ends at "reboot required" and prints manual commands.
-**Do:** a first-boot unit that clones the exact commit and runs phase 1, then a
-phase-2 unit that resumes after the new deployment boots; disable each unit only
-after its phase verifies. Keep secrets/logins as explicit manual gates.
-**Dependency ready:** the **encrypted secrets vault** the orchestrator consumes is
-built (`scripts/vault/`, spec `docs/superpowers/specs/2026-06-12-secrets-vault-design.md`,
-plan `docs/superpowers/plans/2026-06-12-secrets-vault.md`). The orchestrator unlocks
-it once and applies `install/manifest.toml`.
+### 🔴 1. Resumable orchestrator + reboot handoff — ✅ BUILT (2026-06-13); VM validation pending
+A minimal **phase runner** now bridges P0 (launch) → P1 (bootstrap) → rpm-ostree
+reboot → P2 (post-reboot, via a systemd **user** service) → P3 (finalize), unattended.
+Built: `orchestrate.sh`, `scripts/lib-orchestrate.sh` (state keys REPO_COMMIT/PHASE/
+DEPLOYMENT_ID, resumable phase loop, deployment-id parsing, scoped provisioning
+sudoers removed at finalize), `systemd/user/dotfiles-phase2.service` +
+`scripts/setup-orchestrator-service.sh` (linger), `scripts/install-from-usb.sh`
+(clone → vault unlock → harvest → run), and `verify.sh --profile {phase1|post-reboot|full}`.
+Engine logic is unit-tested (`tests/orchestrate/`, all green); the real end-to-end
+is validated in the disposable VM — see `tests/orchestrate/integration/README.md`.
+Spec `docs/superpowers/specs/2026-06-13-orchestrator-design.md`, plan
+`docs/superpowers/plans/2026-06-13-orchestrator.md`. The **encrypted secrets vault**
+it consumes is also built (`scripts/vault/`). **Remaining:** run the VM end-to-end
+once (confirms the systemd-linger resume; Sway-autostart fallback documented if it
+fails). Manifest-driven rebuild (#8) and full versioned state (#7) stay deferred.
 
 ### 🔴 2. `setup.sh` no longer hard-depends on a to-be-layered package — ✅ DONE (2026-06-11)
 `setup.sh` exited if `unzip` was missing, but `packages.sh` (which layers `unzip`)
