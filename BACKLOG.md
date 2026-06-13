@@ -98,12 +98,16 @@ Vivaldi-PWA divergence is now gone). **Do:** one idempotent session-bootstrap as
 the only startup source (detect existing windows, no duplicates), and generate
 next-step text from the same manifest the orchestrator/verifier use.
 
-### 🟡 9. Static CI — ✅ DONE (2026-06-14)
-ksvalidator on the rendered kickstart, ShellCheck, `set -e` behaviour tests
-(counters/functions in `if`), state-machine tests (clean/interrupted/failed-download/
-resume/dirty-checkout/changed-manifest), rpm-ostree parse fixtures, and assertions
-that every aggregate `READY` implies its required component states and that verifier
-failures exit nonzero.
+### 🟡 9. Static CI — ✅ DONE (infra, 2026-06-14)
+`.github/workflows/ci.yml` runs on every push/PR to main: **lint** (`bash -n` +
+`shellcheck -S error` on all 74 shell files), the **vault + orchestrator unit
+suites**, and **ksvalidator** on the rendered kickstart. This is the static-CI
+infrastructure plus the existing tests; the `set -e` counter bug is already fixed
+(see "Concrete bugs" below) and rpm-ostree parsing has a fixture test.
+**Still TODO (deeper coverage):** state-machine tests for interrupted / resume /
+dirty-checkout / changed-manifest, and assertions that every aggregate `READY`
+implies its required component states. These are new test cases to add over time,
+not CI plumbing.
 
 ### Concrete bugs found by the audit
 - ✅ **`((VERIFY_FAIL++))` under `set -e`** kills the container setup scripts at the first missing tool (post-increment returns 1 when the prior value is 0). **Fixed** → `VERIFY_FAIL=$((VERIFY_FAIL + 1))` in both setup scripts.
