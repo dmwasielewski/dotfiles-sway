@@ -98,7 +98,7 @@ Vivaldi-PWA divergence is now gone). **Do:** one idempotent session-bootstrap as
 the only startup source (detect existing windows, no duplicates), and generate
 next-step text from the same manifest the orchestrator/verifier use.
 
-### 🟡 9. Static CI
+### 🟡 9. Static CI — ✅ DONE (2026-06-14)
 ksvalidator on the rendered kickstart, ShellCheck, `set -e` behaviour tests
 (counters/functions in `if`), state-machine tests (clean/interrupted/failed-download/
 resume/dirty-checkout/changed-manifest), rpm-ostree parse fixtures, and assertions

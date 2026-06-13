@@ -1,0 +1,53 @@
+name: CI
+
+# Static checks for dotfiles-sway: shell linting, the bash unit-test suites
+# (vault + orchestrator), and kickstart validation. Runs on every push/PR to main.
+# Catches the classes of bug we have hit by hand: broken inline comments, wrong
+# relative paths in tests, and `set -e` counter traps.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Shell lint (bash -n + shellcheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect shell files
+        id: files
+        run: |
+          # all *.sh plus the extensionless vault CLI (bash shebang)
+          { git ls-files '*.sh'; echo scripts/vault/vault; } | sort -u > /tmp/shfiles
+          echo "count=$(wc -l < /tmp/shfiles)" >> "$GITHUB_OUTPUT"
+      - name: bash -n (syntax)
+        run: while read -r f; do echo "bash -n $f"; bash -n "$f"; done < /tmp/shfiles
+      - name: shellcheck (errors only)
+        run: xargs -a /tmp/shfiles shellcheck -S error
+
+  test:
+    name: Bash unit tests (vault + orchestrator)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: vault data-layer suite
+        run: bash tests/vault/run.sh
+      - name: orchestrator engine suite
+        run: bash tests/orchestrate/run.sh
+
+  kickstart:
+    name: Kickstart validation (ksvalidator)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pykickstart
+        run: pip install --quiet pykickstart
+      - name: Render placeholders and validate
+        run: |
+          sed -e 's|__HOST_SSH_PUBKEY__|ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICIfakekeyforci ci@example|' \
+              -e 's|__OSTREE_URL__|https://example.com/ostree/repo|' \
+              kickstarts/fedora-sway-atomic.ks > /tmp/rendered.ks
+          ksvalidator /tmp/rendered.ks
