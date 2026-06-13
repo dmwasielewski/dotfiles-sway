@@ -34,3 +34,17 @@ phase_is_done() {
     done_idx="$(phase_index "$rec")"
     [[ "$done_idx" -ge "$want" ]]
 }
+
+# Run every phase not yet done, in order, marking each done as it finishes.
+# Phase bodies are functions phase_P0..phase_P3 defined by the caller
+# (orchestrate.sh for real runs; tests provide stubs). A phase that reboots
+# (P1) marks itself done before rebooting, so this loop never returns past it.
+orchestrate_run_remaining() {
+    local p
+    for p in "${ORCH_PHASES[@]}"; do
+        phase_is_done "$p" && continue
+        echo "==> phase $p"
+        "phase_$p"
+        mark_phase "$p"
+    done
+}
