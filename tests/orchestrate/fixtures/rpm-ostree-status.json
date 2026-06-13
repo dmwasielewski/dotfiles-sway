@@ -1,0 +1,6 @@
+{
+  "deployments": [
+    { "booted": true,  "checksum": "aaaa1111", "version": "44.20260613.0" },
+    { "booted": false, "checksum": "bbbb2222", "version": "44.20260601.0" }
+  ]
+}

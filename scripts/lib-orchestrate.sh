@@ -48,3 +48,19 @@ orchestrate_run_remaining() {
         mark_phase "$p"
     done
 }
+
+# Parse the booted deployment checksum from `rpm-ostree status --json` (stdin).
+deployment_id_from_json() {
+    python3 -c '
+import json,sys
+d=json.load(sys.stdin)
+for dep in d.get("deployments",[]):
+    if dep.get("booted"):
+        print(dep.get("checksum","")); break
+'
+}
+
+# Live booted deployment id (empty if rpm-ostree is unavailable, e.g. in a container).
+current_deployment_id() {
+    rpm-ostree status --json 2>/dev/null | deployment_id_from_json
+}
