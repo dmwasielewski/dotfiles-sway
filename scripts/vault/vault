@@ -1,6 +1,8 @@
 #!/bin/bash
 set -uo pipefail
-HERE="$(cd "$(dirname "$0")" && pwd)"
+# Resolve through a symlink (e.g. ~/.local/bin/vault) so we find lib-vault.sh
+# next to the real script, not next to the symlink.
+HERE="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 # shellcheck source=scripts/vault/lib-vault.sh
 source "$HERE/lib-vault.sh"
 
