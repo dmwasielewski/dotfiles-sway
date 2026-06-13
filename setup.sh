@@ -67,6 +67,7 @@ ln -sf "$DOTFILES/scripts/updates-do.sh"                       ~/.local/bin/upda
 ln -sf "$DOTFILES/scripts/updates-menu.sh"                     ~/.local/bin/updates-menu
 ln -sf "$DOTFILES/scripts/power-menu.sh"                       ~/.local/bin/power-menu
 ln -sf "$DOTFILES/scripts/close-focused-app.sh"               ~/.local/bin/close-focused-app
+ln -sf "$DOTFILES/scripts/vault/vault"                        ~/.local/bin/vault
 ln -sf "$DOTFILES/scripts/enter-damianf.sh"                    ~/.local/bin/damianf
 ln -sf "$DOTFILES/scripts/enter-damianu.sh"                    ~/.local/bin/damianu
 ln -sf "$DOTFILES/scripts/bat-wrapper.sh"                      ~/.local/bin/bat
