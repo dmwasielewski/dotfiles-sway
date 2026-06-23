@@ -29,7 +29,7 @@ jobs:
         run: xargs -a /tmp/shfiles shellcheck -S error
 
   test:
-    name: Bash unit tests (vault + orchestrator)
+    name: Bash unit tests (vault + orchestrator + updates)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,6 +37,8 @@ jobs:
         run: bash tests/vault/run.sh
       - name: orchestrator engine suite
         run: bash tests/orchestrate/run.sh
+      - name: update-indicator suite
+        run: bash tests/updates/run.sh
 
   kickstart:
     name: Kickstart validation (ksvalidator)

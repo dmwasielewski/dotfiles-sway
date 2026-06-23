@@ -112,6 +112,7 @@ baseurl = ${REPO_URL}/\$basearch
 enabled = 1
 gpgcheck = 1
 gpgkey = file://${KEY_FILE}
+skip_if_unavailable = True
 
 [nordvpn-noarch]
 name = NordVPN YUM repository - noarch
@@ -119,10 +120,31 @@ baseurl = ${REPO_URL}/noarch
 enabled = 1
 gpgcheck = 1
 gpgkey = file://${KEY_FILE}
+skip_if_unavailable = True
 EOF
 }
 
+# rpm-ostree aborts its ENTIRE metadata refresh if a single enabled repo is
+# unreachable. repo.nordvpn.com is regularly unreachable here — most reliably
+# while the NordVPN tunnel is connected, when it stops resolving — which would
+# otherwise make every `rpm-ostree upgrade --check` fail and freeze the Waybar
+# update indicator on a stale "updates pending" (amber). skip_if_unavailable
+# tells libdnf/rpm-ostree to skip this third-party repo when it is down instead
+# of failing the whole operation. Idempotent: only add it where it is missing,
+# so it also heals repo files written before this directive existed.
+ensure_repo_resilient() {
+    [[ -f "$REPO_FILE" ]] || return 0
+    grep -q '^[[:space:]]*skip_if_unavailable' "$REPO_FILE" && return 0
+    if ! sudo -n true >/dev/null 2>&1; then
+        echo "sudo credentials are required to add skip_if_unavailable to $REPO_FILE; run 'sudo -v' and rerun" >&2
+        return 1
+    fi
+    # Append the directive after each NordVPN section header ([nordvpn], [nordvpn-noarch]).
+    sudo -n sed -i '/^\[nordvpn/a skip_if_unavailable = True' "$REPO_FILE"
+}
+
 run_step "NORDVPN_REPO" "Configuring NordVPN repository" ensure_repo
+run_step "NORDVPN_REPO_RESILIENT" "Making NordVPN repo non-fatal when offline" ensure_repo_resilient
 
 if command -v nordvpn >/dev/null 2>&1; then
     echo "==> NordVPN CLI already installed — skipping install."

@@ -407,7 +407,7 @@ The `custom/updates` module (`⬆` icon) tracks pending updates across four sour
 
 - **Flatpak** apps
 - **Containers** (auto-discovered distrobox + toolbox; flagged stale past a threshold)
-- **Fedora OS** (`rpm-ostree`; uses a last-known-good cache so it still reports when the repo is offline)
+- **Fedora OS** (`rpm-ostree`; uses a last-known-good cache so it still reports when the repo is offline). A **staged** update (downloaded, pending the next reboot) is detected from the local `rpm-ostree status --json` `staged` field (`staged_from_json` in `lib-updates.sh`) — this reads ground truth on disk, needs **no network**, and so is reported correctly even when the upgrade *check* cannot reach a repo. (The previous detector grepped the human-readable status for the literal `(staged)`, which current rpm-ostree no longer prints, so a real pending-reboot update went unreported and showed amber instead of red.)
 - **User-local apps** — GitHub-release tools that are in no distro repo and have no self-updater (e.g. `yazi`). Each such tool self-registers a key=value manifest under `~/.local/share/dotfiles-updates/` when its setup script installs it; the detector discovers manifests dynamically (no tool names hardcoded), compares the installed version against the latest GitHub tag (`sort -V`, with a 3 h last-known-good tag cache for offline), and updating re-runs the tool's own setup script. Tools covered elsewhere deliberately do **not** register here — Neovim comes from the package manager, and Zed self-updates.
 
 **Severity classes — the colour encodes the action required of you:**
@@ -463,7 +463,7 @@ pair <MAC_ADDRESS>
 - Mako displays notifications but does not play notification sounds itself. Mail sounds should be handled by Thunderbird/PipeWire; if Thunderbird's default system sound stays silent, set a concrete custom sound in Thunderbird rather than debugging Mako first.
 - Kdenlive is installed as the Flathub Flatpak `org.kde.kdenlive`. Its effects/filters come from the Kdenlive/MLT stack, including bundled `frei0r`/`avfilter` support and Flatpak audio plugin extensions pulled in by Flathub; do not layer host video-effect packages unless a specific missing effect is verified.
 - TODO: after Thunderbird filters are recreated manually and tested, add `msgFilterRules.dat` files to repo automation as symlinked profile files with backups.
-- NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start
+- NordVPN: official Linux CLI install via `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh` with automatic `nordvpnd` enable/start. The generated `/etc/yum.repos.d/nordvpn.repo` sets `skip_if_unavailable = True` on both sections: `repo.nordvpn.com` is regularly unreachable (most reliably while the NordVPN tunnel is connected, when it stops resolving), and without this `rpm-ostree` would abort its **entire** metadata refresh on that one third-party repo — freezing the Waybar update indicator on a stale "updates pending" amber. The setup script also heals existing repo files that predate the directive (idempotent `ensure_repo_resilient` step).
 - AdGuard for Linux: official CLI install via `bash ~/dotfiles-sway/scripts/setup-adguard.sh`; first-time `activate/configure/start` stays manual
 - Ubuntu dev container must be created after first reboot (distrobox installed via packages.sh)
 - Rebuild Ubuntu dev container manually: `bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh`

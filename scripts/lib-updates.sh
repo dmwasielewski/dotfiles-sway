@@ -87,7 +87,17 @@ flatpak_last_label() {
 # The check is slow and network-flaky, so callers run os_check_raw ONCE and
 # pass the captured text to the os_parse_* helpers (no repeated subshell calls).
 os_check_raw()  { rpm-ostree upgrade --check 2>&1 || true; }   # call once, capture
-os_staged()     { rpm-ostree status 2>/dev/null | grep -q "(staged)" && echo 1 || echo 0; }
+# staged_from_json: echo 1 if any deployment is staged (downloaded, pending the
+# next reboot), else 0. Reads `rpm-ostree status --json` on stdin so it is unit-
+# testable without rpm-ostree. The "staged" boolean is the authoritative signal —
+# the old check grepped the human-readable status for the literal "(staged)",
+# which current rpm-ostree no longer prints, so a real pending-reboot update was
+# never detected (it showed amber instead of red "reboot to apply"). Same field
+# and "staged and not booted" rule already used by setup-nordvpn.sh.
+staged_from_json() {
+    python3 -c $'import json,sys\ntry: d=json.load(sys.stdin)\nexcept Exception: print(0); sys.exit(0)\nprint(1 if any(x.get("staged") and not x.get("booted") for x in d.get("deployments",[])) else 0)' 2>/dev/null || echo 0
+}
+os_staged()     { rpm-ostree status --json 2>/dev/null | staged_from_json; }
 
 # ── "Last known good" cache (professional stale-fallback pattern) ──────────
 # When a repo is unreachable the live check fails; rather than lie "up to
