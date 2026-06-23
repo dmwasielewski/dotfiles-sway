@@ -257,6 +257,7 @@ Managed by `setup.sh`. Installed from Flathub as user Flatpaks (`--user`) to avo
 | mpv | `io.mpv.Mpv` | Video player |
 | JDownloader | `org.jdownloader.JDownloader` | Download manager |
 | Sticky | `com.vixalien.sticky` | Desktop sticky notes |
+| Simplenote | `com.simplenote.Simplenote` | Cloud notes (Automattic; launched on demand, no autostart/workspace) |
 
 Notes:
 - **Main browser is Firefox**, which ships in the Fedora Sway Atomic **base image** (RPM `firefox`, binary `/usr/bin/firefox`, Wayland `app_id="org.mozilla.firefox"`) — it is not a Flatpak and needs no install step. It is launched on Sway start (`exec firefox`), pinned to ws2, and set as the system default via `xdg-settings` in `setup.sh`. Claude, ChatGPT and WhatsApp are used as ordinary Firefox tabs/bookmarks — there is no second browser and no PWA launchers.
@@ -740,7 +741,7 @@ ChatGPT is used as an ordinary Firefox tab/bookmark alongside Claude Code. Termi
 - [x] Mako notifications (11s auto-dismiss)
 - [x] Clipboard manager (clipman + rofi)
 - [x] Fonts (JetBrainsMono Nerd Font, Font Awesome)
-- [x] All Flatpak apps installed via setup.sh (mpv, VSCode, Obsidian, Bitwarden, Thunderbird, LibreOffice, Spotify, OBS, Kdenlive, JDownloader, Sticky)
+- [x] All Flatpak apps installed via setup.sh (mpv, VSCode, Obsidian, Bitwarden, Thunderbird, LibreOffice, Spotify, OBS, Kdenlive, JDownloader, Sticky, Simplenote)
 - [x] All system packages via packages.sh (rpm-ostree)
 - [x] Neovim from the OS package manager (rpm-ostree/dnf/apt) with Chris Titus Tech `titus-kickstart` config
 - [x] toolbox `damianf` with node, npm, gh, Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT

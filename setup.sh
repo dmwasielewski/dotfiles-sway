@@ -162,6 +162,7 @@ install_flatpak_app com.spotify.Client
 install_flatpak_app com.obsproject.Studio
 install_flatpak_app org.jdownloader.JDownloader
 install_flatpak_app com.vixalien.sticky
+install_flatpak_app com.simplenote.Simplenote
 install_flatpak_app org.libreoffice.LibreOffice
 install_flatpak_app org.kde.kdenlive
 

@@ -28,6 +28,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - mpv — video player
 - JDownloader — download manager
 - Sticky — desktop sticky notes (com.vixalien.sticky)
+- Simplenote — cloud notes (com.simplenote.Simplenote; launched on demand)
 
 ### System
 - `damianf` toolbox container (Fedora dev environment, versioned with the host unless overridden)
