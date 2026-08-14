@@ -171,8 +171,14 @@ fi
 # Thunderbird's flatpak ID is variant-dependent (Flathub rebased the plain
 # org.mozilla.Thunderbird to org.mozilla.thunderbird_esr), so discover whatever is
 # installed instead of hardcoding it. Reused for the presence check further down.
-TB_ID="$(host flatpak list --app --columns=application 2>/dev/null | grep -iE '^org\.mozilla\.thunderbird' | grep -vi esr | head -n1)"
-[[ -z "$TB_ID" ]] && TB_ID="$(host flatpak list --app --columns=application 2>/dev/null | grep -iE '^org\.mozilla\.thunderbird' | head -n1)"
+# `|| true` is load-bearing: verify.sh runs under `set -euo pipefail`, and a grep
+# that matches nothing exits 1, which pipefail propagates out of the command
+# substitution and set -e turns into a silent abort of the WHOLE script. Since
+# Flathub rebased the plain ID onto _esr, `grep -vi esr` matches nothing on this
+# machine, so verify.sh stopped right here — after ~10% of its checks — and still
+# looked like it had finished. Not finding an optional app is not an error.
+TB_ID="$(host flatpak list --app --columns=application 2>/dev/null | grep -iE '^org\.mozilla\.thunderbird' | grep -vi esr | head -n1 || true)"
+[[ -z "$TB_ID" ]] && TB_ID="$(host flatpak list --app --columns=application 2>/dev/null | grep -iE '^org\.mozilla\.thunderbird' | head -n1 || true)"
 
 if [[ -n "$TB_ID" ]] && host flatpak override --user --show "$TB_ID" 2>/dev/null | grep -q "LC_TIME"; then
     pass "Thunderbird flatpak override LC_TIME  ($TB_ID)"

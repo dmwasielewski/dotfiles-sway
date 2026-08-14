@@ -99,5 +99,18 @@ bash "$DOTFILES/scripts/setup-nordvpn.sh"
 # AdGuard for Linux CLI
 bash "$DOTFILES/scripts/setup-adguard.sh"
 
+# ChatGPT desktop app (ChatGPT + ChatGPT Work + Codex in one window).
+# Non-blocking on purpose, unlike the two above: this pulls 420 MB from a third
+# party whose Linux build is still labelled preview. A fresh unattended install
+# must not be lost because that CDN is having a bad day — the failure lands in
+# the install-state summary and verify.sh reports it, same as whispering-open.
+if declare -F run_step_warn >/dev/null 2>&1; then
+    run_step_warn "CHATGPT_SETUP" "Setting up the ChatGPT desktop app" \
+        bash "$DOTFILES/scripts/setup-chatgpt.sh"
+else
+    bash "$DOTFILES/scripts/setup-chatgpt.sh" \
+        || echo "==> WARNING: ChatGPT desktop setup failed — continuing"
+fi
+
 echo "==> Done. Please reboot: systemctl reboot"
 print_state_summary

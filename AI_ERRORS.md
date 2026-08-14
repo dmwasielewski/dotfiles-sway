@@ -903,3 +903,31 @@ file is pinned to that exact file and is invisible to `rpm-ostree upgrade`
 forever, so the app would never appear in the Waybar update indicator. Install
 by name from the repo (`rpm-ostree install chatgpt`); the downloaded package is
 needed only as the source of the signing key.
+
+## `verify.sh` silently aborted after ~10% of its checks
+
+**A `grep` that matches nothing is not an error, but under `set -euo pipefail`
+it kills the script.** `verify.sh` discovered the Thunderbird flatpak with:
+
+```bash
+TB_ID="$(host flatpak list … | grep -iE '^org\.mozilla\.thunderbird' | grep -vi esr | head -n1)"
+```
+
+After Flathub rebased the plain `org.mozilla.Thunderbird` ID onto
+`org.mozilla.thunderbird_esr`, this machine has *only* the ESR variant, so
+`grep -vi esr` matched nothing and exited 1. `pipefail` propagated that out of
+the command substitution and `set -e` aborted the entire script — at section
+**1a of 20**. Nothing looked wrong: the output ended with green ticks, no error
+was printed, and the exit code (1) was never checked by a human. Every later
+check — toolboxes, containers, NordVPN, AdGuard, Neovim, voice typing — had not
+run for weeks while appearing to be fine. Found 2026-08-14; the fix is `|| true`
+on both discovery substitutions, and the run then reported 168 passed / 0 failed.
+
+**The general rule:** in any script with `pipefail`, a command substitution
+whose pipeline ends in an optional match needs an explicit `|| true`. "Optional
+thing is absent" must never be indistinguishable from "the check failed" — that
+is the same false-ready class as audit item 4.
+
+**Check the exit code, not the last line.** This bug survived because the tail
+of the output looked healthy. When verifying that a verification tool works,
+compare the number of sections it printed against the number it contains.

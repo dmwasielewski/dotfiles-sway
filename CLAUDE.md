@@ -729,8 +729,11 @@ ShellGPT API configuration is automated by `scripts/configure-shellgpt.sh` from 
 ## ChatGPT desktop app (includes Codex)
 
 OpenAI shipped an official Linux desktop app on 2026-08-11 (preview). Fedora 44 is
-on its supported list. Installed by `scripts/setup-chatgpt.sh`; the launcher and
-`chatgpt` binary come from the package itself.
+on its supported list. Installed by `scripts/setup-chatgpt.sh`, which `packages.sh`
+runs automatically (via `run_step_warn`, so it is **non-blocking** — a failed
+420 MB third-party download must not abandon a fresh unattended install). The
+launcher and `chatgpt` binary come from the package itself, and the reboot it
+needs is the one `packages.sh` already requires.
 
 **There is no separate Codex application for Linux.** OpenAI merged the standalone
 Codex app into the ChatGPT client in July 2026, so ChatGPT, ChatGPT Work and Codex

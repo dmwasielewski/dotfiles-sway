@@ -195,14 +195,17 @@ adguard-cli stop
 bash ~/dotfiles-sway/scripts/setup-security-container.sh
 ```
 
-12. Install the ChatGPT desktop app (includes Codex):
+12. The ChatGPT desktop app (includes Codex) is installed by `packages.sh` in
+step 3, so it needs no separate step — it is already in the deployment you booted
+in step 4. Sign in on first launch with the same OpenAI account used by
+`codex login`. To install or repair it on its own:
 ```bash
 sudo -v && bash ~/dotfiles-sway/scripts/setup-chatgpt.sh
 systemctl reboot
 ```
-This layers the app with `rpm-ostree` from OpenAI's own repository, so a reboot is
-required before `chatgpt` appears. Sign in on first launch with the same OpenAI
-account used by `codex login`.
+Its step is deliberately non-blocking: a failed 420 MB download from OpenAI's CDN
+is recorded in the install state and reported by `verify.sh` instead of aborting
+the whole install.
 
 13. Run full verification:
 ```bash
