@@ -397,13 +397,22 @@ Solid black (`#000000`) — no image.
 Config is in `sway/config.d/90-swayidle.conf` (overrides Fedora's system default `/usr/share/sway/config.d/90-swayidle.conf` added in F44).
 
 ### Workspace autostart layout
-| Workspace | Content |
-|---|---|
-| 1 | Foot terminal |
-| 2 | Firefox browser |
-| 3 | Obsidian |
+| Workspace | Content | Routed by |
+|---|---|---|
+| 1 | Foot terminal | `app_id="foot"` |
+| 2 | Firefox browser | `app_id="org.mozilla.firefox"` |
+| 3 | Thunderbird | `app_id="(?i)^org\.mozilla\.thunderbird.*"` |
+| 4 | Obsidian | `title=".*Obsidian.*"` |
+| 5 | ChatGPT desktop | `class`/`app_id` `"(?i)^chatgpt$"` (both) |
 
 `Mod+Shift+S` re-runs the autostart script.
+
+**ChatGPT needs two `assign` rules, not one.** It runs under XWayland, where sway
+sees an X11 `class` and **no** `app_id` — so an `app_id` rule like Firefox's
+silently never matches and the window lands wherever it opens. Both rules are in
+`sway/config` on purpose so routing keeps working if OpenAI ships a native
+Wayland build, which would flip which of the two applies. Verified with
+`swaymsg -t get_tree`: the live window reports `app_id=None, class='Chatgpt'`.
 
 ### Key bindings summary
 | Shortcut | Action |

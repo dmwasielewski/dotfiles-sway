@@ -8,3 +8,8 @@ sleep 4
 
 flatpak run md.obsidian.Obsidian &
 disown
+
+# ChatGPT desktop app (ChatGPT + Work + Codex). Pinned to ws5 by the assign
+# rules in sway/config — see the note there about XWayland class vs app_id.
+chatgpt &
+disown

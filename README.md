@@ -298,9 +298,13 @@ Solid black (`#000000`) — no image, no distractions.
 | 2 | Firefox browser |
 | 3 | Thunderbird |
 | 4 | Obsidian |
+| 5 | ChatGPT desktop (ChatGPT + Work + Codex) |
 
 Apps are launched by `exec` lines in `sway/config` and pinned to workspaces by
-`assign` rules. Thunderbird is started via
+`assign` rules. ChatGPT has **two** assign rules: it runs under XWayland, where
+sway sees an X11 `class` and no `app_id`, so an `app_id` rule alone would never
+match — and the second rule keeps the routing correct if OpenAI later ships a
+native Wayland build. Thunderbird is started via
 `scripts/launch-thunderbird.sh`, which discovers the installed Thunderbird
 flatpak at runtime (regular or `_esr` variant) instead of hardcoding an app ID —
 Flathub deprecated the plain `org.mozilla.Thunderbird` ID in favour of

@@ -303,6 +303,7 @@ set $ws1 1
 set $ws2 2
 set $ws3 3
 set $ws4 4
+set $ws5 5
 
 # ── Workspace bootstrap ──
 
@@ -310,6 +311,7 @@ exec foot
 exec ~/dotfiles-sway/scripts/launch-thunderbird.sh
 exec firefox
 exec flatpak run md.obsidian.Obsidian
+exec chatgpt
 bindsym $mod+Shift+s exec ~/dotfiles-sway/scripts/autostart.sh
 
 # ── Floating rules for utility terminals ──
@@ -323,5 +325,11 @@ assign [app_id="foot"] workspace number 1
 assign [app_id="(?i)^org\.mozilla\.thunderbird.*"] workspace number 3
 assign [title=".*Obsidian.*"] workspace number 4
 assign [app_id="org.mozilla.firefox"] workspace number 2
+# ChatGPT desktop app. It currently runs under XWayland, where sway sees an X11
+# `class` and NO `app_id` — an app_id rule (like Firefox's above) silently never
+# matches. Both rules are present on purpose so the routing survives OpenAI
+# shipping a native Wayland build, which would flip which one applies.
+assign [class="(?i)^chatgpt$"] workspace number 5
+assign [app_id="(?i)^chatgpt$"] workspace number 5
 
 exec_always systemctl --user import-environment LC_TIME
