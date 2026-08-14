@@ -487,6 +487,47 @@ else
     warn "User not in nordvpn group yet — re-run bash ~/dotfiles-sway/scripts/setup-nordvpn.sh and log out/in"
 fi
 
+# ── 5b. ChatGPT desktop app ──────────────────────────────────────────────
+section "5b. ChatGPT desktop (incl. Codex)"
+
+CHATGPT_REPO_FILE="/etc/yum.repos.d/chatgpt.repo"
+
+if host which chatgpt &>/dev/null 2>&1; then
+    pass "ChatGPT desktop app"
+elif host rpm-ostree status --json 2>/dev/null | python3 -c \
+        'import json,sys; d=json.load(sys.stdin); sys.exit(0 if any(dep.get("staged") and not dep.get("booted") and ("chatgpt" in (dep.get("requested-packages") or []) or "chatgpt" in (dep.get("packages") or [])) for dep in d.get("deployments",[])) else 1)' 2>/dev/null; then
+    warn "ChatGPT desktop app is staged — reboot to activate it"
+else
+    fail "ChatGPT desktop app  MISSING" "sudo -v && bash ~/dotfiles-sway/scripts/setup-chatgpt.sh"
+fi
+
+# rpm-ostree rejects the raw binary keyring that upstream's %post writes
+# ("PKI file ... contains no valid public key") and fails the install only after
+# downloading everything. dnf accepts it, so this is easy to reintroduce.
+CHATGPT_KEY_FILE="/etc/pki/rpm-gpg/RPM-GPG-KEY-chatgpt"
+if host test -f "$CHATGPT_KEY_FILE"; then
+    if host head -1 "$CHATGPT_KEY_FILE" 2>/dev/null | grep -q 'BEGIN PGP PUBLIC KEY BLOCK'; then
+        pass "ChatGPT signing key is ASCII-armoured"
+    else
+        fail "ChatGPT signing key is not ASCII-armoured  (rpm-ostree will reject it)" \
+             "sudo -v && bash ~/dotfiles-sway/scripts/setup-chatgpt.sh"
+    fi
+fi
+
+# The repo must exist AND tolerate an unreachable host, or one OpenAI outage
+# aborts the whole rpm-ostree metadata refresh and freezes the update indicator.
+if host test -f "$CHATGPT_REPO_FILE"; then
+    if host grep -q '^[[:space:]]*skip_if_unavailable' "$CHATGPT_REPO_FILE"; then
+        pass "ChatGPT repo present and non-fatal when offline"
+    else
+        fail "ChatGPT repo missing skip_if_unavailable  (an OpenAI outage would freeze the update indicator)" \
+             "sudo -v && bash ~/dotfiles-sway/scripts/setup-chatgpt.sh"
+    fi
+else
+    fail "ChatGPT repo  MISSING  (app would never receive updates)" \
+         "sudo -v && bash ~/dotfiles-sway/scripts/setup-chatgpt.sh"
+fi
+
 # ── 5b. AdGuard for Linux ────────────────────────────────────────────────
 section "5b. AdGuard for Linux"
 

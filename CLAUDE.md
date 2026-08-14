@@ -83,6 +83,7 @@ dotfiles-sway/
     ├── setup-neovim-config.sh         ← Neovim Chris Titus Tech config + plugin sync (binary from the package manager)
     ├── setup-zed.sh                   ← Zed GUI editor: official upstream binary, user-local in ~/.local/opt (self-updates)
     ├── setup-nordvpn.sh               ← NordVPN CLI install + nordvpnd enable/start + group setup — writes state
+    ├── setup-chatgpt.sh                ← ChatGPT desktop app (incl. Codex): OpenAI repo + key + rpm-ostree — writes state
     ├── setup-adguard.sh               ← AdGuard for Linux CLI install — writes state
     ├── setup-whispering-open.sh       ← Whispering Open latest GitHub release download — non-blocking
     ├── setup-damian-container.sh      ← Toolbox damianf: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
@@ -725,11 +726,39 @@ ShellGPT API configuration is automated by `scripts/configure-shellgpt.sh` from 
 
 ---
 
-## ChatGPT
+## ChatGPT desktop app (includes Codex)
 
-ChatGPT is used as an ordinary Firefox tab/bookmark alongside Claude Code. Terminal access to OpenAI Codex is provided by the `codex` CLI in the `damianf` toolbox.
+OpenAI shipped an official Linux desktop app on 2026-08-11 (preview). Fedora 44 is
+on its supported list. Installed by `scripts/setup-chatgpt.sh`; the launcher and
+`chatgpt` binary come from the package itself.
 
-- **No installation needed** — it's a web page opened in Firefox; there is no `.desktop` launcher or PWA window any more.
+**There is no separate Codex application for Linux.** OpenAI merged the standalone
+Codex app into the ChatGPT client in July 2026, so ChatGPT, ChatGPT Work and Codex
+are three workspaces in one window — switch with the menu in the top-left corner.
+The `codex` CLI in toolbox `damianf` is unaffected and stays; both use the same
+OpenAI account.
+
+Three things about this install are deliberate and must not be "simplified":
+
+1. **`rpm-ostree`, not `dnf`.** Upstream documents `sudo dnf install ./chatgpt.x86_64.rpm`,
+   which is wrong for an immutable host.
+2. **Installed BY NAME from OpenAI's repo, not by layering the downloaded file.**
+   A locally layered `.rpm` is pinned to that exact file and is invisible to
+   `rpm-ostree upgrade` forever — the app would never appear in the Waybar update
+   indicator. Installing by name puts it in the normal OS update path.
+3. **The signing key is extracted from the package at runtime.** Upstream publishes
+   it *only* inside the `%post` scriptlet as `SIGNING_KEY_BASE64`; there is no public
+   key URL (`/gpg`, `/gpg.key`, `/RPM-GPG-KEY-chatgpt` all return 404). Extracting it
+   per-run means a key rotation is followed automatically instead of silently
+   breaking `gpgcheck`. Key as of 2026-08-14: RSA 4096, "Codex Linux Repository",
+   fingerprint `3BFA0E4AE8B8CC16A2D9BA684A3B4A566C4660E4`.
+
+`skip_if_unavailable = True` is written into `/etc/yum.repos.d/chatgpt.repo` from the
+start — upstream's own `%post` omits it, and without it an unreachable OpenAI host
+would abort the entire `rpm-ostree` metadata refresh and freeze the update indicator,
+exactly as the NordVPN repo used to.
+
+Claude and WhatsApp remain ordinary Firefox tabs/bookmarks — no PWA launchers.
 
 ---
 
@@ -762,6 +791,7 @@ ChatGPT is used as an ordinary Firefox tab/bookmark alongside Claude Code. Termi
 - [x] Power button — rofi power menu (shutdown/reboot/suspend/hibernate/logout)
 - [x] Voice typing — push-to-talk `Mod+T` with local Whisper AI (faster-whisper, no cloud)
 - [x] Whispering Open release installer — non-blocking GitHub download with desktop launcher
+- [x] ChatGPT desktop app (incl. Codex) — official OpenAI repo, name-tracked rpm-ostree layer
 
 ## What is planned / in progress
 
@@ -946,6 +976,7 @@ These require human interaction — document them so nothing is forgotten after 
 | Set ANTHROPIC_API_KEY | `~/.bashrc.d/ai-keys.bash` with `export ANTHROPIC_API_KEY="key"` |
 | Claude login (OAuth) | `damianf` → `claude login` |
 | Codex login | `damianf` → `codex login` |
+| ChatGPT desktop login | Launch `chatgpt` → sign in with the OpenAI account (same one as the `codex` CLI) |
 | GitHub CLI login | `damianf` → `gh auth login` |
 | MCP integrations (Gmail, Calendar, Drive, Slack) | `claude.ai` → Settings → Integrations |
 | Bluetooth pairing | `bluetoothctl` → `power on` → `scan on` → `pair <MAC>` |

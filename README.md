@@ -16,7 +16,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Black solid wallpaper
 
 ### Browser
-- Firefox — main browser (ships in the Fedora Sway Atomic base image; the system default), opens on ws2. Claude, ChatGPT and WhatsApp are used as ordinary Firefox tabs/bookmarks.
+- Firefox — main browser (ships in the Fedora Sway Atomic base image; the system default), opens on ws2. Claude and WhatsApp are used as ordinary Firefox tabs/bookmarks. ChatGPT has its own desktop app (see below).
 
 ### Applications (Flatpak)
 - VSCode — code editor
@@ -195,12 +195,21 @@ adguard-cli stop
 bash ~/dotfiles-sway/scripts/setup-security-container.sh
 ```
 
-12. Run full verification:
+12. Install the ChatGPT desktop app (includes Codex):
+```bash
+sudo -v && bash ~/dotfiles-sway/scripts/setup-chatgpt.sh
+systemctl reboot
+```
+This layers the app with `rpm-ostree` from OpenAI's own repository, so a reboot is
+required before `chatgpt` appears. Sign in on first launch with the same OpenAI
+account used by `codex login`.
+
+13. Run full verification:
 ```bash
 bash ~/dotfiles-sway/scripts/verify.sh
 ```
 
-13. Optional: validate the fresh-install flow in a disposable Fedora Sway Atomic VM:
+14. Optional: validate the fresh-install flow in a disposable Fedora Sway Atomic VM:
 ```bash
 bash ~/dotfiles-sway/scripts/create-fedora-sway-vm.sh
 ```
@@ -499,6 +508,7 @@ dotfiles-sway/
 │   ├── setup-kvm.sh                   # KVM/QEMU setup (libvirtd, groups, network) — writes state
 │   ├── setup-neovim-config.sh         # Neovim 0.12.1 + Chris Titus Tech config symlink
 │   ├── setup-nordvpn.sh               # NordVPN CLI install + nordvpnd enable/start + group setup — writes state
+│   ├── setup-chatgpt.sh                # ChatGPT desktop app (incl. Codex): OpenAI repo + signing key + rpm-ostree — writes state
 │   ├── setup-adguard.sh               # AdGuard for Linux CLI install — writes state
 │   ├── setup-whispering-open.sh       # Whispering Open GitHub release download — non-blocking
 │   ├── setup-damian-container.sh      # Toolbox damianf: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
@@ -803,6 +813,18 @@ claude
 # Inside damianf container
 codex
 ```
+
+### Run the ChatGPT desktop app (includes Codex)
+```bash
+# On the host — no container
+chatgpt
+```
+
+Installed by `scripts/setup-chatgpt.sh`. ChatGPT, ChatGPT Work and Codex are three
+workspaces inside one window — switch with the menu in the top-left corner. **There
+is no separate Codex application for Linux**; OpenAI merged the standalone Codex app
+into the ChatGPT client in July 2026. The `codex` CLI above is unaffected and both
+use the same OpenAI account.
 
 ### Run the DeepSeek/CodeWhale TUI
 ```bash

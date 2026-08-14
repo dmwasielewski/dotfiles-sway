@@ -861,3 +861,45 @@ regardless of the earlier download failing).
   re-run never fails just because the remote is unreachable.
 - A step that can "succeed" while its real work failed is worse than a hard
   failure: it hides the problem. Fail loudly with a reason on stderr.
+
+## ChatGPT desktop app — GPG key format and the poisoned metadata cache
+
+**Trap 1 — Upstream's own signing key format does not work with `rpm-ostree`.**
+OpenAI ships the ChatGPT repo key as a **raw binary keyring**, base64-encoded
+inside the package's `%post` scriptlet (`SIGNING_KEY_BASE64`). Writing it out
+verbatim — which is exactly what upstream's own scriptlet does — works under
+`dnf` but makes `rpm-ostree` fail with:
+
+```text
+error: PKI file /var/cache/rpm-ostree/repomd/openai-chatgpt-44-x86_64/RPM-GPG-KEY-chatgpt contains no valid public key
+```
+
+The failure comes **last**, after resolving dependencies and downloading 447 MB,
+so it looks like a network or repo problem and is not. `rpm` confirms the cause
+directly: `rpm --import` on the binary file says *"not an armored public key"*.
+The key must be re-armoured before installing it — import into a throwaway
+`GNUPGHOME` and `gpg --batch --armor --export`, producing a file starting with
+`-----BEGIN PGP PUBLIC KEY BLOCK-----`. Handled in `scripts/setup-chatgpt.sh`
+→ `install_key`, and checked by `verify.sh`. Note `gpg --enarmor` is NOT the
+right tool: it emits `BEGIN PGP ARMORED FILE`, which is a different header.
+
+**Trap 2 — Fixing the key in `/etc` is not enough.** `rpm-ostree` copies
+`gpgkey` into `/var/cache/rpm-ostree/repomd/<repo>-<release>-<arch>/` on the
+first metadata refresh and then trusts **that copy**. Correcting only
+`/etc/pki/rpm-gpg/…` leaves the bad copy in place and the install keeps failing
+with the identical error, which reads as "my fix did nothing". Clear it with
+`sudo rpm-ostree cleanup -m`. `setup-chatgpt.sh` decides this by *comparing*
+the cached copy with the installed key rather than by remembering that it just
+wrote one — a run that dies between the two steps must still self-heal.
+
+**Trap 3 — Do not tell the user to paste `!` into a normal terminal.** The
+`! <command>` prefix belongs to the Claude Code prompt. In bash `!` is the
+negation operator, so `! sudo -v && bash script.sh` runs the script only when
+`sudo -v` **fails** — the exact inverse of the intent, and it fails silently
+by doing nothing at all.
+
+**Trap 4 — Never layer this app from the downloaded `.rpm`.** A locally layered
+file is pinned to that exact file and is invisible to `rpm-ostree upgrade`
+forever, so the app would never appear in the Waybar update indicator. Install
+by name from the repo (`rpm-ostree install chatgpt`); the downloaded package is
+needed only as the source of the signing key.

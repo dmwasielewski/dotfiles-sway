@@ -123,6 +123,25 @@ declarative profiles + capability groups; add non-destructive behavioural checks
 (`sway --validate`, desktop-file validation, systemd unit syntax, container→host
 `podman info`, deployment reconciliation). Pairs with item 3.
 
+### 🟠 12. Update module ignores every language package manager
+The Waybar update module has four sources — Flatpak, containers, OS, user-local
+apps — and **none of them updates a single npm/pip package**. `do_containers()`
+runs `distrobox upgrade` / toolbox `dnf`, which is the *distro* package manager
+inside the container; the AI CLIs are installed on top of it with
+`npm install -g` (`setup-damian-container.sh:96`, `setup-ubuntu-dev-container.sh:128`).
+So `claude`, `codex`, `codewhale` and `markdownlint-cli2` — the tools used every
+day — are updated by nobody and drift silently until noticed by hand. The same
+hole covers `shell-gpt` and `faster-whisper`, installed with `pip3 install --user`.
+
+**Do:** add a fifth source to `lib-updates.sh` covering language package managers
+inside containers, discovered dynamically (never a hardcoded package list):
+`npm -g outdated --json` and `pip list --outdated --format=json` per container,
+run through the same container discovery already used by `discover_toolbox` /
+`discover_distrobox`. It needs its own section in the tooltip, its own menu
+entry, and a `upd_record` timestamp so "last updated" works like the others.
+Found 2026-08-14 when a manual `npm i -g @openai/codex` turned out to be the
+only way codex ever gets a new version.
+
 ---
 
 ## Planned features (from CLAUDE.md "What is planned")
