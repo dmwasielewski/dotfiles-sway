@@ -152,6 +152,24 @@ only way codex ever gets a new version.
 - 🟡 **`gh auth login` automation**
 - 🟠 **Full idempotency audit** of `setup.sh` / `packages.sh` / post-reboot scripts (overlaps items 4 & 7)
 
+### 🟡 13. Claude Desktop — wait for a native Fedora package
+Anthropic shipped an official Claude Desktop for Linux on 2026-06-30 (beta:
+Chat, Cowork, Code). It is **.deb only**, via `https://downloads.claude.ai/claude-desktop/apt/stable`,
+officially Ubuntu 22.04+ / Debian 12+. There is no RPM and Fedora is not
+supported; Anthropic says more distributions are planned, with no date.
+
+Installing it into the Ubuntu distrobox `damianu` and exporting it with
+`distrobox-export --app` was investigated and **rejected by Damian on
+2026-08-14**: GUI applications he uses daily must live in the Fedora layer, not
+in a container. The container stays a development environment, not an app
+delivery mechanism. Do not re-propose this route — see the rule in `CLAUDE.md`.
+
+**Do:** periodically re-check for an RPM or an official Fedora repo. When one
+exists, add `scripts/setup-claude-desktop.sh` modelled on `setup-chatgpt.sh`
+(name-tracked rpm-ostree layer, `skip_if_unavailable` on the repo), route it to
+a free workspace, and cover it in `verify.sh`. Until then Claude stays as the
+`claude` CLI in toolbox `damianf` plus a Firefox tab.
+
 ---
 
 ## Small open items

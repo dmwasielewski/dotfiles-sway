@@ -772,6 +772,20 @@ exactly as the NordVPN repo used to.
 
 Claude and WhatsApp remain ordinary Firefox tabs/bookmarks — no PWA launchers.
 
+### Rule: GUI applications belong to the Fedora layer, never a container
+
+Damian uses Fedora as his daily desktop. A GUI application he uses every day must
+be installed on the host — rpm-ostree, Flatpak, or a user-local binary — and never
+inside a toolbox/distrobox exported with `distrobox-export`. Containers are
+development environments here, not an app delivery mechanism.
+
+This decides a real case: **Claude Desktop**. Anthropic released it for Linux on
+2026-06-30 (beta) as **.deb only**, Ubuntu 22.04+ / Debian 12+, no RPM and no
+Fedora support. Installing it into `damianu` and exporting it would work — it was
+investigated and the pieces verified — but Damian rejected that route on
+2026-08-14. Do not propose it again. Claude stays as the `claude` CLI in `damianf`
+plus a Firefox tab until an official Fedora package exists; see backlog item 13.
+
 ---
 
 ## What is complete
