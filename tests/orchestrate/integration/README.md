@@ -19,11 +19,26 @@ sudo credential, harvests secrets to `~/.local/state/dotfiles-secrets`, and runs
 
 ## Procedure
 
-1. **Provision the VM (kickstart + phase 1):**
+1. **Provision the VM and run the orchestrator:**
    ```bash
    bash ~/dotfiles-sway/scripts/create-fedora-sway-vm.sh
    ```
-   The disposable-VM kickstart grants `%wheel NOPASSWD`, so P0's sudo is a no-op there.
+   The disposable-VM kickstart grants `%wheel NOPASSWD` (verified in
+   `kickstarts/fedora-sway-atomic.ks`), so P0's sudo is a no-op there.
+
+   The script defaults to `VM_INSTALL_MODE=orchestrator`: it clones the repo,
+   runs `orchestrate.sh run`, survives the phase-1 reboot, waits for the guest,
+   and then reports whether phase 2 resumed on its own. **This is the whole
+   point of the test** — `VM_INSTALL_MODE=bootstrap` runs the classic
+   `bootstrap.sh` path instead, which never enables `dotfiles-phase2.service`
+   and therefore cannot answer the linger question at all. Until 2026-08-14 the
+   script only had the bootstrap path while this README told you to check
+   phase 2, so the check could not pass for a reason that had nothing to do with
+   linger.
+
+   Expect a long pause during `packages.sh`: the ChatGPT desktop step downloads
+   ~420 MB inside the guest. It is `run_step_warn`, so a CDN failure is recorded
+   and the install continues.
 
 2. **After the VM reboots, confirm phase 2 resumed automatically:**
    ```bash

@@ -1,8 +1,11 @@
 #!/bin/bash
 # create-fedora-sway-vm.sh — disposable Fedora Sway Atomic VM for install validation
 # Uses the official Fedora Everything installer ISO and an injected kickstart file
-# to automate the Atomic Sway install. After first boot, it can run bootstrap.sh
-# over SSH to validate the dotfiles bootstrap.
+# to automate the Atomic Sway install. After first boot it drives the install over
+# SSH — by default the ORCHESTRATOR path, because that is the one backlog #5 needs
+# proven: does systemd-linger resume phase 2 after the reboot without anyone
+# logging in? bootstrap.sh cannot answer that question; it never enables
+# dotfiles-phase2.service, it only runs setup.sh + packages.sh and stops.
 
 set -euo pipefail
 
@@ -15,7 +18,12 @@ VM_RAM_MB="${VM_RAM_MB:-8192}"
 VM_VCPUS="${VM_VCPUS:-4}"
 VM_DISK_GB="${VM_DISK_GB:-40}"
 VM_HOSTNAME="${VM_HOSTNAME:-fedora-sway-test}"
-VM_BOOTSTRAP="${VM_BOOTSTRAP:-1}"
+# orchestrator = clone + orchestrate.sh run (P0..P1, reboot, P2..P3 via linger)
+# bootstrap    = clone + setup.sh + packages.sh, stops before the reboot
+# none         = provision the VM only
+VM_INSTALL_MODE="${VM_INSTALL_MODE:-orchestrator}"
+# Back-compat: callers that set VM_BOOTSTRAP=0 meant "install nothing".
+[[ "${VM_BOOTSTRAP:-1}" == "0" ]] && VM_INSTALL_MODE="none"
 VM_USER="${VM_USER:-damian}"
 VM_ISO="${VM_ISO:-$HOME/Downloads/Fedora-Everything-netinst-x86_64-44-1.7.iso}"
 VM_CHECKSUM="${VM_CHECKSUM:-$HOME/Downloads/Fedora-Everything-44-1.7-x86_64-CHECKSUM}"
@@ -199,16 +207,71 @@ else
     exit 1
 fi
 
-if [[ "$VM_BOOTSTRAP" == "1" ]]; then
-    echo -e "${CYAN}==> Running bootstrap.sh inside the VM...${NC}"
+vm_ssh() {   # run a command in the guest; caller decides how to treat failure
     ssh -i "$SSH_PRIVKEY_FILE" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=5 \
-        "$VM_USER@$VM_IP" 'bash -lc "curl -fsSL https://raw.githubusercontent.com/dmwasielewski/dotfiles-sway/main/bootstrap.sh | bash"'
-    echo ""
-    echo -e "${GREEN}✓ Bootstrap completed inside the VM${NC}"
-    echo -e "${YELLOW}Note: bootstrap stops after Phase 1 and asks for a reboot. That is expected.${NC}"
-else
-    echo -e "${YELLOW}Bootstrap skipped (VM_BOOTSTRAP=0)${NC}"
-fi
+        "$VM_USER@$VM_IP" "$@"
+}
+
+case "$VM_INSTALL_MODE" in
+    orchestrator)
+        echo -e "${CYAN}==> Running the orchestrator inside the VM (P0..P1, then reboot)...${NC}"
+        echo -e "${YELLOW}    packages.sh downloads ~420 MB for the ChatGPT app; a long pause here is${NC}"
+        echo -e "${YELLOW}    the download, not a hang.${NC}"
+        # P1 ends in `sudo systemctl reboot`, so this ssh ALWAYS dies — dropped
+        # connection or non-zero exit. Under `set -euo pipefail` that would abort
+        # the script exactly at the moment of interest, so the failure is accepted
+        # here and the real verdict comes from the state file after the reboot.
+        vm_ssh 'bash -lc "
+            set -e
+            if [[ -d ~/dotfiles-sway/.git ]]; then git -C ~/dotfiles-sway pull --ff-only
+            else git clone https://github.com/dmwasielewski/dotfiles-sway.git ~/dotfiles-sway
+            fi
+            git -C ~/dotfiles-sway submodule update --init --recursive
+            bash ~/dotfiles-sway/orchestrate.sh run
+        "' || echo -e "${YELLOW}==> SSH ended (expected: phase 1 reboots the guest).${NC}"
+
+        echo -e "${CYAN}==> Waiting for the guest to come back...${NC}"
+        if ! wait_for_ssh; then
+            echo -e "${RED}✗ Guest did not return after the phase-1 reboot${NC}"
+            exit 1
+        fi
+
+        # THE question behind backlog #5: did linger resume phase 2 with nobody
+        # logged in? Read the state file rather than trusting that it looks alive.
+        echo -e "${CYAN}==> Checking whether phase 2 resumed on its own...${NC}"
+        for _ in $(seq 1 60); do
+            vm_ssh 'grep -q "^INSTALL_COMPLETE=" ~/.dotfiles-install-state 2>/dev/null' && break
+            sleep 20
+        done
+        echo ""
+        vm_ssh 'systemctl --user status dotfiles-phase2.service --no-pager 2>&1 | head -12' || true
+        echo ""
+        if vm_ssh 'grep -q "^INSTALL_COMPLETE=" ~/.dotfiles-install-state 2>/dev/null'; then
+            echo -e "${GREEN}✓ Phase 2 resumed after the reboot and the install completed${NC}"
+            echo -e "${GREEN}  systemd-linger works — backlog #5 answered.${NC}"
+        else
+            echo -e "${RED}✗ Phase 2 did NOT complete after the reboot${NC}"
+            echo -e "${YELLOW}  This is the documented risk. Fall back to a Sway-session trigger${NC}"
+            echo -e "${YELLOW}  (exec orchestrate.sh resume) and record it in setup-orchestrator-service.sh.${NC}"
+            vm_ssh 'cat ~/.dotfiles-install-state' || true
+        fi
+        ;;
+    bootstrap)
+        echo -e "${CYAN}==> Running bootstrap.sh inside the VM (classic path)...${NC}"
+        vm_ssh 'bash -lc "curl -fsSL https://raw.githubusercontent.com/dmwasielewski/dotfiles-sway/main/bootstrap.sh | bash"'
+        echo ""
+        echo -e "${GREEN}✓ Bootstrap completed inside the VM${NC}"
+        echo -e "${YELLOW}Note: bootstrap stops after Phase 1 and asks for a reboot. That is expected.${NC}"
+        echo -e "${YELLOW}It does NOT exercise the orchestrator — use VM_INSTALL_MODE=orchestrator for that.${NC}"
+        ;;
+    none)
+        echo -e "${YELLOW}Install skipped (VM_INSTALL_MODE=none)${NC}"
+        ;;
+    *)
+        echo -e "${RED}Unknown VM_INSTALL_MODE: $VM_INSTALL_MODE${NC}" >&2
+        exit 2
+        ;;
+esac
 
 echo ""
 echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
