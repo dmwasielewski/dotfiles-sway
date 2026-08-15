@@ -23,6 +23,7 @@ for:
 | `scripts/vault/vault` | No `set -e`, `cryptsetup`/`mount` exit codes unchecked → prints `vault: unlocked` after both failed. **Fixed 2026-08-14**, with a stubbed repro: old printed `unlocked` and exited 0 after three failed sudo calls, new exits 1. |
 | `scripts/lib-orchestrate.sh` | **The engine itself.** `orchestrate_run_remaining` ignored each phase's exit status and marked it done regardless, so a failed P1 still ran P2 and P3 and finished with `PHASE=P3`, exit 0 — a reported-successful unattended install on top of a failed phase. `phase_is_done` then skipped that phase on every resume, so it could never be retried. **Fixed 2026-08-14**, test-first. |
 | `orchestrate.sh` | Phase bodies ran their steps unchecked, so a failed `setup.sh` still rebooted the machine and handed a broken phase 1 to phase 2. **Fixed 2026-08-14**; `check-hardware.sh` stays deliberately tolerant. |
+| `write_provisioning_sudoers` | Installed the drop-in into `/etc/sudoers.d` **first** and ran `visudo -cf` on it **afterwards**, without checking the result — the comment claimed the opposite order. A malformed drop-in can break sudo system-wide, after which sudo cannot be used to remove it. **Fixed 2026-08-14**, test-first. |
 
 Plus two already in `BACKLOG.md`: the `((VERIFY_FAIL++))` abort and audit item 4
 ("eliminate false ready state transitions").
@@ -127,7 +128,25 @@ be tested too.
 
 ## Pass 2 — logic and behaviour
 
-Only after pass 1, and each item needs a repro before a fix:
+Only after pass 1, and each item needs a repro before a fix.
+
+### Already checked, no action needed (do not re-investigate)
+
+- **`waybar/config` is JSONC, not JSON.** A strict `json.load` fails on the `//`
+  comments; Waybar parses it fine and the running bar uses this exact file.
+- **`configure-shellgpt.sh` rewrites the whole `.sgptrc`**, dropping seven keys
+  ShellGPT itself had written (cache paths, role storage, functions path,
+  `PRETTIFY_MARKDOWN`). ShellGPT does not re-add them — it only writes the file
+  when absent — but every dropped key has an identical default in
+  `sgpt.config.DEFAULT_CONFIG`, verified directly, so behaviour is unchanged. The
+  script is idempotent against itself, byte for byte.
+- **`post-reboot` and `full` verify profiles are identical today** (20 sections
+  each). Only `containers` and `kvm` are gated; nothing is classified optional or
+  personal yet. That is backlog item 11, not a defect.
+- **All 88 repo-internal file references resolve**, and all 77 shell scripts
+  parse. Static warnings are down to 11, all style or loop variables.
+
+### Open:
 
 - **Idempotency.** `README.md` already concedes that re-running re-executes most
   steps and overwrites state, and that some steps are destructive on rerun.

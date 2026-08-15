@@ -10,7 +10,9 @@ setup_logging "orchestrate.sh"
 STAGE="$HOME/.local/state/dotfiles-secrets"
 
 phase_P0() {
-    write_provisioning_sudoers
+    # Without the scoped sudoers drop-in every later phase would block on a
+    # password prompt with no TTY, so a failure here must stop the run.
+    write_provisioning_sudoers || return 1
     orch_set REPO_COMMIT "$(git -C "$HERE" rev-parse HEAD)"
     mkdir -p "$STAGE"; chmod 700 "$STAGE"
     # vault secrets were harvested by install-from-usb.sh into $STAGE already.

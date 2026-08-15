@@ -92,8 +92,25 @@ EOF
 write_provisioning_sudoers() {
     local tmp; tmp="$(mktemp)"
     provisioning_sudoers_content "$USER" > "$tmp"
-    sudo install -m 0440 -o root -g root "$tmp" "$ORCH_SUDOERS"
+    # Validate BEFORE anything reaches /etc/sudoers.d. A malformed drop-in there
+    # can break sudo for the whole system, and once it has, sudo can no longer be
+    # used to remove the file that broke it. The previous order — install, then
+    # check — made the check decorative, and its result was not even tested.
+    # `visudo -cf` needs no privileges to check a file we own.
+    if ! visudo -cf "$tmp" >/dev/null 2>&1; then
+        echo "orchestrate: generated sudoers content is invalid — refusing to install it:" >&2
+        sed 's/^/  /' "$tmp" >&2
+        rm -f "$tmp"; return 1
+    fi
+    if ! sudo install -m 0440 -o root -g root "$tmp" "$ORCH_SUDOERS"; then
+        echo "orchestrate: failed to install $ORCH_SUDOERS" >&2
+        rm -f "$tmp"; return 1
+    fi
     rm -f "$tmp"
-    sudo visudo -cf "$ORCH_SUDOERS" >/dev/null
+    # Re-check what actually landed on disk, and undo it if it does not parse.
+    if ! sudo visudo -cf "$ORCH_SUDOERS" >/dev/null; then
+        echo "orchestrate: installed $ORCH_SUDOERS does not validate — removing it" >&2
+        sudo rm -f "$ORCH_SUDOERS"; return 1
+    fi
 }
 remove_provisioning_sudoers() { sudo rm -f "$ORCH_SUDOERS"; }
