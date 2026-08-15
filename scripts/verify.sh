@@ -570,7 +570,10 @@ section "5c. Neovim"
 # would shadow the packaged one.
 NVIM_ON_PATH="$(command -v nvim || true)"
 if [[ -n "$NVIM_ON_PATH" ]]; then
-    NVIM_LINE=$("$NVIM_ON_PATH" --version | head -n1)
+    # A broken nvim (missing shared lib, bad build) would exit non-zero here and,
+    # with pipefail + set -e, take the remaining sections of this script with it.
+    NVIM_LINE=$("$NVIM_ON_PATH" --version 2>/dev/null | head -n1 || true)
+    [[ -n "$NVIM_LINE" ]] || NVIM_LINE="version unreadable"
     pass "Neovim from package manager ($NVIM_ON_PATH — $NVIM_LINE)"
     if echo "$NVIM_LINE" | grep -qvE "v0\.(1[2-9]|[2-9][0-9])"; then
         warn "Neovim < 0.12 — Chris Titus Tech config uses vim.pack (needs 0.12+): $NVIM_LINE"

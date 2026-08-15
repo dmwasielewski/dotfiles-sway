@@ -4,8 +4,9 @@
 defects, starting with the one class that has already produced four separate
 failures.
 
-**Status:** pass 1 in progress. Six instances of the exit-status class found and
-fixed so far, each with a recorded repro.
+**Status:** pass 1 in progress. Eight fixes so far, each with a recorded repro.
+One of them (the touchpad check) was only visible *because* an exit code was
+made honest first — a good argument for doing this class before pass 2.
 
 ---
 
@@ -90,6 +91,21 @@ Verified **safe**, do not re-flag: `scripts/thunderbird-id.sh` carries the same
 `grep -vi esr | head` shape as the verify.sh bug but runs under `set -uo
 pipefail` **without** `-e`, so the failing substitution cannot abort it. Tested
 live: returns `org.mozilla.thunderbird_esr`, exit 0.
+
+Cleared with evidence, do not re-flag: `verify.sh:101` (inside `if [[ -f
+"$LOG_FILE" ]]`, so `du` cannot fail) and `verify.sh:573` (inside a
+`command -v nvim` guard — hardened anyway, since a broken nvim binary would
+otherwise take the remaining 15 sections with it). `setup-yazi.sh` and
+`setup-zed.sh` run through `run_step_warn` in `setup.sh`, so a failed GitHub API
+call is recorded in the install state rather than lost; failing there is the
+wanted behaviour.
+
+`check-hardware.sh` exited 0 even when it had counted failures and written
+`HARDWARE_CHECK=failed`. Making the exit code agree with the verdict immediately
+surfaced a real false negative: the touchpad check used `libinput list-devices`,
+which needs root to open `/dev/input/event*`, so as a normal user it found no
+touchpad on a laptop that has one. Now reads the world-readable
+`/proc/bus/input/devices` with libinput as fallback. Both fixed 2026-08-14.
 
 Remaining candidates from query 1, none yet verified: `setup-yazi.sh:20,40`,
 `setup-zed.sh:34,65,73`, `setup-neovim-config.sh:72`,

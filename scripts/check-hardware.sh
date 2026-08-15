@@ -36,7 +36,12 @@ check "VA-API hardware acceleration"          "vainfo"
 check "USB controller"                        "lsusb"
 check "Audio output (ALSA sink)"             "pactl list sinks short | grep -q alsa_output"
 check "Microphone (ALSA input)"              "pactl list sources short | grep -q alsa_input"
-check "Touchpad detected"                    "libinput list-devices 2>/dev/null | grep -qi touchpad"
+# `libinput list-devices` needs root to open /dev/input/event*; as a normal user
+# it prints "Permission denied" for every device and finds nothing, so this check
+# reported a missing touchpad on a laptop whose touchpad works. /proc/bus/input/devices
+# is world-readable and lists the same hardware. libinput stays as the fallback for
+# systems without procfs input, and no device name is hardcoded either way.
+check "Touchpad detected"                    "grep -qi touchpad /proc/bus/input/devices 2>/dev/null || libinput list-devices 2>/dev/null | grep -qi touchpad"
 
 # Wifi — warn only
 if nmcli device status 2>/dev/null | grep -q "wifi.*connected"; then
@@ -92,3 +97,8 @@ fi
 
 echo ""
 print_state_summary
+
+# Exit code must agree with the verdict already written to the state file.
+# Callers that want to continue regardless say so explicitly — orchestrate.sh
+# phase P2 uses `|| true` because this check is advisory there.
+[[ $FAIL -eq 0 ]]
