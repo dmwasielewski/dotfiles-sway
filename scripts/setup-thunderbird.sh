@@ -16,8 +16,14 @@ if [[ -z "$TB_ID" ]]; then
 fi
 TB_BASE="$HOME/.var/app/$TB_ID/.thunderbird"
 
-# Find the default-esr profile
-PROFILE=$(ls -d "$TB_BASE"/*.default-esr 2>/dev/null | head -1)
+# Find the default-esr profile.
+# `|| true` is load-bearing: under `set -euo pipefail` a non-matching glob makes
+# `ls` exit 2, pipefail propagates it past `head`, and set -e kills the script
+# right here — which made the "launch Thunderbird once" branch below unreachable
+# dead code in exactly the situation it was written for (a fresh install, before
+# Thunderbird has ever been started). Verified with an isolated repro: the script
+# exited 2 and never reached the next line.
+PROFILE=$(ls -d "$TB_BASE"/*.default-esr 2>/dev/null | head -1 || true)
 
 if [[ -z "$PROFILE" ]]; then
     echo "==> No Thunderbird profile found at $TB_BASE"

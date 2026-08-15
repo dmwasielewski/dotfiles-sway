@@ -1,0 +1,142 @@
+# Automation audit — plan
+
+**Goal:** review the install and automation scripts for logic and behaviour
+defects, starting with the one class that has already produced four separate
+failures.
+
+**Status:** not started. Findings below are from a first mechanical scan on
+2026-08-14; three fixes were made the same day and are marked as such.
+
+---
+
+## Why this audit has an obvious starting point
+
+Four instances of a single defect class surfaced in one day, none of them looked
+for:
+
+| Where | What happened |
+|---|---|
+| `scripts/verify.sh` | `grep -vi esr` matched nothing → exit 1 → `pipefail` + `set -e` → silent abort at section **1a of 20**. Output still ended in green ticks. **Fixed 2026-08-14.** |
+| `scripts/setup-thunderbird.sh` | Non-matching glob → `ls` exit 2 → same chain → script dies at the profile lookup, making the "launch Thunderbird once" branch **unreachable dead code** in exactly the fresh-install case it was written for. **Fixed 2026-08-14.** |
+| `scripts/create-fedora-sway-vm.sh` | P1's own `sudo systemctl reboot` kills the ssh session; under `set -euo pipefail` that would abort the script at the moment of interest. **Fixed 2026-08-14** (accepted exit + re-wait). |
+| `scripts/vault/vault` | No `set -e`, `cryptsetup`/`mount` exit codes unchecked → prints `vault: unlocked` after both failed. **Open.** |
+
+Plus two already in `BACKLOG.md`: the `((VERIFY_FAIL++))` abort and audit item 4
+("eliminate false ready state transitions").
+
+These are not six unrelated bugs. They are one systematic weakness: **exit-status
+handling, where "optional thing is absent" and "expected non-zero" cannot be
+distinguished from "failed" — in both directions.** Either a harmless absence
+kills the script, or a real failure is reported as success. Both were observed.
+
+That makes pass 1 mechanical and verifiable rather than a matter of taste.
+
+---
+
+## Pass 1 — exit-status correctness
+
+### Scope
+
+Every tracked shell script: `bootstrap.sh`, `setup.sh`, `packages.sh`,
+`orchestrate.sh`, `scripts/*.sh`, `scripts/vault/*`, `tests/**`.
+
+### The four queries
+
+1. Command substitutions whose pipeline can legitimately produce a non-zero
+   status, in scripts with **both** `-e` and `pipefail`.
+2. Scripts with **no** `set -e` that print a success line — every `sudo` and
+   state-changing command before that line needs its exit code checked.
+3. `run_step` / `run_step_warn` targets that can legitimately exit non-zero.
+4. Success messages (`✓`, `done`, `ready`, `unlocked`, `complete`) not guarded
+   by the result of the thing they claim succeeded.
+
+### Method — non-negotiable, because the scan lies
+
+A grep hit is a **candidate**, never a finding. For each one:
+
+1. Read the surrounding code and decide whether the non-zero case is reachable.
+2. Build an isolated repro **in a real script file**, then fix, then prove both
+   the failure path and the happy path.
+3. Only then write the fix, with a comment saying why the guard is load-bearing.
+
+Three traps already caught during the first scan — expect more:
+
+- **A subshell test lies.** `( set -euo pipefail; X=$(false|head -1); echo ok )`
+  printed `ok`; the identical code in a real `.sh` file exited 2. The
+  Thunderbird finding was nearly dismissed on the strength of the subshell run.
+- **`head -12` is not a header.** `setup-chatgpt.sh` was flagged as missing
+  `set -e` because its `set` line sits at line 21, below a long comment.
+- **`grep '*e*'` matches `pipefail`.** A filter meant to select `set -e` scripts
+  silently included every `set -uo pipefail` one.
+
+### First-scan inventory (2026-08-14)
+
+Scripts with no `set -e` that print success — each needs its own judgement, they
+are not automatically wrong:
+
+```
+orchestrate.sh                  set -uo pipefail
+scripts/check-hardware.sh       (no set)
+scripts/install-devops-tools.sh set -uo pipefail
+scripts/lib-install.sh          (no set)
+scripts/updates-menu.sh         set -uo pipefail
+scripts/vault/vault             set -uo pipefail   ← known bug, start here
+tests/orchestrate/test_state.sh (no set)
+```
+
+Verified **safe**, do not re-flag: `scripts/thunderbird-id.sh` carries the same
+`grep -vi esr | head` shape as the verify.sh bug but runs under `set -uo
+pipefail` **without** `-e`, so the failing substitution cannot abort it. Tested
+live: returns `org.mozilla.thunderbird_esr`, exit 0.
+
+Remaining candidates from query 1, none yet verified: `setup-yazi.sh:20,40`,
+`setup-zed.sh:34,65,73`, `setup-neovim-config.sh:72`,
+`vault/setup-vault-usb.sh:39`, `nordvpn-waybar.sh:26`, `verify.sh:101,573`,
+`create-fedora-sway-vm.sh:131`. Most end in `awk`/`find`/`head`, which exit 0 on
+no match — the likely outcome is that most are fine, and saying so with evidence
+is a valid result.
+
+### Known open item to fix first
+
+`scripts/vault/vault` — `unlock` and `lock` both report success unconditionally.
+This is the highest-consequence one: it is the gate in front of every API key,
+and a false "unlocked" was already observed twice (sudo without a TTY, and three
+wrong passphrases).
+
+---
+
+## Pass 2 — logic and behaviour
+
+Only after pass 1, and each item needs a repro before a fix:
+
+- **Idempotency.** `README.md` already concedes that re-running re-executes most
+  steps and overwrites state, and that some steps are destructive on rerun.
+  Establish per-script what a second run actually does. Overlaps backlog 1 & 7.
+- **Ordering assumptions.** `packages.sh` calls NordVPN, AdGuard and ChatGPT
+  setups; `setup.sh` calls yazi and Zed. Which of these silently depend on a
+  step that ran earlier, and what happens when one is run alone?
+- **Blocking vs non-blocking.** Which failures should abort an unattended
+  install and which should be recorded and skipped? Today this is decided
+  per-script, without a stated rule. ChatGPT is `run_step_warn`, NordVPN and
+  AdGuard are bare `bash` — that difference is deliberate but undocumented as a
+  principle.
+- **`verify.sh` coverage vs claims.** Backlog 11. Now more tractable: the script
+  reaches its own summary for the first time.
+- **Duplication between `sway/config` exec lines and `autostart.sh`.** The
+  config launches four apps, `autostart.sh` relaunches three — they drifted
+  once and will again. Overlaps backlog 8.
+
+---
+
+## Verification for the whole audit
+
+- `bash scripts/verify.sh` reaches its summary and exits 0.
+- `shellcheck --severity=warning` clean on every changed script.
+- `bash tests/orchestrate/run.sh` and `bash tests/vault/run.sh` green.
+- Every fix has a recorded repro proving the old behaviour, not only the new.
+- Anything found that is not fixed goes to `BACKLOG.md` with its evidence.
+
+## Explicitly out of scope
+
+Rewriting the install engine. That is backlog items 7 and 8 and needs its own
+design; this audit fixes defects in what exists and records what it cannot fix.
