@@ -19,7 +19,7 @@ for:
 | `scripts/verify.sh` | `grep -vi esr` matched nothing → exit 1 → `pipefail` + `set -e` → silent abort at section **1a of 20**. Output still ended in green ticks. **Fixed 2026-08-14.** |
 | `scripts/setup-thunderbird.sh` | Non-matching glob → `ls` exit 2 → same chain → script dies at the profile lookup, making the "launch Thunderbird once" branch **unreachable dead code** in exactly the fresh-install case it was written for. **Fixed 2026-08-14.** |
 | `scripts/create-fedora-sway-vm.sh` | P1's own `sudo systemctl reboot` kills the ssh session; under `set -euo pipefail` that would abort the script at the moment of interest. **Fixed 2026-08-14** (accepted exit + re-wait). |
-| `scripts/vault/vault` | No `set -e`, `cryptsetup`/`mount` exit codes unchecked → prints `vault: unlocked` after both failed. **Open.** |
+| `scripts/vault/vault` | No `set -e`, `cryptsetup`/`mount` exit codes unchecked → prints `vault: unlocked` after both failed. **Fixed 2026-08-14**, with a stubbed repro: old printed `unlocked` and exited 0 after three failed sudo calls, new exits 1. |
 
 Plus two already in `BACKLOG.md`: the `((VERIFY_FAIL++))` abort and audit item 4
 ("eliminate false ready state transitions").
@@ -96,12 +96,14 @@ Remaining candidates from query 1, none yet verified: `setup-yazi.sh:20,40`,
 no match — the likely outcome is that most are fine, and saying so with evidence
 is a valid result.
 
-### Known open item to fix first
+### Done: `scripts/vault/vault`
 
-`scripts/vault/vault` — `unlock` and `lock` both report success unconditionally.
-This is the highest-consequence one: it is the gate in front of every API key,
-and a false "unlocked" was already observed twice (sudo without a TTY, and three
-wrong passphrases).
+Both `unlock` and `lock` now check every privileged step and re-read the final
+state through `vault_is_unlocked` instead of assuming it. A failed mount closes
+the mapper again rather than leaving a decrypted-but-unmounted vault that
+`status` would call locked. Reproduced with stubbed `lsblk`/`sudo` on PATH — no
+hardware and no real passphrase needed, which is how the rest of pass 1 should
+be tested too.
 
 ---
 

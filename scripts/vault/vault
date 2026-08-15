@@ -21,18 +21,49 @@ require_unlocked() { vault_is_unlocked || { echo "vault: locked — run 'vault u
 
 cmd="${1:-}"; shift || true
 case "$cmd" in
+    # This script runs without `set -e` on purpose (the data commands below rely
+    # on it), so every privileged step here checks its own exit code and the
+    # final state is re-read rather than assumed. Reporting "unlocked" after a
+    # failed cryptsetup was observed twice — sudo with no TTY, and three wrong
+    # passphrases — and a false "unlocked" on the box holding every API key is
+    # the worst possible lie this tool can tell.
     unlock)
         dev="$(vault_device)"; [[ -n "$dev" ]] || { echo "vault: device not found (PARTLABEL=$VAULT_PARTLABEL)" >&2; exit 1; }
-        sudo cryptsetup open "$dev" "$VAULT_MAPPER"
-        mkdir -p "$VAULT_MOUNT"; chmod 700 "$VAULT_MOUNT"
-        sudo mount "/dev/mapper/$VAULT_MAPPER" "$VAULT_MOUNT"
+        if ! sudo cryptsetup open "$dev" "$VAULT_MAPPER"; then
+            echo "vault: cryptsetup open failed on $dev — NOT unlocked" >&2; exit 1
+        fi
+        if ! mkdir -p "$VAULT_MOUNT" || ! chmod 700 "$VAULT_MOUNT"; then
+            echo "vault: cannot prepare $VAULT_MOUNT — NOT unlocked" >&2
+            sudo cryptsetup close "$VAULT_MAPPER" || true
+            exit 1
+        fi
+        if ! sudo mount "/dev/mapper/$VAULT_MAPPER" "$VAULT_MOUNT"; then
+            # Close the mapper again: a decrypted-but-unmounted device is a
+            # half-open vault that `status` would not call unlocked and nobody
+            # would think to clean up.
+            echo "vault: mount failed — closing the mapper again, NOT unlocked" >&2
+            sudo cryptsetup close "$VAULT_MAPPER" || true
+            exit 1
+        fi
         # Take ownership of the whole tree: the scaffold may have been created by
         # root during setup, so chown -R ensures the normal user can edit secrets.
-        sudo chown -R "$USER:$USER" "$VAULT_MOUNT"
+        if ! sudo chown -R "$USER:$USER" "$VAULT_MOUNT"; then
+            echo "vault: warning — chown failed; secrets may not be writable" >&2
+        fi
+        vault_is_unlocked || { echo "vault: post-check failed — NOT unlocked" >&2; exit 1; }
         echo "vault: unlocked at $VAULT_MOUNT" ;;
     lock)
-        mountpoint -q "$VAULT_MOUNT" && sudo umount "$VAULT_MOUNT"
-        [[ -e "/dev/mapper/$VAULT_MAPPER" ]] && sudo cryptsetup close "$VAULT_MAPPER"
+        if mountpoint -q "$VAULT_MOUNT" && ! sudo umount "$VAULT_MOUNT"; then
+            echo "vault: umount failed — STILL UNLOCKED (something is using $VAULT_MOUNT?)" >&2
+            echo "vault: check with  lsof +D $VAULT_MOUNT  or  fuser -vm $VAULT_MOUNT" >&2
+            exit 1
+        fi
+        if [[ -e "/dev/mapper/$VAULT_MAPPER" ]] && ! sudo cryptsetup close "$VAULT_MAPPER"; then
+            echo "vault: cryptsetup close failed — the device is STILL DECRYPTED" >&2; exit 1
+        fi
+        if vault_is_unlocked || [[ -e "/dev/mapper/$VAULT_MAPPER" ]]; then
+            echo "vault: post-check failed — NOT fully locked" >&2; exit 1
+        fi
         echo "vault: locked" ;;
     status)
         if vault_is_unlocked; then echo "unlocked at $VAULT_MOUNT"; else echo "locked"; fi ;;
