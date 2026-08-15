@@ -17,9 +17,13 @@ phase_P0() {
 }
 
 phase_P1() {
-    bash "$HERE/setup.sh"
-    bash "$HERE/packages.sh"
-    bash "$HERE/scripts/setup-orchestrator-service.sh"
+    # `|| return 1` on every step: this script runs under `set -uo pipefail` with
+    # no `-e`, so an unchecked failure here used to reboot the machine anyway and
+    # hand a broken phase 1 to phase 2. Rebooting on top of a failed setup.sh is
+    # the worst possible response, because the evidence scrolls away with it.
+    bash "$HERE/setup.sh"    || return 1
+    bash "$HERE/packages.sh" || return 1
+    bash "$HERE/scripts/setup-orchestrator-service.sh" || return 1
     orch_set PRE_REBOOT_DEPLOYMENT "$(current_deployment_id)"
     mark_phase P1            # record before rebooting so resume continues at P2
     echo "rebooting for the new rpm-ostree deployment..."
@@ -32,17 +36,20 @@ phase_P2() {
     local now pre; now="$(current_deployment_id)"; pre="$(orch_get PRE_REBOOT_DEPLOYMENT)"
     [[ -n "$now" && "$now" != "$pre" ]] || echo "warning: deployment unchanged ($now)"
     orch_set DEPLOYMENT_ID "$now"
+    # check-hardware is advisory (it reports GPU/VA-API/KVM findings), so it stays
+    # tolerant. The rest build the environment the install is for — a failure
+    # there must stop the run rather than be papered over by the final verify.
     bash "$HERE/scripts/check-hardware.sh"            || true
-    bash "$HERE/scripts/setup-kvm.sh"
-    bash "$HERE/scripts/setup-damian-container.sh"
-    bash "$HERE/scripts/setup-ubuntu-dev-container.sh"
-    bash "$HERE/scripts/setup-security-container.sh"
+    bash "$HERE/scripts/setup-kvm.sh"                 || return 1
+    bash "$HERE/scripts/setup-damian-container.sh"    || return 1
+    bash "$HERE/scripts/setup-ubuntu-dev-container.sh" || return 1
+    bash "$HERE/scripts/setup-security-container.sh"  || return 1
     # Apply the harvested vault manifest. VAULT_MOUNT must point at the on-disk
     # staging (the real ~/.vault is locked/unmounted after P0).
     if [[ -f "$STAGE/install/manifest.toml" ]]; then
-        VAULT_MOUNT="$STAGE" bash "$HERE/scripts/vault/vault-apply-manifest.sh" "$STAGE/install/manifest.toml"
+        VAULT_MOUNT="$STAGE" bash "$HERE/scripts/vault/vault-apply-manifest.sh" "$STAGE/install/manifest.toml" || return 1
     fi
-    bash "$HERE/scripts/verify.sh" --profile post-reboot
+    bash "$HERE/scripts/verify.sh" --profile post-reboot || return 1
 }
 
 phase_P3() {

@@ -44,7 +44,18 @@ orchestrate_run_remaining() {
     for p in "${ORCH_PHASES[@]}"; do
         phase_is_done "$p" && continue
         echo "==> phase $p"
-        "phase_$p"
+        # The phase's exit status is the whole point: orchestrate.sh runs under
+        # `set -uo pipefail` with NO `-e`, so an unchecked call let a failed phase
+        # be marked done, the remaining phases run anyway, and the engine report a
+        # successful unattended install. Worse, `phase_is_done` would then skip
+        # the failed phase on every later resume, so it could never be retried.
+        if ! "phase_$p"; then
+            orch_set PHASE_FAILED "$p"
+            echo "orchestrate: phase $p FAILED — stopping. It is not marked done," >&2
+            echo "orchestrate: so re-running resumes at $p once the cause is fixed." >&2
+            return 1
+        fi
+        orch_set PHASE_FAILED ""     # clear a previous failure once the phase passes
         mark_phase "$p"
     done
 }

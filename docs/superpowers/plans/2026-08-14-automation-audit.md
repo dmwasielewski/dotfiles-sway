@@ -4,8 +4,8 @@
 defects, starting with the one class that has already produced four separate
 failures.
 
-**Status:** not started. Findings below are from a first mechanical scan on
-2026-08-14; three fixes were made the same day and are marked as such.
+**Status:** pass 1 in progress. Six instances of the exit-status class found and
+fixed so far, each with a recorded repro.
 
 ---
 
@@ -20,6 +20,8 @@ for:
 | `scripts/setup-thunderbird.sh` | Non-matching glob → `ls` exit 2 → same chain → script dies at the profile lookup, making the "launch Thunderbird once" branch **unreachable dead code** in exactly the fresh-install case it was written for. **Fixed 2026-08-14.** |
 | `scripts/create-fedora-sway-vm.sh` | P1's own `sudo systemctl reboot` kills the ssh session; under `set -euo pipefail` that would abort the script at the moment of interest. **Fixed 2026-08-14** (accepted exit + re-wait). |
 | `scripts/vault/vault` | No `set -e`, `cryptsetup`/`mount` exit codes unchecked → prints `vault: unlocked` after both failed. **Fixed 2026-08-14**, with a stubbed repro: old printed `unlocked` and exited 0 after three failed sudo calls, new exits 1. |
+| `scripts/lib-orchestrate.sh` | **The engine itself.** `orchestrate_run_remaining` ignored each phase's exit status and marked it done regardless, so a failed P1 still ran P2 and P3 and finished with `PHASE=P3`, exit 0 — a reported-successful unattended install on top of a failed phase. `phase_is_done` then skipped that phase on every resume, so it could never be retried. **Fixed 2026-08-14**, test-first. |
+| `orchestrate.sh` | Phase bodies ran their steps unchecked, so a failed `setup.sh` still rebooted the machine and handed a broken phase 1 to phase 2. **Fixed 2026-08-14**; `check-hardware.sh` stays deliberately tolerant. |
 
 Plus two already in `BACKLOG.md`: the `((VERIFY_FAIL++))` abort and audit item 4
 ("eliminate false ready state transitions").

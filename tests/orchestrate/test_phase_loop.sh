@@ -21,4 +21,15 @@ assert_eq "$(orch_get PHASE)" "P3" "PHASE advanced to P3"
 : > "$LOG"; orch_set PHASE ""
 orchestrate_run_remaining
 assert_eq "$(tr '\n' ' ' < "$LOG")" "P0 P1 P2 P3 " "fresh run executes all phases"
+# A failing phase must stop the run, stay unmarked, and report non-zero.
+# Without this the engine marked a failed phase done, ran the remaining phases
+# and reported a successful install — and a resume would skip the phase forever.
+: > "$LOG"; orch_set PHASE ""
+phase_P1() { echo P1 >> "$LOG"; return 1; }
+orchestrate_run_remaining && rc=0 || rc=$?
+assert_eq "$(tr '\n' ' ' < "$LOG")" "P0 P1 " "stops at the failing phase"
+assert_eq "$rc" "1" "returns non-zero when a phase fails"
+assert_eq "$(orch_get PHASE)" "P0" "failed phase is NOT marked done, so a resume retries it"
+assert_eq "$(orch_get PHASE_FAILED)" "P1" "records which phase failed"
+
 assert_summary
