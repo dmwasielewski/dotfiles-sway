@@ -21,9 +21,27 @@ echo "==> caching one sudo credential for provisioning"
 sudo -v
 
 echo "==> harvesting secrets to $STAGE"
+# Ask the vault library where the vault is rather than repeating its default:
+# hardcoding "$HOME/.vault" here meant a VAULT_MOUNT override unlocked one place
+# and harvested from another. If a stale empty ~/.vault existed, the copy would
+# succeed, stage nothing, and the install would carry on with no secrets at all.
+# shellcheck source=scripts/vault/lib-vault.sh
+source "$DEST/scripts/vault/lib-vault.sh"
+vault_is_unlocked || { echo "install: vault is not mounted at $VAULT_MOUNT — aborting" >&2; exit 1; }
+
 mkdir -p "$STAGE"; chmod 700 "$STAGE"
-cp -a "$HOME/.vault/." "$STAGE/"
+cp -a "$VAULT_MOUNT/." "$STAGE/"
 chmod -R go-rwx "$STAGE"
+
+# Prove the harvest actually produced something before locking the vault again;
+# after `vault lock` the source is gone and an empty staging is unrecoverable
+# without the USB and the passphrase.
+staged_count="$(find "$STAGE" -type f | wc -l)"
+if [[ "$staged_count" -eq 0 ]]; then
+    echo "install: harvested 0 files from $VAULT_MOUNT — aborting before locking the vault" >&2
+    exit 1
+fi
+echo "==> harvested $staged_count file(s)"
 "$VAULT" lock
 
 echo "==> starting the orchestrator"
