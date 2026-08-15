@@ -4,7 +4,7 @@
 defects, starting with the one class that has already produced four separate
 failures.
 
-**Status:** pass 1 in progress. Eight fixes so far, each with a recorded repro.
+**Status:** pass 1 complete, pass 2 started. Ten fixes so far, each with a recorded repro.
 One of them (the touchpad check) was only visible *because* an exit code was
 made honest first — a good argument for doing this class before pass 2.
 
@@ -24,6 +24,7 @@ for:
 | `scripts/lib-orchestrate.sh` | **The engine itself.** `orchestrate_run_remaining` ignored each phase's exit status and marked it done regardless, so a failed P1 still ran P2 and P3 and finished with `PHASE=P3`, exit 0 — a reported-successful unattended install on top of a failed phase. `phase_is_done` then skipped that phase on every resume, so it could never be retried. **Fixed 2026-08-14**, test-first. |
 | `orchestrate.sh` | Phase bodies ran their steps unchecked, so a failed `setup.sh` still rebooted the machine and handed a broken phase 1 to phase 2. **Fixed 2026-08-14**; `check-hardware.sh` stays deliberately tolerant. |
 | `write_provisioning_sudoers` | Installed the drop-in into `/etc/sudoers.d` **first** and ran `visudo -cf` on it **afterwards**, without checking the result — the comment claimed the opposite order. A malformed drop-in can break sudo system-wide, after which sudo cannot be used to remove it. **Fixed 2026-08-14**, test-first. |
+| `scripts/install-from-usb.sh` | Hardcoded `$HOME/.vault` instead of `$VAULT_MOUNT`, and a stale empty directory made `cp -a` succeed while staging nothing — the install then locked the vault and continued with no secrets, silently, because the manifest step skips when the file is absent. **Fixed 2026-08-14**. |
 
 Plus two already in `BACKLOG.md`: the `((VERIFY_FAIL++))` abort and audit item 4
 ("eliminate false ready state transitions").
@@ -145,6 +146,32 @@ Only after pass 1, and each item needs a repro before a fix.
   personal yet. That is backlog item 11, not a defect.
 - **All 88 repo-internal file references resolve**, and all 77 shell scripts
   parse. Static warnings are down to 11, all style or loop variables.
+- **The no-hardcoding rule holds.** No `/dev/sdX`, no hardcoded flatpak IDs in
+  logic, no hardcoded username — every "damian" hit is the filename
+  `setup-damian-container.sh`, and `VM_USER` is an overridable default.
+- **Submodules are covered on both install paths.** `install-from-usb.sh` never
+  calls `git submodule update`, but `setup-neovim-config.sh` initialises the one
+  submodule it needs, and `setup.sh` calls it.
+- **The phase-2 unit is sound.** `After=default.target` together with
+  `WantedBy=default.target` looks like an ordering cycle but is not: a stub unit
+  with the same stanzas was enabled here and systemd pulled it into
+  `default.target` with no cycle reported. `systemd-analyze verify` is clean and
+  `orchestrate.sh` is mode 100755, so `ExecStart` will not fail with 203/EXEC.
+  Whether linger starts the user manager at boot is the one thing left that
+  genuinely needs the VM.
+- **Waybar helpers all return valid JSON and exit 0** (`updates`, `nordvpn`,
+  `adguard`), and all three `verify.sh` profiles run to completion, exit 0, and
+  reject an unknown profile with exit 2.
+
+### Minor, recorded not fixed
+
+- `dotfiles-phase2.service` sets `SuccessExitStatus=0 75`, but nothing in the
+  orchestrator ever returns 75. The intent (a phase that needs another login
+  should not mark the service failed) was never implemented. Harmless dead
+  config; decide the semantics before writing code for it.
+- `configure-shellgpt.sh:52` assigns `GEMINI_FALLBACK_MODEL` and never uses it.
+  The fallback itself works — the generated wrapper reads
+  `SHELLGPT_GEMINI_FALLBACK_MODEL` from the environment with the same default.
 
 ### Open:
 
