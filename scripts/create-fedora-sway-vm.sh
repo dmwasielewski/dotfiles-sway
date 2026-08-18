@@ -283,7 +283,22 @@ case "$VM_INSTALL_MODE" in
             fi
             git -C ~/dotfiles-sway submodule update --init --recursive
             bash ~/dotfiles-sway/orchestrate.sh run
-        "' || echo -e "${YELLOW}==> SSH ended (expected: phase 1 reboots the guest).${NC}"
+        "' || echo -e "${YELLOW}==> SSH ended — phase 1 either rebooted the guest or failed.${NC}"
+
+        # Those two look identical from here: both end the ssh session with a
+        # non-zero status. Ask the guest which it was instead of assuming the
+        # happy one — assuming cost a 20-minute wait for an INSTALL_COMPLETE that
+        # a failed P1 was never going to write (observed 2026-08-18).
+        failed_phase="$(vm_ssh 'grep -m1 "^PHASE_FAILED=" ~/.dotfiles-install-state 2>/dev/null | cut -d= -f2' 2>/dev/null | tr -d "\r")"
+        if [[ -n "$failed_phase" ]]; then
+            echo -e "${RED}✗ Phase $failed_phase FAILED in the guest — the orchestrator stopped there.${NC}"
+            echo -e "${YELLOW}  It is not marked done, so re-running this script resumes at $failed_phase.${NC}"
+            echo -e "${YELLOW}  Guest state:${NC}"
+            vm_ssh 'cat ~/.dotfiles-install-state' 2>/dev/null | sed 's/^/    /'
+            echo -e "${YELLOW}  Last guest log lines:${NC}"
+            vm_ssh 'tail -15 ~/.dotfiles-install.log' 2>/dev/null | sed 's/^/    /'
+            exit 1
+        fi
 
         echo -e "${CYAN}==> Waiting for the guest to come back...${NC}"
         if ! wait_for_ssh; then
