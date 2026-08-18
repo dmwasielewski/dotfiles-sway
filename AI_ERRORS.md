@@ -1008,3 +1008,29 @@ and a wedged signal path now costs a minute of staleness instead of an hour.
 the rendered bar, not the file behind it. When the rendered state cannot be
 inspected directly, say so and ask — do not promote the nearest inspectable
 value into a claim about the screen.
+
+## A timeout tuned below the thing it waits for is a false negative
+
+**2026-08-18.** The orchestrator VM run reported `✗ SSH did not become ready` and
+exited. The guest was fine: a console screenshot (`virsh screenshot`, which dumps
+the QXL framebuffer without needing a viewer) showed Anaconda at
+`Receiving objects: 96% (69100/71827) 2.1 GB` — still pulling the ostree commit.
+`wait_for_ssh` allowed 360 × 5 s = 30 minutes; the pull alone had not finished at
+32 minutes, and the checkout, bootloader and first boot come after it. The
+ceiling was set below the duration of the work it was waiting for, so it could
+only ever report a healthy install as a failure.
+
+Now `SSH_WAIT_SECONDS` (default 5400) with a progress line every five minutes —
+a silent half-hour is indistinguishable from a hang, which is exactly how this
+looked while it was working correctly.
+
+**An existing VM is a resume, not an error.** The script refused to run when the
+domain existed, so a timeout on a ~40-minute install phase meant destroying it
+and paying that cost again. It now resumes by default; `VM_RECREATE=1` forces a
+clean rebuild.
+
+**The same mistake in my own harness.** The run was launched as
+`bash script.sh > log 2>&1; echo "EXIT=$?"`. The trailing `echo` succeeds, so the
+compound command exits 0 and the failure was reported as success — the identical
+defect this audit has been fixing in the repo, committed by me while fixing it.
+Never terminate a wrapper with a command that cannot fail.

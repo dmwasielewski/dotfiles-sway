@@ -65,12 +65,27 @@ wait_for_ip() {
     return 1
 }
 
+# 90 minutes by default, not 30. The Fedora Atomic install pulls ~72k ostree
+# objects (~2 GB) before it even writes a bootloader: on 2026-08-18 that was only
+# 96% done at the 32-minute mark, so the old 30-minute ceiling aborted a healthy
+# install and reported "SSH did not become ready" as if the guest were broken.
+# A ceiling tuned below the thing it is waiting for is not a timeout, it is a
+# false negative.
+SSH_WAIT_SECONDS="${SSH_WAIT_SECONDS:-5400}"
+
 wait_for_ssh() {
     local attempt
     local state
     local ip
+    local tries=$(( SSH_WAIT_SECONDS / 5 ))
 
-    for attempt in $(seq 1 360); do
+    for attempt in $(seq 1 "$tries"); do
+        # Say what is happening every 5 minutes: a silent half-hour is
+        # indistinguishable from a hang, which is why the last run looked stuck.
+        if (( attempt % 60 == 0 )); then
+            echo -e "${CYAN}==> still waiting for SSH ($(( attempt * 5 / 60 )) min of $(( SSH_WAIT_SECONDS / 60 )); guest is installing)${NC}"
+        fi
+
         state="$(virsh --connect qemu:///system domstate "$VM_NAME" 2>/dev/null || true)"
         if [[ "$state" == "shut off" ]]; then
             echo -e "${CYAN}==> VM is shut off after install; starting installed system...${NC}"
@@ -191,12 +206,27 @@ echo -e "${GREEN}✓ ISO checksum verified${NC}"
 echo -e "${CYAN}==> Staging ISO for libvirt...${NC}"
 install -D -m 0644 "$VM_ISO" "$VM_STAGE_ISO"
 
+# An existing VM is a resume, not an error. This run takes over an hour and the
+# install phase alone is ~40 minutes; making a timeout or an interrupted run cost
+# that time again is why the previous attempt had to be thrown away. Set
+# VM_RECREATE=1 to force a clean rebuild.
 if virsh --connect qemu:///system dominfo "$VM_NAME" >/dev/null 2>&1; then
-    echo -e "${RED}✗ VM already exists: $VM_NAME${NC}"
-    echo -e "${YELLOW}  Remove it first: virsh --connect qemu:///system destroy $VM_NAME && virsh --connect qemu:///system undefine $VM_NAME --nvram${NC}"
-    exit 1
+    if [[ "${VM_RECREATE:-0}" == "1" ]]; then
+        echo -e "${YELLOW}==> VM_RECREATE=1 — destroying the existing $VM_NAME${NC}"
+        virsh --connect qemu:///system destroy "$VM_NAME" >/dev/null 2>&1 || true
+        virsh --connect qemu:///system undefine "$VM_NAME" --nvram >/dev/null 2>&1 || true
+    else
+        echo -e "${CYAN}==> $VM_NAME already exists — resuming instead of rebuilding${NC}"
+        echo -e "${CYAN}    (VM_RECREATE=1 forces a clean rebuild)${NC}"
+        if [[ "$(virsh --connect qemu:///system domstate "$VM_NAME" 2>/dev/null)" != "running" ]]; then
+            echo -e "${CYAN}==> starting it${NC}"
+            virsh --connect qemu:///system start "$VM_NAME" >/dev/null
+        fi
+        SKIP_PROVISION=1
+    fi
 fi
 
+if [[ "${SKIP_PROVISION:-0}" != "1" ]]; then
 echo -e "${CYAN}==> Launching virt-install...${NC}"
 virt-install --connect qemu:///system \
     --name "$VM_NAME" \
@@ -214,6 +244,8 @@ virt-install --connect qemu:///system \
     --initrd-inject "$KS_FILE" \
     --extra-args "inst.ks=file:/$(basename "$KS_FILE") inst.ksstrict" \
     --noautoconsole
+
+fi   # SKIP_PROVISION
 
 echo -e "${CYAN}==> Waiting for VM to obtain an IP address...${NC}"
 VM_IP="$(wait_for_ip)" || {
