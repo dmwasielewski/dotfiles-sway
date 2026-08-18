@@ -52,8 +52,26 @@ require_sudo_session() {
         return 0
     fi
 
+    # Passwordless sudo — which both the orchestrator's P0 drop-in and the
+    # disposable-VM kickstart install — needs no session and no keepalive.
+    # Test it by RUNNING something, not by validating: `sudo -v` does not mean
+    # "may I run things", it means "authenticate this user", and sudo demands a
+    # password for it even under `NOPASSWD: ALL`. Over ssh with no TTY that
+    # fails with "a terminal is required to read the password" and takes the
+    # whole install phase down — which is exactly how phase P1 died in the
+    # 2026-08-18 VM run, on a guest where `sudo -n true` worked fine.
+    # An unattended install has no terminal by definition.
+    if sudo -n true >/dev/null 2>&1; then
+        echo "==> Passwordless sudo already available — no session needed."
+        return 0
+    fi
+
     echo "==> Acquiring sudo session for unattended install steps..."
-    sudo -v
+    if ! sudo -v; then
+        echo "ERROR: could not obtain a sudo session." >&2
+        echo "       Unattended runs need passwordless sudo; interactive runs need a terminal." >&2
+        return 1
+    fi
 
     parent_pid="$$"
     (
