@@ -240,7 +240,13 @@
     "custom/updates": {
         "exec": "$HOME/.local/bin/updates-waybar",
         "return-type": "json",
-        "interval": 3600,
+        // 60s, not 3600s. The signal below is the primary, event-driven refresh
+        // and this interval is only its safety net — but on 2026-08-18 a waybar
+        // process that had been up for four days stopped acting on the signal,
+        // and an hour-long net meant the icon kept showing a stale all-clear
+        // with no way for anyone to tell. The exec is cache-only and measures
+        // 0.00s, so a short net is free.
+        "interval": 60,
         "tooltip": true,
         "signal": 8,
         "on-click": "$HOME/.local/bin/updates-do"

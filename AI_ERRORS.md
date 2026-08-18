@@ -974,3 +974,37 @@ by `tests/updates/test_unknown_not_uptodate.sh`.
 
 This is the same class as the `verify.sh` silent abort and the `vault unlock`
 false success: **a status nobody looked at, turning "I don't know" into "fine".**
+
+## "The cache says critical" is not "the user sees a red icon"
+
+**Meta-lesson, 2026-08-18.** I told Damian his icon was red because
+`~/.cache/waybar-updates.json` contained `"class":"critical"`. It was not red. A
+cache file is what the *producer* wrote; what the bar renders is whether the
+*consumer* re-read it. Those are two different facts and only the second one is
+the user's experience.
+
+What the evidence actually showed, once gathered properly:
+
+- The staged OS update was real — `rpm-ostree status --json` reported
+  `staged=true` for `44.20260817.0` while `44.20260814.0` was booted.
+- The cache was correct: `class=critical`.
+- The waybar process that had been running since the previous boot **did not
+  re-run the module** when signalled. Proven by setting the cache file's atime
+  two days back, sending `SIGRTMIN+8`, and observing atime unchanged — with a
+  control test (`cat` the file, atime updates) confirming the method works on
+  this `relatime` mount.
+- After `swaymsg reload`, the module ran, read `critical`, and on the *fresh*
+  process `pkill -RTMIN+8 -x waybar` refreshes it correctly (signal 42 here;
+  waybar catches RT 35-64, per `SigCgt` in `/proc/<pid>/status`).
+
+Why the four-day-old process stopped responding could not be determined: the
+evidence died with the process. The actionable part is the consequence, not the
+cause — **the indicator's correctness depended on one long-lived process staying
+responsive, with an hour-long interval as its only fallback.** `interval` is now
+60s. The exec is cache-only and measures 0.00s, so a short safety net is free,
+and a wedged signal path now costs a minute of staleness instead of an hour.
+
+**Verify at the layer the user experiences.** For a status indicator that means
+the rendered bar, not the file behind it. When the rendered state cannot be
+inspected directly, say so and ask — do not promote the nearest inspectable
+value into a claim about the screen.
