@@ -147,23 +147,46 @@ sed \
     -e "s|__OSTREE_URL__|$VM_OSTREE_URL_ESCAPED|g" \
     "$KS_TEMPLATE" > "$KS_FILE"
 
-if [[ -f "$VM_ISO" ]]; then
-    echo -e "${GREEN}✓ ISO already present: $VM_ISO${NC}"
-else
-    echo -e "${CYAN}==> Downloading Fedora Everything ISO...${NC}"
-    mkdir -p "$(dirname "$VM_ISO")"
-    curl -fL "$VM_ISO_URL" -o "$VM_ISO"
-fi
-
-if [[ -f "$VM_CHECKSUM" ]]; then
+# The checksum comes first: it is what decides whether an existing ISO is usable.
+if [[ -s "$VM_CHECKSUM" ]]; then
     echo -e "${GREEN}✓ checksum already present: $VM_CHECKSUM${NC}"
 else
     echo -e "${CYAN}==> Downloading Fedora Everything checksum...${NC}"
-    curl -fL "$VM_CHECKSUM_URL" -o "$VM_CHECKSUM"
+    mkdir -p "$(dirname "$VM_CHECKSUM")"
+    curl -fL --retry 3 "$VM_CHECKSUM_URL" -o "$VM_CHECKSUM"
 fi
 
-echo -e "${CYAN}==> Verifying ISO checksum...${NC}"
-( cd "$(dirname "$VM_ISO")" && sha256sum --ignore-missing -c "$(basename "$VM_CHECKSUM")" )
+iso_is_valid() {
+    [[ -s "$VM_ISO" ]] || return 1
+    ( cd "$(dirname "$VM_ISO")" && sha256sum --ignore-missing --status -c "$(basename "$VM_CHECKSUM")" )
+}
+
+# `[[ -f ]]` is not "the ISO is usable": an interrupted curl leaves a truncated
+# file behind, and the old check announced "✓ ISO already present" for a 179 MB
+# fragment of a 700 MB image (observed 2026-08-15 after a cancelled download).
+# The run then died at the verification step with a bare checksum error and no
+# hint that the cure is to delete the fragment — and every rerun failed the same
+# way. Validate what is on disk, and re-fetch what does not validate.
+if iso_is_valid; then
+    echo -e "${GREEN}✓ ISO already present and verified: $VM_ISO${NC}"
+else
+    if [[ -e "$VM_ISO" ]]; then
+        echo -e "${YELLOW}==> Existing ISO fails its checksum ($(du -h "$VM_ISO" | cut -f1)) — re-downloading${NC}"
+        rm -f "$VM_ISO"
+    fi
+    echo -e "${CYAN}==> Downloading Fedora Everything ISO (~700 MB)...${NC}"
+    mkdir -p "$(dirname "$VM_ISO")"
+    # -C - resumes a partial transfer instead of restarting from zero.
+    curl -fL --retry 3 -C - "$VM_ISO_URL" -o "$VM_ISO"
+
+    echo -e "${CYAN}==> Verifying ISO checksum...${NC}"
+    if ! iso_is_valid; then
+        echo -e "${RED}✗ The downloaded ISO does not match its published checksum.${NC}" >&2
+        echo -e "${YELLOW}  Delete it and retry:  rm -f $VM_ISO${NC}" >&2
+        exit 1
+    fi
+fi
+echo -e "${GREEN}✓ ISO checksum verified${NC}"
 
 echo -e "${CYAN}==> Staging ISO for libvirt...${NC}"
 install -D -m 0644 "$VM_ISO" "$VM_STAGE_ISO"
