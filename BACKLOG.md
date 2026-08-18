@@ -170,6 +170,24 @@ exists, add `scripts/setup-claude-desktop.sh` modelled on `setup-chatgpt.sh`
 a free workspace, and cover it in `verify.sh`. Until then Claude stays as the
 `claude` CLI in toolbox `damianf` plus a Firefox tab.
 
+### 🟠 14. The update module still has two blind spots after the 2026-08-18 fix
+`flatpak_count` and the OS branch now say "could not check" instead of inventing
+a zero (see `AI_ERRORS.md`). Two related gaps remain:
+
+- **User-local tools skip silently.** `userlocal_update_rows` does
+  `[[ -z "$latest" ]] && continue` when the GitHub API cannot be reached — no
+  count, no note in the tooltip. It has a last-known-good tag cache, so the
+  window is narrow, but an unauthenticated API is rate-limited to 60 requests an
+  hour and a rate-limited reply is indistinguishable from "no newer release".
+- **Resume from suspend defeats the cache.** `CACHE_MAX_AGE` is 3 h, so a resume
+  after that spawns a refresh immediately — typically before NetworkManager has
+  connected. The result is now amber rather than a false all-clear, but it is
+  still a wasted check that then sits for three hours.
+  `XDG_RUNTIME_DIR` survives suspend, so the first-run-of-session force-refresh
+  does not fire either. Options: retry the refresh when a check returns unknown
+  (backoff), or hook `sleep.target` to invalidate the cache on resume. Needs a
+  decision before code.
+
 ---
 
 ## Small open items
