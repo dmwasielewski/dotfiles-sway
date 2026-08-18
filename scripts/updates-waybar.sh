@@ -28,12 +28,19 @@ emit() {
 
 # ── Heavy worker: compute everything and write the cache atomically ────────
 compute_and_cache() {
-    local total=0 os_is_staged=0 sec_high=0
+    local total=0 os_is_staged=0 sec_high=0 unknown=0
     local lines=()
 
-    # Flatpak (first — most frequently updated)
-    local fp; fp=$(flatpak_count)
-    if [[ "$fp" -gt 0 ]]; then
+    # Flatpak (first — most frequently updated).
+    # `flatpak_count` returns non-zero when a remote could not be reached. Silence
+    # from a check that never ran is not the same as "nothing to update", and
+    # saying "up to date" for it is the failure this whole module exists to avoid.
+    local fp fp_rc
+    fp=$(flatpak_count) && fp_rc=0 || fp_rc=$?
+    if [[ "$fp_rc" -ne 0 ]]; then
+        lines+=("Flatpak: could not check (remote unreachable) — last updated $(flatpak_last_label)")
+        unknown=$(( unknown + 1 ))
+    elif [[ "$fp" -gt 0 ]]; then
         lines+=("Flatpak: $fp app(s) — last updated $(flatpak_last_label)")
         total=$(( total + fp ))
     else
@@ -80,7 +87,11 @@ compute_and_cache() {
     if [[ "$(os_staged)" -eq 1 ]]; then
         os_is_staged=1; lines+=("OS: staged update — reboot to apply"); total=$(( total + 1 ))
     elif [[ "$os_fresh" == "none" ]]; then
-        lines+=("OS: not yet checked (repo unreachable)")
+        # Never checked and no last-known-good to fall back on. This used to add
+        # nothing to the badge, so "I have no idea" rendered identically to
+        # "all clear".
+        lines+=("OS: could not check (repo unreachable, no cached result)")
+        unknown=$(( unknown + 1 ))
     elif [[ "$os_state" == "pending" ]]; then
         local nv pc reg
         nv="$(os_parse_version "$os_raw")"; pc="$(os_parse_pkgcount "$os_raw")"
@@ -100,10 +111,12 @@ compute_and_cache() {
     #   critical (red)     a deployment is staged — reboot required / pending
     # OS pending packages and security count toward the badge (amber) but never
     # turn it red; only an actually staged update (awaiting reboot) is red.
+    # A source that could not be checked counts as "needs your attention" (amber),
+    # never as "nothing to do" (grey). Grey must mean "I checked, and it is clean".
     local klass
-    if   [[ "$total" -eq 0 ]];         then klass="uptodate"
-    elif [[ "$os_is_staged" -eq 1 ]];  then klass="critical"
-    else                                    klass="warning"; fi
+    if   [[ "$total" -eq 0 && "$unknown" -eq 0 ]]; then klass="uptodate"
+    elif [[ "$os_is_staged" -eq 1 ]];              then klass="critical"
+    else                                                klass="warning"; fi
 
     local tooltip result
     tooltip="$(printf '%s\n' "${lines[@]}")"

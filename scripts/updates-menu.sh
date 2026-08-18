@@ -37,7 +37,9 @@ refresh_userlocal() { UL_ROWS="$(userlocal_update_rows)"; }
 # ── Summary screen (always shows every section) ──────────────────────────
 show_summary() {
     # Gather (OS comes from the per-session cache, not a fresh slow check)
-    FP_COUNT="$(flatpak_count)"
+    # Same rule as the Waybar indicator: a count that could not be obtained must
+    # not be printed as if it were zero.
+    FP_COUNT="$(flatpak_count)" && FP_RC=0 || FP_RC=$?
     OS_RAW="$(os_raw_cached)"
     OS_STAGED="$(os_staged)"
     OS_STATE="$(os_parse_state "$OS_RAW")"
@@ -51,7 +53,11 @@ show_summary() {
 
     # ── Flatpak ──
     echo "  Flatpak apps          last updated: $(flatpak_last_label)"
-    echo "    Updates:    $FP_COUNT"
+    if [[ "$FP_RC" -ne 0 ]]; then
+        echo "    Updates:    could not check (remote unreachable)"
+    else
+        echo "    Updates:    $FP_COUNT"
+    fi
     echo ""
 
     # ── Containers (dynamic) ──
@@ -335,8 +341,12 @@ show_list() {
         local NAME_W=44 VER_W=22
 
         # Flatpak — count here equals the menu count (same source)
-        local fp; fp="$(flatpak_count)"
-        echo "FLATPAK APPS ($fp)"
+        local fp fp_rc; fp="$(flatpak_count)" && fp_rc=0 || fp_rc=$?
+        if [[ "$fp_rc" -ne 0 ]]; then
+            echo "FLATPAK APPS (could not check — remote unreachable)"
+        else
+            echo "FLATPAK APPS ($fp)"
+        fi
         if [[ "$fp" -gt 0 ]]; then
             printf '  %-*s  %-*s    %s\n' "$NAME_W" "Package" "$VER_W" "Current" "New"
             printf '  %s\n' "$(printf '─%.0s' $(seq 1 $((NAME_W + VER_W + 18))))"

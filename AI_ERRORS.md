@@ -931,3 +931,46 @@ is the same false-ready class as audit item 4.
 **Check the exit code, not the last line.** This bug survived because the tail
 of the output looked healthy. When verifying that a verification tool works,
 compare the number of sections it printed against the number it contains.
+
+## The update indicator went quiet because a failed check counts as zero
+
+**Symptom (2026-08-18):** the Waybar update icon sat neutral/grey while 11 Flatpak
+updates, a yazi update and a 27-package Fedora update (1 with a security advisory)
+were waiting. Opening the menu revealed all of them at once.
+
+**Root cause — one line does it:**
+
+```bash
+n="$(flatpak remote-ls $scope --updates 2>/dev/null | grep -c . || true)"
+```
+
+`flatpak remote-ls` exits non-zero when it cannot reach a remote, but piping it
+straight into `grep -c .` throws that status away: an unreachable Flathub yields
+`0`, identical to a genuinely up-to-date system. The tooltip then printed
+**"Flatpak: up to date"** — a confident claim produced by checking nothing. The OS
+branch had the matching flaw in the other direction: it printed "not yet checked
+(repo unreachable)" but added nothing to the badge total, so an unknown OS state
+rendered exactly like a clean one. With containers freshly updated, the total was
+0 and the class was `uptodate`.
+
+Reproduced with stubs (no network needed) — with `flatpak`, `rpm-ostree` and
+`curl` all failing and fresh container timestamps, the computed badge was
+`class=uptodate`, tooltip `"Flatpak: up to date"`. That is the exact reported
+symptom, generated on demand.
+
+**The likely real-world trigger** is resume from suspend: the cache is older than
+`CACHE_MAX_AGE` (3 h), so a refresh spawns immediately — before NetworkManager
+has finished connecting. Every query fails, "all clear" is written to the cache,
+and that answer is then served for the next three hours. `XDG_RUNTIME_DIR`
+survives suspend, so the first-run-of-session force-refresh does not fire either.
+
+**Rule: grey must mean "I checked, and it is clean."** Any detector that can fail
+has three outcomes, not two — clean / has updates / could not check — and the
+third must be visible. `flatpak_count` now returns non-zero when a remote could
+not be queried (still echoing a number, so numeric callers keep working), the
+indicator counts an unknown source as amber, and both the tooltip and the menu
+say "could not check (remote unreachable)" instead of inventing a zero. Covered
+by `tests/updates/test_unknown_not_uptodate.sh`.
+
+This is the same class as the `verify.sh` silent abort and the `vault unlock`
+false success: **a status nobody looked at, turning "I don't know" into "fine".**

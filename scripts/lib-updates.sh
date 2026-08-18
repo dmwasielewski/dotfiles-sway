@@ -42,16 +42,29 @@ _flatpak_scope_arg() {                 # map installation name → flatpak scope
         *)      echo "--installation=$1" ;;
     esac
 }
+# Echoes the number of apps with updates, and RETURNS NON-ZERO when at least one
+# installation could not be queried. That distinction is the whole point: the old
+# version piped a failing `remote-ls` into `grep -c .`, so an unreachable Flathub
+# produced the same 0 as a genuinely up-to-date system and the indicator went
+# quiet while updates piled up. A count is only meaningful together with whether
+# it could be obtained, so callers must check the status, not just the number.
 flatpak_count() {
-    command -v flatpak >/dev/null 2>&1 || { echo 0; return; }
-    local total=0 inst scope n
+    command -v flatpak >/dev/null 2>&1 || { echo 0; return 0; }
+    local total=0 inst scope out rc=0
     while IFS= read -r inst; do
         [[ -z "$inst" ]] && continue
         scope="$(_flatpak_scope_arg "$inst")"
-        n="$(flatpak remote-ls $scope --updates 2>/dev/null | grep -c . || true)"
-        total=$(( total + n ))
+        # Capture first: `flatpak remote-ls` exits non-zero when it cannot reach a
+        # remote (verified against the real binary) and 0 on success, so its exit
+        # status is the signal — piping straight into grep threw that away.
+        if out="$(flatpak remote-ls $scope --updates 2>/dev/null)"; then
+            total=$(( total + $(printf '%s' "$out" | grep -c . || true) ))
+        else
+            rc=1
+        fi
     done < <(flatpak_installations)
     echo "$total"
+    return "$rc"
 }
 flatpak_update_rows() {                # echoes "appid<TAB>current<TAB>available"
     command -v flatpak >/dev/null 2>&1 || return 0
