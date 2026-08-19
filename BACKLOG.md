@@ -65,11 +65,39 @@ Aggregate `*_READY=done` was written while the component could be unusable. Fixe
 vocabulary and sharing one required-vs-optional manifest between setup and verify
 — folds into items 7 and 11.
 
-### 🟠 5. VM validation through reboot + correct network
-`scripts/create-fedora-sway-vm.sh` validates only phase 1 and hardcodes libvirt
-network `default`, while the repo manages `dotfiles-nat`. **Do:** parameterise the
-network (default to the repo-managed one after checking it's active), add
-reboot/reconnect, then run phase 2 + a verification profile before declaring success.
+### 🟠 5. VM validation through reboot — ✅ THE LINGER QUESTION IS ANSWERED (2026-08-19)
+
+The risk this item existed for — *does `systemd-linger` resume phase 2 after the
+reboot with nobody logged in?* — is settled, on a real guest rather than from
+documentation. **Yes, it does.** The documented Sway-autostart fallback is not
+needed.
+
+Evidence, taken deliberately to rule out the one alternative explanation (that an
+ssh login started the user manager):
+
+```
+system boot                 07:23:43
+user@1000.service started   07:23:50   ← 7 s after boot
+dotfiles-phase2.service     07:23:50   ← same second
+first ssh login            ~07:28      ← five minutes later
+Linger=yes
+orchestrate.sh resume        running (pid 1122)
+```
+
+`scripts/create-fedora-sway-vm.sh` now runs the orchestrator path by default
+(`VM_INSTALL_MODE=orchestrator`), starts it detached so a host interruption
+cannot kill it, resumes an existing VM instead of rebuilding, and reports which
+phase failed rather than waiting out a timeout.
+
+**Still open from the original item:** the libvirt network is still the stock
+`default`, not the repo-managed `dotfiles-nat`. Parameterise it — that part was
+never about the reboot and is unrelated to the finding above.
+
+**Four bugs surfaced only because this ran**, every one invisible on a
+configured machine — see `AI_ERRORS.md`: the interactive `sudo -v` in an
+unattended path, the RETURN trap outliving its function, `rpm -q` missing
+already-requested packages so no resume could work, and `chmod +x` dirtying the
+repo so `git pull` silently stopped.
 
 ### 🟠 6. Harden the kickstart — ✅ DONE (partial, 2026-06-11)
 **Fixed:** plaintext password `damian` removed — `rootpw --lock` + a no-password

@@ -1034,3 +1034,34 @@ clean rebuild.
 compound command exits 0 and the failure was reported as success — the identical
 defect this audit has been fixing in the repo, committed by me while fixing it.
 Never terminate a wrapper with a command that cannot fail.
+
+## Four bugs that only a fresh install could reveal
+
+**2026-08-19.** The disposable-VM run finally reached the reboot, and getting
+there cost four fixes. What they share matters more than any of them
+individually: **every one is invisible on a machine that is already set up.**
+
+| Bug | Why a configured machine never shows it |
+|---|---|
+| `require_sudo_session` ran `sudo -v`, which demands a password even under `NOPASSWD: ALL`, so it failed over ssh with "a terminal is required" | An interactive install has a terminal. Only the unattended path — the one that must never need one — hits it. |
+| A `trap 'rm -rf "$tmpdir"' RETURN` in setup-nordvpn.sh outlived its function and re-fired on the caller's return, aborting under `set -u` with `tmpdir: unbound variable` blamed on a file that never mentions it | The function returns early when the NordVPN repo and key already exist, before the trap is ever set. |
+| `packages.sh` filtered with `rpm -q`, which only sees the booted rpm database, so packages layered into a staged deployment looked absent and `rpm-ostree` aborted with "already requested" | Needs an interrupted layering to produce packages in that state. Nothing on a healthy machine is ever "requested but not booted". |
+| `setup.sh`'s `chmod +x scripts/*.sh` flipped two scripts recorded in git as 644, leaving a permanent mode diff that makes `git pull --ff-only` refuse | bootstrap.sh sees local changes and *skips* the pull, so the update path stops working in silence rather than failing. |
+
+**The general shape:** a code path that only executes when something is absent,
+partial, or interrupted is a path nobody exercises. Testing on the developer's
+own machine cannot reach it, because that machine is by definition the finished
+state. This is the argument for the disposable VM, and it paid for itself in one
+run.
+
+**Two method notes from the same session, both mine:**
+
+- **A repro that does not reproduce has not disproved anything.** The first
+  attempt at the RETURN-trap repro used two sibling functions and passed
+  cleanly. Only the nested `run_step -> helper` shape — the shape the real code
+  uses — triggers it. A negative result from an unfaithful repro is worthless,
+  and it very nearly closed a real bug as a false alarm.
+- **`pgrep -f` over ssh matches itself.** Any pattern describing the process
+  being looked for also appears in the ssh command line doing the looking, so
+  the probe reported "already running" on an idle guest and skipped the launch.
+  Use a pidfile the process writes itself; there is nothing to self-match.
