@@ -35,7 +35,10 @@ pick_kvm_subnet() {
 configure_repo_network() {
     local network_xml subnet
     network_xml="$(mktemp)"
-    trap 'rm -f "$network_xml"' RETURN
+    # Self-clearing: a RETURN trap outlives the function that set it and fires
+    # again when the caller returns, with the local variable out of scope — under
+    # `set -u` that aborts the run somewhere unrelated. See setup-nordvpn.sh.
+    trap 'rm -f "${network_xml:-}"; trap - RETURN' RETURN
 
     if sudo virsh --connect qemu:///system net-info "$KVM_NETWORK_NAME" >/dev/null 2>&1; then
         echo -e "${YELLOW}==> Network '$KVM_NETWORK_NAME' already defined — reusing existing configuration.${NC}"

@@ -154,7 +154,9 @@ run_install() {
     local workdir asset_url asset_path
 
     workdir="$(mktemp -d)"
-    trap 'rm -rf "$workdir"' RETURN
+    # Self-clearing — see the note in setup-nordvpn.sh: a RETURN trap survives
+    # its function and re-fires on the caller's return with $workdir gone.
+    trap 'rm -rf "${workdir:-}"; trap - RETURN' RETURN
 
     echo "==> Fetching latest release metadata..."
     if ! curl -fsSL "$api_url" -o "$workdir/release.json"; then

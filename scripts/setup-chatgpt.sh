@@ -130,7 +130,10 @@ install_key() {
     local workdir
     workdir="$(mktemp -d)"
     # shellcheck disable=SC2064
-    trap "rm -rf '$workdir'" RETURN
+    # This form expands $workdir now, so a stray firing only repeats a harmless
+    # rm — but the trap still outlives the function, so clear it as it fires.
+    # shellcheck disable=SC2064
+    trap "rm -rf '$workdir'; trap - RETURN" RETURN
     chmod 700 "$workdir"
     printf '%s' "$key_b64" | base64 -d > "$workdir/key.bin"
     if ! GNUPGHOME="$workdir" gpg --batch --quiet --import "$workdir/key.bin" 2>/dev/null; then

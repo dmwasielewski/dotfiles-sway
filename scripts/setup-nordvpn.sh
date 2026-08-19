@@ -74,7 +74,15 @@ ensure_repo() {
 
     local tmpdir
     tmpdir="$(mktemp -d)"
-    trap 'rm -rf "$tmpdir"' RETURN
+    # A RETURN trap set in a function is NOT scoped to it: it survives that
+    # function's return and fires again when the ENCLOSING function returns —
+    # here run_step, which called this one. By then $tmpdir is out of scope, so
+    # `set -u` aborts the install with "tmpdir: unbound variable" blamed on
+    # lib-install.sh, a file that never mentions tmpdir. Clear the trap as it
+    # fires, and default the expansion so a stray firing cannot crash anything.
+    # Only reachable on a fresh install: an already-configured machine returns
+    # above, before the trap is ever set, which is why this never showed up here.
+    trap 'rm -rf "${tmpdir:-}"; trap - RETURN' RETURN
     if ! command -v rpm2cpio >/dev/null 2>&1; then
         echo "rpm2cpio is required to unpack the NordVPN release RPM" >&2
         return 1
