@@ -144,7 +144,30 @@ not CI plumbing.
 - ✅ **README idempotency claim corrected** (2026-06-11) — the "all scripts are safe to rerun and skip completed steps" line now honestly says re-running re-executes most steps and overwrites state (no state-driven resume; some steps are destructive on rerun). True idempotent convergence is still items 1 & 7.
 - ✅ **Swallowed failures now recorded** (2026-06-11) — `setup.sh` yazi, Zed, the Podman socket and cgroup delegation use `run_step_warn` / explicit `step_done`/`step_failed`, so they appear in the install-state summary instead of vanishing into a plain echo. **Still TODO:** have `verify.sh` check every warning-only capability it claims is installed.
 
-### 🟡 11. Verification: separate required / optional / personal / test-only
+### 🟠 11. Verification: separate required / optional / personal / test-only
+**Now blocking, with evidence (2026-08-19).** `verify.sh --profile post-reboot`
+is the last step of orchestrator phase P2, so whatever it fails on, the
+unattended install fails on. In the test VM it reported 12 failures on an
+install that had actually worked:
+
+- **`VM 'win11' NOT FOUND`** — Damian's personal VM. Nothing in the repo creates
+  it; the remedy literally says "create manually". Fixed: it is a warning now,
+  because a check whose fix is a manual step cannot gate an automated one.
+- **`User NOT in libvirt group`, `libvirtd not running`, `NAT network missing`** —
+  `setup-kvm.sh` does add the group, but its own remedy says "then log out and
+  back in". An install cannot satisfy that before it finishes.
+- **`NordVPN background service NOT RUNNING`** — documented as a manual login step.
+- **Four tools "MISSING in damianu"** (`bat`, `fd`, `sgpt`, `claude`) while
+  `nvim`, `btop`, `duf`, `ncdu`, `rg`, `fzf` in the same container passed, and the
+  install state recorded every one of them as installed. Re-probing by hand found
+  all four present. These are timing-dependent false negatives, not missing
+  tools — worth understanding before trusting any container check.
+
+**Do:** classify every check as required / optional / personal / manual-step, and
+let the profile that gates the install assert only what the install itself is
+responsible for. Until then P2 cannot pass on a clean machine.
+
+### 🟡 11b. (original wording)
 `verify.sh` mixes a personal `win11` VM, lab tooling, credentials, GUI apps and
 core install into one result, and checks presence more than behaviour. **Do:**
 declarative profiles + capability groups; add non-destructive behavioural checks

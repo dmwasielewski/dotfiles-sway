@@ -774,7 +774,14 @@ for vmname in win11 winserver kali fedora-sway-test; do
     VMSTATE=$(host virsh --connect qemu:///system domstate "$vmname" 2>/dev/null || echo "not found")
     if [[ "$VMSTATE" == "not found" ]]; then
         if [[ "$vmname" == "win11" ]]; then
-            fail "VM '$vmname'  NOT FOUND" "Create manually — see CLAUDE.md KVM section"
+            # A warning, not a failure. Nothing in this repo creates win11 — its
+            # own remedy says "create manually" — yet this section gates the
+            # orchestrator's phase P2, which ends in `verify.sh --profile
+            # post-reboot`. A freshly installed machine cannot have Damian's
+            # personal Windows VM, so an otherwise perfect unattended install
+            # could never report success (observed 2026-08-19 in the test VM).
+            # A check whose fix is a manual step must not fail an automated one.
+            warn "VM '$vmname'  not present (personal VM, created manually — see CLAUDE.md)"
         elif [[ "$vmname" == "fedora-sway-test" ]]; then
             warn "VM '$vmname'  not created yet (validation VM)"
         else
