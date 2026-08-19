@@ -276,26 +276,47 @@ case "$VM_INSTALL_MODE" in
         # interruptions (a reboot, a suspend, a stopped background job) each
         # killed rpm-ostree mid-download and threw the run away. setsid + nohup
         # means the guest finishes on its own and this script is only an observer.
-        vm_ssh 'bash -lc "
-            set -e
-            if [[ -d ~/dotfiles-sway/.git ]]; then
-                # Hard sync, not a pull. setup.sh chmods every script, so the
-                # guest tree carries mode-only diffs and --ff-only refuses to run
-                # (that is what blocked the resume on 2026-08-19). This VM is
-                # disposable by definition, so discarding guest-side changes is
-                # the correct move here and nowhere else.
-                git -C ~/dotfiles-sway fetch --quiet origin
-                git -C ~/dotfiles-sway reset --hard --quiet origin/main
-            else
-                git clone https://github.com/dmwasielewski/dotfiles-sway.git ~/dotfiles-sway
-            fi
-            git -C ~/dotfiles-sway submodule update --init --recursive
-            # -x on the pattern would still match this very ssh command line, so
-            # look for the running bash instead of the words we just typed.
-            if pgrep -f \"bash .*orchestrate.sh\" >/dev/null 2>&1; then echo already-running; exit 0; fi
-            setsid nohup bash ~/dotfiles-sway/orchestrate.sh run > ~/orchestrate.out 2>&1 < /dev/null &
-            sleep 2; echo started
-        "' || { echo -e "${RED}✗ Could not start the orchestrator in the guest${NC}"; exit 1; }
+        # The remote script goes in on stdin. Nesting it inside quotes was a
+        # steady source of bugs — a single quote in the payload silently ended the
+        # outer quoting, and every pgrep pattern describing the orchestrator also
+        # appeared in the ssh command line that started it, so pgrep matched
+        # itself and reported already-running on an idle guest (verified
+        # 2026-08-19). A heredoc has neither problem.
+        if ! vm_ssh 'bash -s' <<'REMOTE'
+set -e
+if [[ -d ~/dotfiles-sway/.git ]]; then
+    # Hard sync, not a pull: setup.sh chmods every script, so the guest tree
+    # carries mode-only diffs and --ff-only refuses. This VM is disposable by
+    # definition, so discarding guest-side changes is right here and nowhere else.
+    git -C ~/dotfiles-sway fetch --quiet origin
+    git -C ~/dotfiles-sway reset --hard --quiet origin/main
+else
+    git clone https://github.com/dmwasielewski/dotfiles-sway.git ~/dotfiles-sway
+fi
+git -C ~/dotfiles-sway submodule update --init --recursive
+
+# A pidfile, not a process-name pattern — see above.
+if [ -f ~/orchestrate.pid ] && kill -0 "$(cat ~/orchestrate.pid)" 2>/dev/null; then
+    echo already-running
+    exit 0
+fi
+# The inner shell records its OWN pid and then execs, so the pidfile names the
+# process actually doing the work rather than a transient wrapper.
+setsid nohup bash -c 'echo $$ > ~/orchestrate.pid; exec bash ~/dotfiles-sway/orchestrate.sh run' \
+    > ~/orchestrate.out 2>&1 < /dev/null &
+sleep 3
+if [ -s ~/orchestrate.pid ] && kill -0 "$(cat ~/orchestrate.pid)" 2>/dev/null; then
+    echo "started pid=$(cat ~/orchestrate.pid)"
+else
+    echo FAILED-TO-START
+    cat ~/orchestrate.out 2>/dev/null
+    exit 1
+fi
+REMOTE
+        then
+            echo -e "${RED}✗ Could not start the orchestrator in the guest${NC}"
+            exit 1
+        fi
 
         echo -e "${CYAN}==> Watching the guest (it reboots once during phase 1)...${NC}"
         echo -e "${YELLOW}    packages.sh downloads ~200 MB of rpm-ostree layers plus 420 MB for${NC}"
