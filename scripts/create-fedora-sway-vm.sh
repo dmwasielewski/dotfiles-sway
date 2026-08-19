@@ -269,62 +269,64 @@ vm_ssh() {   # run a command in the guest; caller decides how to treat failure
 
 case "$VM_INSTALL_MODE" in
     orchestrator)
-        echo -e "${CYAN}==> Running the orchestrator inside the VM (P0..P1, then reboot)...${NC}"
-        echo -e "${YELLOW}    packages.sh downloads ~420 MB for the ChatGPT app; a long pause here is${NC}"
-        echo -e "${YELLOW}    the download, not a hang.${NC}"
-        # P1 ends in `sudo systemctl reboot`, so this ssh ALWAYS dies — dropped
-        # connection or non-zero exit. Under `set -euo pipefail` that would abort
-        # the script exactly at the moment of interest, so the failure is accepted
-        # here and the real verdict comes from the state file after the reboot.
+        echo -e "${CYAN}==> Starting the orchestrator inside the VM...${NC}"
+        # Launched DETACHED, not in the foreground of this ssh. The install takes
+        # over an hour and reboots the guest halfway; running it through a live
+        # ssh made it a hostage to this side staying up, and three separate host
+        # interruptions (a reboot, a suspend, a stopped background job) each
+        # killed rpm-ostree mid-download and threw the run away. setsid + nohup
+        # means the guest finishes on its own and this script is only an observer.
         vm_ssh 'bash -lc "
             set -e
             if [[ -d ~/dotfiles-sway/.git ]]; then git -C ~/dotfiles-sway pull --ff-only
             else git clone https://github.com/dmwasielewski/dotfiles-sway.git ~/dotfiles-sway
             fi
             git -C ~/dotfiles-sway submodule update --init --recursive
-            bash ~/dotfiles-sway/orchestrate.sh run
-        "' || echo -e "${YELLOW}==> SSH ended — phase 1 either rebooted the guest or failed.${NC}"
+            pgrep -f \"orchestrate.sh run\" >/dev/null && { echo already-running; exit 0; }
+            setsid nohup bash ~/dotfiles-sway/orchestrate.sh run > ~/orchestrate.out 2>&1 < /dev/null &
+            sleep 2; echo started
+        "' || { echo -e "${RED}✗ Could not start the orchestrator in the guest${NC}"; exit 1; }
 
-        # Those two look identical from here: both end the ssh session with a
-        # non-zero status. Ask the guest which it was instead of assuming the
-        # happy one — assuming cost a 20-minute wait for an INSTALL_COMPLETE that
-        # a failed P1 was never going to write (observed 2026-08-18).
-        failed_phase="$(vm_ssh 'grep -m1 "^PHASE_FAILED=" ~/.dotfiles-install-state 2>/dev/null | cut -d= -f2' 2>/dev/null | tr -d "\r")"
-        if [[ -n "$failed_phase" ]]; then
-            echo -e "${RED}✗ Phase $failed_phase FAILED in the guest — the orchestrator stopped there.${NC}"
-            echo -e "${YELLOW}  It is not marked done, so re-running this script resumes at $failed_phase.${NC}"
-            echo -e "${YELLOW}  Guest state:${NC}"
-            vm_ssh 'cat ~/.dotfiles-install-state' 2>/dev/null | sed 's/^/    /'
-            echo -e "${YELLOW}  Last guest log lines:${NC}"
-            vm_ssh 'tail -15 ~/.dotfiles-install.log' 2>/dev/null | sed 's/^/    /'
-            exit 1
-        fi
+        echo -e "${CYAN}==> Watching the guest (it reboots once during phase 1)...${NC}"
+        echo -e "${YELLOW}    packages.sh downloads ~200 MB of rpm-ostree layers plus 420 MB for${NC}"
+        echo -e "${YELLOW}    the ChatGPT app; long silences here are downloads, not hangs.${NC}"
 
-        echo -e "${CYAN}==> Waiting for the guest to come back...${NC}"
-        if ! wait_for_ssh; then
-            echo -e "${RED}✗ Guest did not return after the phase-1 reboot${NC}"
-            exit 1
-        fi
+        deadline=$(( $(date +%s) + ${ORCH_WATCH_SECONDS:-7200} ))
+        verdict=""
+        while [[ $(date +%s) -lt $deadline ]]; do
+            sleep 30
+            # The guest may be mid-reboot; an unreachable guest is not a verdict.
+            state="$(vm_ssh 'cat ~/.dotfiles-install-state 2>/dev/null' 2>/dev/null || true)"
+            [[ -z "$state" ]] && continue
 
-        # THE question behind backlog #5: did linger resume phase 2 with nobody
-        # logged in? Read the state file rather than trusting that it looks alive.
-        echo -e "${CYAN}==> Checking whether phase 2 resumed on its own...${NC}"
-        for _ in $(seq 1 60); do
-            vm_ssh 'grep -q "^INSTALL_COMPLETE=" ~/.dotfiles-install-state 2>/dev/null' && break
-            sleep 20
+            if grep -q "^INSTALL_COMPLETE=" <<<"$state"; then verdict="complete"; break; fi
+            failed_phase="$(grep -m1 "^PHASE_FAILED=" <<<"$state" | cut -d= -f2 | tr -d "\r" || true)"
+            if [[ -n "$failed_phase" ]]; then verdict="failed:$failed_phase"; break; fi
+
+            printf '%s' "."
         done
         echo ""
-        vm_ssh 'systemctl --user status dotfiles-phase2.service --no-pager 2>&1 | head -12' || true
-        echo ""
-        if vm_ssh 'grep -q "^INSTALL_COMPLETE=" ~/.dotfiles-install-state 2>/dev/null'; then
-            echo -e "${GREEN}✓ Phase 2 resumed after the reboot and the install completed${NC}"
-            echo -e "${GREEN}  systemd-linger works — backlog #5 answered.${NC}"
-        else
-            echo -e "${RED}✗ Phase 2 did NOT complete after the reboot${NC}"
-            echo -e "${YELLOW}  This is the documented risk. Fall back to a Sway-session trigger${NC}"
-            echo -e "${YELLOW}  (exec orchestrate.sh resume) and record it in setup-orchestrator-service.sh.${NC}"
-            vm_ssh 'cat ~/.dotfiles-install-state' || true
-        fi
+
+        case "$verdict" in
+            complete)
+                echo -e "${GREEN}✓ The unattended install completed on its own.${NC}"
+                echo -e "${GREEN}  Phase 2 resumed after the reboot with nobody logged in —${NC}"
+                echo -e "${GREEN}  systemd-linger works, backlog #5 answered.${NC}"
+                vm_ssh 'systemctl --user status dotfiles-phase2.service --no-pager 2>&1 | head -8' || true
+                ;;
+            failed:*)
+                echo -e "${RED}✗ Phase ${verdict#failed:} FAILED in the guest — the orchestrator stopped there.${NC}"
+                echo -e "${YELLOW}  It is not marked done, so re-running this script resumes at it.${NC}"
+                vm_ssh 'cat ~/.dotfiles-install-state' 2>/dev/null | sed 's/^/    /'
+                vm_ssh 'tail -20 ~/.dotfiles-install.log' 2>/dev/null | sed 's/^/    /'
+                exit 1
+                ;;
+            *)
+                echo -e "${YELLOW}⚠ Still running after the watch window — the guest carries on regardless.${NC}"
+                echo -e "${YELLOW}  Re-run this script to keep watching; nothing is lost.${NC}"
+                vm_ssh 'cat ~/.dotfiles-install-state' 2>/dev/null | sed 's/^/    /'
+                ;;
+        esac
         ;;
     bootstrap)
         echo -e "${CYAN}==> Running bootstrap.sh inside the VM (classic path)...${NC}"

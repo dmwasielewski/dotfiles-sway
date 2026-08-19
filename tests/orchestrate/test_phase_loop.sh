@@ -32,4 +32,24 @@ assert_eq "$rc" "1" "returns non-zero when a phase fails"
 assert_eq "$(orch_get PHASE)" "P0" "failed phase is NOT marked done, so a resume retries it"
 assert_eq "$(orch_get PHASE_FAILED)" "P1" "records which phase failed"
 
+# PHASE_FAILED must describe THIS run from the moment it starts. It is written on
+# failure and cleared only when a phase later SUCCEEDS, so while a resumed run is
+# still working the marker from the previous run is still on disk. Anything
+# reading it from outside — the VM harness polls exactly this file — concludes
+# the current run has failed when it is merely still going. Clear it up front.
+orch_set PHASE ""; orch_set PHASE_FAILED "P1"
+seen=""
+phase_P0() { seen="$(orch_get PHASE_FAILED)"; echo P0 >> "$LOG"; }
+phase_P1() { echo P1 >> "$LOG"; }
+: > "$LOG"
+orchestrate_run_remaining >/dev/null
+assert_eq "$seen" "" "the previous run's failure marker is gone before the first phase runs"
+
+orch_set PHASE ""; orch_set PHASE_FAILED "P3"
+phase_P0() { echo P0 >> "$LOG"; }
+phase_P1() { echo P1 >> "$LOG"; return 1; }
+: > "$LOG"
+orchestrate_run_remaining >/dev/null 2>&1 || true
+assert_eq "$(orch_get PHASE_FAILED)" "P1" "a new failure replaces the old marker rather than leaving it"
+
 assert_summary

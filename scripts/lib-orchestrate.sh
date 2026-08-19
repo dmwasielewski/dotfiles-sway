@@ -41,6 +41,12 @@ phase_is_done() {
 # (P1) marks itself done before rebooting, so this loop never returns past it.
 orchestrate_run_remaining() {
     local p
+    # Start clean: PHASE_FAILED is written on failure and cleared only when a
+    # phase later SUCCEEDS, so a resumed run carries the previous run's marker
+    # for as long as it is still working. Anything watching from outside — the
+    # VM harness polls this very file — then reads a run in progress as a run
+    # that failed. The marker must describe this run from its first moment.
+    orch_set PHASE_FAILED ""
     for p in "${ORCH_PHASES[@]}"; do
         phase_is_done "$p" && continue
         echo "==> phase $p"
