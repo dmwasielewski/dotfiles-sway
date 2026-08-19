@@ -1065,3 +1065,38 @@ run.
   being looked for also appears in the ssh command line doing the looking, so
   the probe reported "already running" on an idle guest and skipped the launch.
   Use a pidfile the process writes itself; there is nothing to self-match.
+
+## A probe that runs once per item fails once per item
+
+**2026-08-19.** `verify.sh` reported `bat`, `fd`, `sgpt` and `claude` missing from
+the `damianu` container on a fresh install. All four were present: the files
+predated the check by half an hour, and re-probing by hand found every one. The
+install state recorded them as installed too.
+
+What gave it away was the interleaving:
+
+```
+07:51:57  sgpt ✗
+07:51:58  nvim ✓   btop ✓   duf ✓   bat ✗
+07:51:59  ncdu ✓   rg ✓     fzf ✓   fd ✗
+```
+
+Passes and failures alternate, about one per second, and `rg` — which lives in
+the same `~/.local/bin` as `bat` and `fd`, created in the same second — passed
+while they failed. Nothing about the tools differed. The **probe** was flaky.
+
+The check ran `distrobox enter … which <tool>` **once per tool**, sixteen times
+per container. Every invocation is another opportunity for a container that is
+mid-start, or a host under load, to fail — and a failed invocation was
+indistinguishable from a missing tool. Sixteen probes means sixteen chances to
+lie, and on a machine busy finishing an install some of them take it.
+
+Now one probe per container asks it for everything it has, and a probe that
+fails outright is a **warning** that the container could not be queried, never a
+failure that the tool is absent. "I could not ask" and "it is not there" are
+different answers, and only one of them is the install's fault.
+
+**The general rule:** if a check calls out to something that can fail for its own
+reasons, batch the call and separate its failure from the answer. Repeating a
+fallible probe does not make it more reliable — it multiplies the failure rate by
+the number of things you are checking.

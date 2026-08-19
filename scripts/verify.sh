@@ -304,9 +304,30 @@ section "5. Toolbox '$TOOLBOX_CONTAINER' (dev environment)"
 if host toolbox list 2>/dev/null | grep -qw "$TOOLBOX_CONTAINER"; then
     pass "Toolbox '$TOOLBOX_CONTAINER' exists"
 
+    # Probe ONCE and ask the container for everything it has, instead of running
+    # `toolbox run` separately for every tool. Each invocation is another chance
+    # for an infrastructure hiccup — a container mid-start, a busy host — to be
+    # reported as a missing tool, and one call per tool multiplies that by the
+    # number of tools. On 2026-08-19 the VM run reported bat, fd, sgpt and claude
+    # missing from a container where they were present, with passes interleaved
+    # between the failures; the files predated the check by half an hour. The
+    # probe was flaky, not the install.
+    TOOLBOX_TOOLS=""
+    TOOLBOX_PROBE_OK=0
+    if TOOLBOX_TOOLS="$(host toolbox run --container "$TOOLBOX_CONTAINER" bash -lc \
+            'for t in "$@"; do command -v "$t" >/dev/null 2>&1 && printf "%s\n" "$t"; done' _ \
+            node npm gh claude codex deepseek sgpt git nvim btop duf bat ncdu rg fzf fd \
+            2>/dev/null)"; then
+        TOOLBOX_PROBE_OK=1
+    fi
+
     check_toolbox_tool() {
         local tool="$1" label="${2:-$1}"
-        if host toolbox run --container "$TOOLBOX_CONTAINER" which "$tool" &>/dev/null 2>&1; then
+        if [[ "$TOOLBOX_PROBE_OK" -ne 1 ]]; then
+            # "I could not ask" is not "it is not there" — the distinction this
+            # whole audit is about. Do not turn it into a failure.
+            warn "$label — could not query toolbox '$TOOLBOX_CONTAINER'"
+        elif grep -qx -- "$tool" <<<"$TOOLBOX_TOOLS"; then
             pass "$label"
         else
             fail "$label  MISSING in toolbox" "bash ~/dotfiles-sway/scripts/setup-damian-container.sh"
@@ -402,9 +423,21 @@ if host podman container exists "$UBUNTU_DEV_CONTAINER" 2>/dev/null; then
              "distrobox stop $UBUNTU_DEV_CONTAINER --yes && distrobox rm $UBUNTU_DEV_CONTAINER --force && bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh"
     fi
 
+    # One probe for the whole container — see the note on the toolbox check above.
+    UBUNTU_TOOLS=""
+    UBUNTU_PROBE_OK=0
+    if UBUNTU_TOOLS="$(host distrobox enter --name "$UBUNTU_DEV_CONTAINER" -- bash -lc \
+            'for t in "$@"; do command -v "$t" >/dev/null 2>&1 && printf "%s\n" "$t"; done' _ \
+            node npm gh claude codex deepseek sgpt git nvim btop duf bat ncdu rg fzf fd \
+            2>/dev/null)"; then
+        UBUNTU_PROBE_OK=1
+    fi
+
     check_ubuntu_dev_tool() {
         local tool="$1" label="${2:-$1}"
-        if host distrobox enter --name "$UBUNTU_DEV_CONTAINER" -- which "$tool" &>/dev/null 2>&1; then
+        if [[ "$UBUNTU_PROBE_OK" -ne 1 ]]; then
+            warn "$label — could not query container '$UBUNTU_DEV_CONTAINER'"
+        elif grep -qx -- "$tool" <<<"$UBUNTU_TOOLS"; then
             pass "$label"
         else
             fail "$label  MISSING in $UBUNTU_DEV_CONTAINER container" \
