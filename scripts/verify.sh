@@ -493,6 +493,23 @@ else
     warn "User not in nordvpn group yet — re-run bash ~/dotfiles-sway/scripts/setup-nordvpn.sh and log out/in"
 fi
 
+# ── Repo hygiene ─────────────────────────────────────────────────────────
+section "Repo working tree"
+
+# setup.sh runs `chmod +x scripts/*.sh`. Any script recorded in git as 644 is
+# therefore flipped to 755 on every install, leaving a permanent mode-only diff —
+# and `git pull --ff-only` refuses to run against a dirty tree. The effect is that
+# the documented update path stops working after the first setup.sh, silently:
+# bootstrap.sh sees local changes and skips the pull. Observed 2026-08-19 in the
+# test VM, where it blocked the orchestrator resume outright.
+MODE_DRIFT="$(cd "$HOME/dotfiles-sway" 2>/dev/null && git diff --summary 2>/dev/null | grep -c "mode change" || true)"
+if [[ "${MODE_DRIFT:-0}" -eq 0 ]]; then
+    pass "No file-mode drift between the working tree and git"
+else
+    fail "$MODE_DRIFT script(s) differ from git by file mode only — this blocks 'git pull --ff-only'" \
+         "cd ~/dotfiles-sway && git diff --summary | grep 'mode change'  # then: git update-index --chmod=+x <file>"
+fi
+
 # ── 5b. ChatGPT desktop app ──────────────────────────────────────────────
 section "5b. ChatGPT desktop (incl. Codex)"
 

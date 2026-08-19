@@ -278,11 +278,21 @@ case "$VM_INSTALL_MODE" in
         # means the guest finishes on its own and this script is only an observer.
         vm_ssh 'bash -lc "
             set -e
-            if [[ -d ~/dotfiles-sway/.git ]]; then git -C ~/dotfiles-sway pull --ff-only
-            else git clone https://github.com/dmwasielewski/dotfiles-sway.git ~/dotfiles-sway
+            if [[ -d ~/dotfiles-sway/.git ]]; then
+                # Hard sync, not a pull. setup.sh chmods every script, so the
+                # guest tree carries mode-only diffs and --ff-only refuses to run
+                # (that is what blocked the resume on 2026-08-19). This VM is
+                # disposable by definition, so discarding guest-side changes is
+                # the correct move here and nowhere else.
+                git -C ~/dotfiles-sway fetch --quiet origin
+                git -C ~/dotfiles-sway reset --hard --quiet origin/main
+            else
+                git clone https://github.com/dmwasielewski/dotfiles-sway.git ~/dotfiles-sway
             fi
             git -C ~/dotfiles-sway submodule update --init --recursive
-            pgrep -f \"orchestrate.sh run\" >/dev/null && { echo already-running; exit 0; }
+            # -x on the pattern would still match this very ssh command line, so
+            # look for the running bash instead of the words we just typed.
+            if pgrep -f \"bash .*orchestrate.sh\" >/dev/null 2>&1; then echo already-running; exit 0; fi
             setsid nohup bash ~/dotfiles-sway/orchestrate.sh run > ~/orchestrate.out 2>&1 < /dev/null &
             sleep 2; echo started
         "' || { echo -e "${RED}✗ Could not start the orchestrator in the guest${NC}"; exit 1; }
