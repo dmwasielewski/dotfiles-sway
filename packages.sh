@@ -47,11 +47,35 @@ if lspci | grep -qi "Intel.*Graphics"; then
     PACKAGES="$PACKAGES intel-media-driver"
 fi
 
-# Filter out packages already installed (rpm-ostree errors on already-layered packages)
+# Filter out packages rpm-ostree would refuse. Two distinct states count as
+# "nothing to do", and checking only the first is a real bug:
+#   installed  — present in the BOOTED rpm database, what `rpm -q` sees
+#   requested  — layered into a deployment that has not been booted yet
+# A package in the second state is invisible to `rpm -q`, so it was passed to
+# `rpm-ostree install`, which aborts the ENTIRE transaction with
+# "Package/capability 'mako' is already requested". Any interrupted layering
+# leaves packages in exactly that state, so re-running packages.sh — which is
+# what resuming phase 1 does — could never succeed (observed 2026-08-19 in the
+# test VM, after an earlier run was killed mid-download).
+REQUESTED="$(rpm-ostree status --json 2>/dev/null | python3 -c '
+import json, sys
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+names = set()
+for dep in data.get("deployments", []):
+    for key in ("requested-packages", "packages"):
+        names.update(dep.get(key) or [])
+print(" ".join(sorted(names)))
+' 2>/dev/null || true)"
+
 MISSING=()
 for pkg in $PACKAGES; do
     if rpm -q "$pkg" &>/dev/null 2>&1; then
         echo "==> $pkg already installed — skipping"
+    elif [[ " $REQUESTED " == *" $pkg "* ]]; then
+        echo "==> $pkg already requested (pending reboot) — skipping"
     else
         MISSING+=("$pkg")
     fi
