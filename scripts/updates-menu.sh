@@ -208,6 +208,30 @@ CONTAINER_UPGRADE_CMD='
 # is missing, ask the user once for their password to install a NOPASSWD rule —
 # after that every future update is silent, consistent with distrobox.
 # $1 = "toolbox"|"distrobox", $2 = container name. Returns 0 if sudo is usable.
+# dnf aborts its WHOLE metadata refresh when any one enabled repo is unreachable,
+# so a single third-party repo having a bad day takes the entire container update
+# with it. That is how the `warpdotdev` repo killed the damianf toolbox update on
+# 2026-08-25 with "Curl error (28): Timeout" — nothing was wrong with the
+# container or with any package it needed. Same failure the NordVPN repo used to
+# cause on the host, same cure: mark every repo skippable when offline.
+# Discovered dynamically — no repo name is hardcoded, so a repo added tomorrow is
+# covered too.
+ensure_container_repos_resilient() {
+    local kind="$1" name="$2" runner
+    [[ "$kind" == "toolbox" ]] && runner=(toolbox run --container "$name") \
+                               || runner=(distrobox enter "$name" --)
+    # apt has no per-source equivalent, so this applies to dnf-based containers.
+    "${runner[@]}" test -d /etc/yum.repos.d 2>/dev/null || return 0
+    "${runner[@]}" sudo -n bash -c '
+        shopt -s nullglob
+        for f in /etc/yum.repos.d/*.repo; do
+            grep -q "^[[:space:]]*skip_if_unavailable" "$f" && continue
+            sed -i "/^\[/a skip_if_unavailable = True" "$f"
+            echo "  hardened $(basename "$f")"
+        done
+    ' 2>/dev/null || true
+}
+
 ensure_container_nopasswd() {
     local kind="$1" name="$2" runner
     [[ "$kind" == "toolbox" ]] && runner=(toolbox run --container "$name") \
@@ -241,6 +265,7 @@ do_containers() {
     while IFS= read -r name <&3; do
         [[ -z "$name" ]] && continue
         echo ""; echo "── Updating distrobox: $name ────────────────────────"
+        ensure_container_repos_resilient distrobox "$name"
         log_line "BEGIN distrobox upgrade $name"
         if run_logged distrobox upgrade "$name"; then
             upd_record "container-$name"; log_line "OK distrobox $name"
@@ -255,6 +280,7 @@ do_containers() {
         echo ""; echo "── Updating toolbox: $name ──────────────────────────"
         log_line "BEGIN toolbox upgrade $name"
         if ! ensure_container_nopasswd toolbox "$name"; then failed+=("$name (sudo)"); rc=1; continue; fi
+        ensure_container_repos_resilient toolbox "$name"
         if run_logged toolbox run --container "$name" bash -c "$CONTAINER_UPGRADE_CMD"; then
             upd_record "container-$name"; log_line "OK toolbox $name"
         else
