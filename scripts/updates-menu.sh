@@ -187,7 +187,21 @@ do_flatpak() {
         if run_logged flatpak update $scope -y; then
             log_line "OK Flatpak ($inst)"
         else
-            log_line "FAIL Flatpak ($inst)"; echo "  ✗ $inst scope failed. Log: $LOG"; rc=1
+            # Flathub sometimes publishes a static delta whose decompressed size
+            # exceeds flatpak's built-in limit, and the update then fails every
+            # single time with "Decompressed delta part exceeds configured limit".
+            # It is not transient and it does not clear itself: Bitwarden failed
+            # this way three runs in a row (2026-08-25 twice, 2026-08-26) and sat
+            # on a stale version for two days — on a password manager. Retrying
+            # without deltas pulls the full object instead and succeeds.
+            echo "  ⚠ $inst scope failed — retrying without static deltas…"
+            log_line "RETRY Flatpak ($inst) with --no-static-deltas"
+            if run_logged flatpak update $scope --no-static-deltas -y; then
+                log_line "OK Flatpak ($inst) after --no-static-deltas"
+                echo "  ✔ $inst succeeded on the retry."
+            else
+                log_line "FAIL Flatpak ($inst)"; echo "  ✗ $inst scope failed. Log: $LOG"; rc=1
+            fi
         fi
     done 3< <(flatpak_installations)
     [[ "$rc" -eq 0 ]] && upd_record flatpak
