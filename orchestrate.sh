@@ -43,6 +43,23 @@ phase_P2() {
     # there must stop the run rather than be papered over by the final verify.
     bash "$HERE/scripts/check-hardware.sh"            || true
     bash "$HERE/scripts/setup-kvm.sh"                 || return 1
+
+    # NordVPN is layered by packages.sh during P1, so the binary does not exist
+    # until this reboot has happened. setup-nordvpn.sh gates its whole
+    # service-enabling block on `command -v nordvpn`, which is therefore false
+    # every time it runs in P1 — and nothing ever came back afterwards, so
+    # nordvpnd was never enabled on any unattended install (observed 2026-08-31:
+    # package installed, group added, service neither running nor enabled).
+    # Re-running it here is the other half of its work; it is idempotent and
+    # skips whatever P1 already finished.
+    #
+    # Tolerated rather than fatal: repo.nordvpn.com is regularly unreachable, and
+    # a VPN daemon is not worth abandoning a whole install for. This is not a
+    # silent swallow — the script records NORDVPN_READY in the install state and
+    # verify.sh reports it.
+    if ! bash "$HERE/scripts/setup-nordvpn.sh"; then
+        echo "warning: NordVPN post-reboot setup did not complete — see verify.sh" >&2
+    fi
     bash "$HERE/scripts/setup-damian-container.sh"    || return 1
     bash "$HERE/scripts/setup-ubuntu-dev-container.sh" || return 1
     bash "$HERE/scripts/setup-security-container.sh"  || return 1

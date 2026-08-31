@@ -1132,3 +1132,35 @@ command ran, not whether the world changed. Where a step exists to produce a
 specific state, assert that state. `git add` silently reverting
 `update-index --chmod`, `sudo -v` refusing under `NOPASSWD`, and now `usermod`
 no-opping on ostree — all three returned success while achieving nothing.
+
+## A step that can only finish after the reboot was only ever tried before it
+
+**2026-08-31.** No unattended install ever enabled `nordvpnd`. The package was
+installed, the group was added, and the service was neither running nor enabled —
+on every run.
+
+`setup-nordvpn.sh` gates its whole service-enabling block on:
+
+```bash
+if command -v nordvpn >/dev/null 2>&1 && ...
+```
+
+NordVPN is layered by `packages.sh` via rpm-ostree, and a layered package does
+not exist until the machine reboots into the new deployment. `setup-nordvpn.sh`
+is called *from* `packages.sh` — before that reboot — so the guard is false every
+single time and the block is skipped. Phase 2 then ran hardware, KVM, containers
+and verification, but never came back to NordVPN. The work had no second half.
+
+The script was honest about it the whole time: it prints "reboot may still be
+required" and records `NORDVPN_READY=pending`. Nobody acted on that, and the
+final verification called the result a failure without anyone asking why the same
+failure appeared every run.
+
+Phase 2 now re-runs it. Verified idempotent on a configured host first: every
+step reported "already … — skipping", exit 0, service left enabled and active.
+
+**The pattern to look for:** a script that both (a) installs something through
+rpm-ostree and (b) configures that same thing in the same run. On an image-based
+system those two halves are separated by a reboot, so the second half belongs in
+the phase *after* it. Ask of any setup step: *could this have worked at the
+moment it ran?*
