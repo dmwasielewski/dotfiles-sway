@@ -29,10 +29,9 @@ VM_USER="${VM_USER:-damian}"
 # `default` network — 192.168.122.0/24, gateway .1 — INSIDE the guest. Attaching
 # the guest to the host's `default` network puts it on that exact subnet too, so
 # the moment setup-kvm.sh enables libvirtd the guest raises virbr0 with a
-# conflicting route to its own subnet and loses the network entirely (observed
-# 2026-08-31: pings and ssh stopped while the console sat at a login prompt).
-# The repo-managed dotfiles-nat lives at 192.168.125.0/24 and does not collide,
-# so it is the default here. Override with VM_NETWORK if you know better.
+# conflicting route to its own subnet and loses networking entirely (observed
+# 2026-08-31: ping and ssh dead while the console sat at a login prompt).
+# dotfiles-nat lives at 192.168.125.0/24 and does not collide.
 VM_NETWORK="${VM_NETWORK:-dotfiles-nat}"
 VM_ISO="${VM_ISO:-$HOME/Downloads/Fedora-Everything-netinst-x86_64-44-1.7.iso}"
 VM_CHECKSUM="${VM_CHECKSUM:-$HOME/Downloads/Fedora-Everything-44-1.7-x86_64-CHECKSUM}"
@@ -81,6 +80,28 @@ wait_for_ip() {
 # A ceiling tuned below the thing it is waiting for is not a timeout, it is a
 # false negative.
 SSH_WAIT_SECONDS="${SSH_WAIT_SECONDS:-5400}"
+
+ensure_vm_network() {
+    if ! virsh --connect qemu:///system net-info "$VM_NETWORK" >/dev/null 2>&1; then
+        echo -e "${RED}✗ libvirt network '$VM_NETWORK' does not exist${NC}" >&2
+        echo -e "${YELLOW}  Create it:    bash ~/dotfiles-sway/scripts/setup-kvm.sh${NC}" >&2
+        echo -e "${YELLOW}  Or override:  VM_NETWORK=default bash $0${NC}" >&2
+        return 1
+    fi
+    if [[ "$(virsh --connect qemu:///system net-info "$VM_NETWORK" 2>/dev/null | awk '/^Active/{print $2}')" != "yes" ]]; then
+        echo -e "${CYAN}==> starting libvirt network '$VM_NETWORK'${NC}"
+        virsh --connect qemu:///system net-start "$VM_NETWORK" >/dev/null || return 1
+    fi
+    local subnet
+    subnet="$(virsh --connect qemu:///system net-dumpxml "$VM_NETWORK" 2>/dev/null \
+              | sed -n "s/.*<ip address='\([0-9.]*\)'.*/\1/p" | head -1)"
+    if [[ "$subnet" == 192.168.122.* ]]; then
+        echo -e "${YELLOW}⚠ '$VM_NETWORK' is on ${subnet%.*}.0/24 — the same subnet the guest's own${NC}"
+        echo -e "${YELLOW}  libvirt 'default' network uses; the guest will lose networking once${NC}"
+        echo -e "${YELLOW}  it enables libvirtd. Use dotfiles-nat instead.${NC}"
+    fi
+    echo -e "${GREEN}✓ network '$VM_NETWORK' ready (${subnet:-unknown})${NC}"
+}
 
 wait_for_ssh() {
     local attempt
@@ -287,31 +308,7 @@ case "$VM_INSTALL_MODE" in
         # interruptions (a reboot, a suspend, a stopped background job) each
         # killed rpm-ostree mid-download and threw the run away. setsid + nohup
         # means the guest finishes on its own and this script is only an observer.
-        ensure_vm_network() {
-    if ! virsh --connect qemu:///system net-info "$VM_NETWORK" >/dev/null 2>&1; then
-        echo -e "${RED}✗ libvirt network '$VM_NETWORK' does not exist${NC}" >&2
-        echo -e "${YELLOW}  Create it with: bash ~/dotfiles-sway/scripts/setup-kvm.sh${NC}" >&2
-        echo -e "${YELLOW}  Or pick another: VM_NETWORK=default bash \$0${NC}" >&2
-        return 1
-    fi
-    if [[ "$(virsh --connect qemu:///system net-info "$VM_NETWORK" 2>/dev/null | awk '/^Active/{print $2}')" != "yes" ]]; then
-        echo -e "${CYAN}==> starting libvirt network '$VM_NETWORK'${NC}"
-        virsh --connect qemu:///system net-start "$VM_NETWORK" >/dev/null || return 1
-    fi
-    # Warn if the chosen network shares a subnet with what the guest will create
-    # for itself; that is the collision this default exists to avoid.
-    local subnet
-    subnet="$(virsh --connect qemu:///system net-dumpxml "$VM_NETWORK" 2>/dev/null \
-              | sed -n "s/.*<ip address='\([0-9.]*\)'.*/\1/p" | head -1)"
-    if [[ "$subnet" == 192.168.122.* ]]; then
-        echo -e "${YELLOW}⚠ '$VM_NETWORK' is on ${subnet%.*}.0/24 — the same subnet the guest's own${NC}"
-        echo -e "${YELLOW}  libvirt 'default' network uses. Expect the guest to lose networking${NC}"
-        echo -e "${YELLOW}  once it enables libvirtd. Use dotfiles-nat instead.${NC}"
-    fi
-    echo -e "${GREEN}✓ network '$VM_NETWORK' ready (${subnet:-unknown})${NC}"
-}
-
-# The remote script goes in on stdin. Nesting it inside quotes was a
+        # The remote script goes in on stdin. Nesting it inside quotes was a
         # steady source of bugs — a single quote in the payload silently ended the
         # outer quoting, and every pgrep pattern describing the orchestrator also
         # appeared in the ssh command line that started it, so pgrep matched
