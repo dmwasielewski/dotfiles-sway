@@ -81,6 +81,17 @@ wait_for_ip() {
 # false negative.
 SSH_WAIT_SECONDS="${SSH_WAIT_SECONDS:-5400}"
 
+# The network XML splits the subnet into address + netmask, and the bridge
+# address is a host address (192.168.125.1/24), not the network. The kernel
+# route for the bridge is the one place it is already written as a network
+# CIDR, so read it there instead of doing prefix arithmetic in awk.
+vm_network_subnet() {
+    local bridge
+    bridge="$(virsh --connect qemu:///system net-info "$VM_NETWORK" 2>/dev/null | awk '/^Bridge/{print $2}')"
+    [[ -n "$bridge" ]] || return 0
+    ip -4 -o route show dev "$bridge" proto kernel scope link 2>/dev/null | awk '{print $1; exit}'
+}
+
 ensure_vm_network() {
     if ! virsh --connect qemu:///system net-info "$VM_NETWORK" >/dev/null 2>&1; then
         echo -e "${RED}✗ libvirt network '$VM_NETWORK' does not exist${NC}" >&2
@@ -101,6 +112,52 @@ ensure_vm_network() {
         echo -e "${YELLOW}  it enables libvirtd. Use dotfiles-nat instead.${NC}"
     fi
     echo -e "${GREEN}✓ network '$VM_NETWORK' ready (${subnet:-unknown})${NC}"
+}
+
+# A bare "did not report an IP address in time" is a verdict with no evidence.
+# On 2026-08-31 it cost four hours: the guest had failed its DHCP twice
+# (`dhcp4 no lease` at 98 s and 180 s of uptime) and anaconda then died on
+# "Could not resolve hostname" — but the script printed only the timeout and
+# exited, leaving a dead installer running unnoticed. Everything below was
+# gathered by hand afterwards, so gather it automatically instead: whether the
+# guest is still up, whether the DHCP server ever heard from its MAC (that
+# separates "guest never asked" from "guest asked and got nothing"), whether a
+# VPN kill-switch is filtering the bridge, and a console screenshot — which is
+# how the anaconda traceback was found at all.
+diagnose_no_ip() {
+    local shot mac state
+    shot="${DIAG_DIR:-$HOME}/vm-${VM_NAME}-$(date +%Y%m%d-%H%M%S).png"
+
+    echo -e "${YELLOW}── diagnostics ───────────────────────────────${NC}" >&2
+
+    state="$(virsh --connect qemu:///system domstate "$VM_NAME" 2>/dev/null || echo unknown)"
+    echo -e "${YELLOW}  domain state:  $state${NC}" >&2
+
+    mac="$(virsh --connect qemu:///system domiflist "$VM_NAME" 2>/dev/null | awk 'NF>=5 && $5 ~ /:/ {print $5; exit}')"
+    echo -e "${YELLOW}  guest MAC:     ${mac:-unknown}${NC}" >&2
+
+    if [[ -n "$mac" ]] && virsh --connect qemu:///system net-dhcp-leases "$VM_NETWORK" 2>/dev/null | grep -q "$mac"; then
+        echo -e "${YELLOW}  DHCP lease:    present — the guest has an address but is not reachable yet${NC}" >&2
+    else
+        echo -e "${YELLOW}  DHCP lease:    NONE on '$VM_NETWORK' — the guest never completed DHCP${NC}" >&2
+        # Only worth saying when there is no lease at all: a VPN kill-switch
+        # filters the virtual bridge unless its subnet is allowlisted, and the
+        # guest then boots, sends DISCOVERs and is answered by nothing.
+        if command -v nordvpn >/dev/null 2>&1; then
+            echo -e "${YELLOW}  VPN:           $(nordvpn status 2>/dev/null | awk -F': ' '/^Status/{print $2}')${NC}" >&2
+            echo -e "${YELLOW}                 if connected, allowlist the VM subnet:${NC}" >&2
+            echo -e "${YELLOW}                 nordvpn allowlist add subnet $(vm_network_subnet)${NC}" >&2
+        fi
+    fi
+
+    if virsh --connect qemu:///system screenshot "$VM_NAME" --file "$shot" >/dev/null 2>&1; then
+        echo -e "${YELLOW}  console shot:  $shot${NC}" >&2
+        echo -e "${YELLOW}                 an installer traceback shows up here and nowhere else${NC}" >&2
+    fi
+
+    echo -e "${YELLOW}  the VM is left running on purpose — inspect it, then rerun with${NC}" >&2
+    echo -e "${YELLOW}  VM_RECREATE=1 to rebuild from scratch.${NC}" >&2
+    echo -e "${YELLOW}──────────────────────────────────────────────${NC}" >&2
 }
 
 wait_for_ssh() {
@@ -282,6 +339,7 @@ fi   # SKIP_PROVISION
 echo -e "${CYAN}==> Waiting for VM to obtain an IP address...${NC}"
 VM_IP="$(wait_for_ip)" || {
     echo -e "${RED}✗ VM did not report an IP address in time${NC}"
+    diagnose_no_ip
     exit 1
 }
 echo -e "${GREEN}✓ VM IP: $VM_IP${NC}"
@@ -291,6 +349,7 @@ if wait_for_ssh; then
     echo -e "${GREEN}✓ SSH ready: $VM_IP${NC}"
 else
     echo -e "${RED}✗ SSH did not become ready${NC}"
+    diagnose_no_ip
     exit 1
 fi
 
