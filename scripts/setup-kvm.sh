@@ -82,8 +82,37 @@ run_step "KVM_LIBVIRTD_ENABLED" "Enabling and starting libvirtd" \
     sudo systemctl enable --now libvirtd
 
 # ── Add user to libvirt group ────────────────────────────────────────────
-run_step "KVM_USER_GROUP" "Adding user to libvirt group" \
-    sudo usermod -aG libvirt "$USER"
+# On rpm-ostree systems a package-provided group can live only in
+# /usr/lib/group, and `usermod -aG` then **exits 0 without doing anything** —
+# it edits /etc/group and will not create an entry that is not already there.
+# The install therefore recorded KVM_USER_GROUP=done on a machine where the
+# group stayed empty (observed 2026-08-31 in the test VM: /etc/group had no
+# libvirt line, /usr/lib/group had `libvirt:x:961:`, usermod returned 0, nothing
+# changed). This host escaped it only because its libvirt entry predates that
+# layout and already sits in /etc/group.
+#
+# So: materialise the entry in /etc/group first, preserving the GID from the
+# package layer, then add the user — and confirm from the resulting state rather
+# than from usermod's exit code, which has already proved it can lie here.
+add_user_to_libvirt_group() {
+    if ! getent group libvirt >/dev/null 2>&1; then
+        echo "libvirt group does not exist at all — is libvirt installed?" >&2
+        return 1
+    fi
+    if ! grep -q "^libvirt:" /etc/group; then
+        echo "==> libvirt group exists only in the package layer — copying it to /etc/group"
+        getent group libvirt | sudo tee -a /etc/group >/dev/null || return 1
+    fi
+    sudo usermod -aG libvirt "$USER" || return 1
+    # The check that actually matters.
+    if getent group libvirt | grep -q "\b${USER}\b"; then
+        return 0
+    fi
+    echo "usermod reported success but $USER is still not in the libvirt group." >&2
+    return 1
+}
+
+run_step "KVM_USER_GROUP" "Adding user to libvirt group" add_user_to_libvirt_group
 
 # ── Start dedicated NAT network ───────────────────────────────────────────
 echo -e "\n${CYAN}==> Configuring dedicated libvirt NAT network...${NC}"

@@ -1100,3 +1100,35 @@ different answers, and only one of them is the install's fault.
 reasons, batch the call and separate its failure from the answer. Repeating a
 fallible probe does not make it more reliable — it multiplies the failure rate by
 the number of things you are checking.
+
+## `usermod -aG` exits 0 without doing anything on rpm-ostree
+
+**2026-08-31.** The install recorded `KVM_USER_GROUP=done` on a machine where the
+libvirt group had no members. `run_step` does check exit status, and `usermod`
+had genuinely returned 0.
+
+On an rpm-ostree system a package-provided group can exist only in
+`/usr/lib/group`. `usermod -aG` edits `/etc/group` and **will not create an entry
+that is not already there** — so it succeeds, changes nothing, and says nothing.
+Measured on the guest:
+
+```
+/etc/group        (no libvirt line)
+/usr/lib/group    libvirt:x:961:
+usermod -aG libvirt damian   → exit 0
+/etc/group        (still no libvirt line)
+```
+
+This host never saw it: its `libvirt:x:963:damian` line predates that layout and
+already lives in `/etc/group`, so `usermod` had something to edit. Another defect
+visible only on a fresh install.
+
+The fix copies the entry from the package layer into `/etc/group`, preserving the
+GID, then adds the user — and then **reads the group back** to decide whether it
+worked. Verified live: `libvirt:x:961:damian`.
+
+**The rule this is the third example of:** an exit code describes whether a
+command ran, not whether the world changed. Where a step exists to produce a
+specific state, assert that state. `git add` silently reverting
+`update-index --chmod`, `sudo -v` refusing under `NOPASSWD`, and now `usermod`
+no-opping on ostree — all three returned success while achieving nothing.
