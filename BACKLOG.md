@@ -89,9 +89,18 @@ orchestrate.sh resume        running (pid 1122)
 cannot kill it, resumes an existing VM instead of rebuilding, and reports which
 phase failed rather than waiting out a timeout.
 
-**Still open from the original item:** the libvirt network is still the stock
-`default`, not the repo-managed `dotfiles-nat`. Parameterise it — that part was
-never about the reboot and is unrelated to the finding above.
+**The network half is now done too (2026-08-31)**, and it was not cosmetic. The
+guest installs `libvirt-daemon-config-network`, which defines libvirt's own
+`default` network — 192.168.122.0/24, gateway .1 — *inside* the guest. Attaching
+the guest to the host's `default` network put it on that same subnet, so the
+moment `setup-kvm.sh` enabled libvirtd the guest raised `virbr0` with a
+conflicting route to its own subnet and lost networking completely: pings and ssh
+dead while the console sat happily at a login prompt.
+
+`VM_NETWORK` now defaults to `dotfiles-nat` (192.168.125.0/24, no collision), the
+script starts the network if it is defined but inactive, refuses if it does not
+exist, and warns explicitly when the chosen network is on 192.168.122.x. All
+three paths verified against the live libvirt networks.
 
 **Four bugs surfaced only because this ran**, every one invisible on a
 configured machine — see `AI_ERRORS.md`: the interactive `sudo -v` in an

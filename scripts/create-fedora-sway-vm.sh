@@ -25,6 +25,15 @@ VM_INSTALL_MODE="${VM_INSTALL_MODE:-orchestrator}"
 # Back-compat: callers that set VM_BOOTSTRAP=0 meant "install nothing".
 [[ "${VM_BOOTSTRAP:-1}" == "0" ]] && VM_INSTALL_MODE="none"
 VM_USER="${VM_USER:-damian}"
+# The guest installs libvirt-daemon-config-network, which defines libvirt's own
+# `default` network — 192.168.122.0/24, gateway .1 — INSIDE the guest. Attaching
+# the guest to the host's `default` network puts it on that exact subnet too, so
+# the moment setup-kvm.sh enables libvirtd the guest raises virbr0 with a
+# conflicting route to its own subnet and loses the network entirely (observed
+# 2026-08-31: pings and ssh stopped while the console sat at a login prompt).
+# The repo-managed dotfiles-nat lives at 192.168.125.0/24 and does not collide,
+# so it is the default here. Override with VM_NETWORK if you know better.
+VM_NETWORK="${VM_NETWORK:-dotfiles-nat}"
 VM_ISO="${VM_ISO:-$HOME/Downloads/Fedora-Everything-netinst-x86_64-44-1.7.iso}"
 VM_CHECKSUM="${VM_CHECKSUM:-$HOME/Downloads/Fedora-Everything-44-1.7-x86_64-CHECKSUM}"
 VM_ISO_URL="${VM_ISO_URL:-https://download.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/iso/Fedora-Everything-netinst-x86_64-44-1.7.iso}"
@@ -227,6 +236,8 @@ if virsh --connect qemu:///system dominfo "$VM_NAME" >/dev/null 2>&1; then
 fi
 
 if [[ "${SKIP_PROVISION:-0}" != "1" ]]; then
+ensure_vm_network || exit 1
+
 echo -e "${CYAN}==> Launching virt-install...${NC}"
 virt-install --connect qemu:///system \
     --name "$VM_NAME" \
@@ -236,7 +247,7 @@ virt-install --connect qemu:///system \
     --machine q35 \
     --boot uefi \
     --os-variant fedora-unknown \
-    --network network=default,model=virtio \
+    --network network="$VM_NETWORK",model=virtio \
     --disk size="$VM_DISK_GB",format=qcow2,bus=virtio \
     --graphics spice \
     --video qxl \
@@ -276,7 +287,31 @@ case "$VM_INSTALL_MODE" in
         # interruptions (a reboot, a suspend, a stopped background job) each
         # killed rpm-ostree mid-download and threw the run away. setsid + nohup
         # means the guest finishes on its own and this script is only an observer.
-        # The remote script goes in on stdin. Nesting it inside quotes was a
+        ensure_vm_network() {
+    if ! virsh --connect qemu:///system net-info "$VM_NETWORK" >/dev/null 2>&1; then
+        echo -e "${RED}✗ libvirt network '$VM_NETWORK' does not exist${NC}" >&2
+        echo -e "${YELLOW}  Create it with: bash ~/dotfiles-sway/scripts/setup-kvm.sh${NC}" >&2
+        echo -e "${YELLOW}  Or pick another: VM_NETWORK=default bash \$0${NC}" >&2
+        return 1
+    fi
+    if [[ "$(virsh --connect qemu:///system net-info "$VM_NETWORK" 2>/dev/null | awk '/^Active/{print $2}')" != "yes" ]]; then
+        echo -e "${CYAN}==> starting libvirt network '$VM_NETWORK'${NC}"
+        virsh --connect qemu:///system net-start "$VM_NETWORK" >/dev/null || return 1
+    fi
+    # Warn if the chosen network shares a subnet with what the guest will create
+    # for itself; that is the collision this default exists to avoid.
+    local subnet
+    subnet="$(virsh --connect qemu:///system net-dumpxml "$VM_NETWORK" 2>/dev/null \
+              | sed -n "s/.*<ip address='\([0-9.]*\)'.*/\1/p" | head -1)"
+    if [[ "$subnet" == 192.168.122.* ]]; then
+        echo -e "${YELLOW}⚠ '$VM_NETWORK' is on ${subnet%.*}.0/24 — the same subnet the guest's own${NC}"
+        echo -e "${YELLOW}  libvirt 'default' network uses. Expect the guest to lose networking${NC}"
+        echo -e "${YELLOW}  once it enables libvirtd. Use dotfiles-nat instead.${NC}"
+    fi
+    echo -e "${GREEN}✓ network '$VM_NETWORK' ready (${subnet:-unknown})${NC}"
+}
+
+# The remote script goes in on stdin. Nesting it inside quotes was a
         # steady source of bugs — a single quote in the payload silently ended the
         # outer quoting, and every pgrep pattern describing the orchestrator also
         # appeared in the ssh command line that started it, so pgrep matched
