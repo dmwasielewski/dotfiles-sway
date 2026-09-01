@@ -297,15 +297,49 @@ _ul_newer() {
     [[ "$a" != "$b" && "$(printf '%s\n%s\n' "$a" "$b" | sort -V | tail -1)" == "$b" ]]
 }
 
+# Latest version from a manifest's own probe command, for tools that publish
+# versions somewhere other than GitHub releases. The ChatGPT desktop app is the
+# first: it is installed user-local from OpenAI's RPM repository, so `repo=` has
+# nothing to point at and without this branch its manifest was silently skipped
+# and a new release would have been reported by nothing at all.
+#
+# The probe is a script IN THIS REPO plus arguments (e.g.
+# "scripts/setup-chatgpt.sh --print-latest-version"); the first word is resolved
+# against $DOTFILES and anything that does not land on an executable file inside
+# it is refused, so a manifest can never turn into an arbitrary command. Cached
+# on the same 3h last-known-good terms as the GitHub lookup — this runs from the
+# badge's refresh, and a probe that reaches the network must not run on every
+# redraw.
+userlocal_probe_version() {            # $1 = probe command line
+    local probe="$1" cache_f script out age
+    cache_f="$USERLOCAL_TAG_CACHE/probe_$(printf '%s' "$probe" | tr -c 'A-Za-z0-9' '_')"
+    if [[ -f "$cache_f" ]]; then
+        age=$(( $(date +%s) - $(stat -c %Y "$cache_f" 2>/dev/null || echo 0) ))
+        [[ "$age" -lt 10800 ]] && { cat "$cache_f"; return; }
+    fi
+    # shellcheck disable=SC2086
+    set -- $probe                      # deliberate word splitting: probe is a command line
+    script="${DOTFILES:-$HOME/dotfiles-sway}/$1"
+    [[ "$1" != /* && -x "$script" ]] || return 0
+    shift
+    out="$(timeout 30 "$script" "$@" 2>/dev/null | head -1)" || return 0
+    [[ -n "$out" ]] || return 0
+    mkdir -p "$USERLOCAL_TAG_CACHE"; printf '%s' "$out" > "$cache_f"
+    printf '%s' "$out"
+}
+
 # Outdated user-local tools as "name<TAB>installed<TAB>latest".
 userlocal_update_rows() {
-    local m name repo inst latest
+    local m name repo probe inst latest
     while IFS= read -r m; do
         [[ -z "$m" ]] && continue
         name="$(_ul_field "$m" name)"; repo="$(_ul_field "$m" repo)"
+        probe="$(_ul_field "$m" version_probe)"
         inst="$(_ul_field "$m" installed_version)"
-        [[ -z "$repo" || -z "$inst" ]] && continue
-        latest="$(userlocal_latest_tag "$repo")"
+        [[ -z "$inst" ]] && continue
+        if   [[ -n "$repo" ]];  then latest="$(userlocal_latest_tag "$repo")"
+        elif [[ -n "$probe" ]]; then latest="$(userlocal_probe_version "$probe")"
+        else continue; fi
         [[ -z "$latest" ]] && continue           # unknown/offline → don't flag
         _ul_newer "$inst" "$latest" && printf '%s\t%s\t%s\n' "${name:-$repo}" "$inst" "${latest#v}"
     done < <(userlocal_manifests)
