@@ -37,6 +37,10 @@ last_error_line() {                    # $1 = the BEGIN marker line for this run
 # whether the data is fresh / stale / never-checked for this session.
 OS_FRESHNESS="fresh"
 refresh_os_cache() { OS_FRESHNESS="$(os_refresh_cache)"; }
+# Language packages are queried per container over the network, so like the OS
+# check they are read ONCE per session and reused, keeping the summary and the
+# actions in agreement.
+refresh_langpkg() { LP_ROWS="$(langpkg_update_rows)" && LP_OK=1 || LP_OK=0; }
 os_raw_cached()    { os_cached_raw; }
 
 # User-local app updates are queried once per session (network call) and reused
@@ -80,6 +84,21 @@ show_summary() {
         printf '    %-22s last updated: %s%s\n' "$c" "$(container_age_label "$c")" "$mark"
     done < <(discover_distrobox; discover_toolbox)
     [[ "$found" -eq 0 ]] && echo "    (none found)"
+    echo ""
+
+    # ── Language packages inside containers (npm -g / pip --user) ──
+    local lp_count; lp_count="$(printf '%s' "$LP_ROWS" | grep -c . || true)"
+    echo "  Language packages     last updated: $(upd_age_label langpkg)"
+    if [[ "$LP_OK" -ne 1 ]]; then
+        echo "    could not check — an npm/pip query failed"
+    elif [[ "$lp_count" -gt 0 ]]; then
+        while IFS=$'\t' read -r lc lmgr lname lcur lnew; do
+            [[ -z "$lname" ]] && continue
+            printf '    %-10s %-4s %-22s %s → %s\n' "$lc" "$lmgr" "$lname" "$lcur" "$lnew"
+        done <<< "$LP_ROWS"
+    else
+        echo "    up to date"
+    fi
     echo ""
 
     # ── User-local apps (GitHub-release tools without a package/self updater) ──
@@ -349,6 +368,40 @@ do_userlocal() {
     return "$rc"
 }
 
+do_langpkg() {
+    echo ""; echo "── Updating language packages ───────────────────────"
+    local rc=0 updated=0 c mgr name cur new
+    if [[ "$LP_OK" -ne 1 ]]; then
+        echo "  ✗ the npm/pip query failed earlier — not guessing what to update."
+        echo "    Re-open this menu to retry."
+        return 1
+    fi
+    if [[ "$(printf '%s' "$LP_ROWS" | grep -c . || true)" -eq 0 ]]; then
+        echo "  ✔ Language packages already up to date."
+        return 2
+    fi
+    # Driven entirely by what the query reported — no package names in here.
+    while IFS=$'\t' read -r c mgr name cur new <&3; do
+        [[ -z "$name" ]] && continue
+        echo ""; echo "  $c ($mgr) $name: $cur → $new"
+        log_line "BEGIN $mgr upgrade $name in $c"
+        local ok=0
+        case "$mgr" in
+            npm) run_logged container_exec_by_name "$c" npm i -g "$name@latest" && ok=1 ;;
+            pip) run_logged container_exec_by_name "$c" pip3 install --user -U "$name" && ok=1 ;;
+            *)   echo "    ✗ unknown manager '$mgr' — skipping"; rc=1; continue ;;
+        esac
+        if [[ "$ok" -eq 1 ]]; then
+            log_line "OK $mgr $name in $c"; updated=$(( updated + 1 ))
+        else
+            echo "    ✗ failed (continuing)."; log_line "FAIL $mgr $name in $c"; rc=1
+        fi
+    done 3<<< "$LP_ROWS"
+    [[ "$updated" -gt 0 ]] && upd_record langpkg
+    refresh_langpkg
+    return "$rc"
+}
+
 do_os() {
     echo ""; echo "── Updating Fedora OS ───────────────────────────────"
     local begin="BEGIN rpm-ostree upgrade"
@@ -491,15 +544,21 @@ trap refresh_waybar EXIT
 
 # ── Run "everything" with continue-on-error + summary ─────────────────────
 do_everything() {
-    local r_fp r_ct r_ul r_os
+    local r_fp r_ct r_lp r_ul r_os
     do_flatpak;    r_fp=$?
     do_containers; r_ct=$?
+    do_langpkg;    r_lp=$?
     do_userlocal;  r_ul=$?
     do_os;         r_os=$?
     echo ""; bar
     echo "  Results:"
     [[ "$r_fp" -eq 0 ]] && echo "    ✔ Flatpak apps updated"      || echo "    ✗ Flatpak apps failed"
     [[ "$r_ct" -eq 0 ]] && echo "    ✔ Containers updated"        || echo "    ✗ Some containers failed"
+    case "$r_lp" in
+        0) echo "    ✔ Language packages updated" ;;
+        2) echo "    ✔ Language packages up to date" ;;
+        *) echo "    ✗ Some language packages failed" ;;
+    esac
     case "$r_ul" in
         0) echo "    ✔ User-local apps updated" ;;
         2) echo "    ✔ User-local apps up to date" ;;
@@ -510,7 +569,9 @@ do_everything() {
         2) echo "    ✔ Fedora OS up to date" ;;
         *) echo "    ✗ Fedora OS failed" ;;
     esac
-    if [[ "$r_fp" -ne 0 || "$r_ct" -ne 0 || "$r_os" -eq 1 || ( "$r_ul" -ne 0 && "$r_ul" -ne 2 ) ]]; then
+    if [[ "$r_fp" -ne 0 || "$r_ct" -ne 0 || "$r_os" -eq 1 \
+          || ( "$r_ul" -ne 0 && "$r_ul" -ne 2 ) \
+          || ( "$r_lp" -ne 0 && "$r_lp" -ne 2 ) ]]; then
         echo ""; echo "    Some steps failed — full output logged to:"; echo "      $LOG"
     fi
     [[ "$r_os" -eq 0 ]] && ask_reboot
@@ -524,6 +585,7 @@ echo "Checking for updates… (querying repositories, please wait)"
 log_line "=== update menu session started ==="
 refresh_os_cache
 refresh_userlocal
+refresh_langpkg
 
 while true; do
     show_summary
@@ -532,10 +594,11 @@ while true; do
     echo ""
     echo "    1) Update Flatpak apps      (fastest, no reboot)"
     echo "    2) Update containers        (no reboot)"
-    echo "    3) Update user-local apps   (no reboot)"
-    echo "    4) Update Fedora OS         (reboot required)"
-    echo "    5) Update everything        (apps → containers → user-local → OS)"
-    echo "    6) Show update list"
+    echo "    3) Update language packages (npm/pip inside containers, no reboot)"
+    echo "    4) Update user-local apps   (no reboot)"
+    echo "    5) Update Fedora OS         (reboot required)"
+    echo "    6) Update everything        (apps → containers → language → user-local → OS)"
+    echo "    7) Show update list"
     echo "    q) Cancel"
     echo ""
     read -rp "  Choice: " choice
@@ -545,14 +608,17 @@ while true; do
            echo ""; read -rp "  Press Enter to return to menu…" _ ;;
         2) do_containers && echo "  ✔ Done." || echo "  ✗ Some failed."; refresh_waybar
            echo ""; read -rp "  Press Enter to return to menu…" _ ;;
-        3) do_userlocal; rc=$?; [[ "$rc" -eq 0 || "$rc" -eq 2 ]] && echo "  ✔ Done." || echo "  ✗ Some failed."
+        3) do_langpkg; rc=$?; [[ "$rc" -eq 0 || "$rc" -eq 2 ]] && echo "  ✔ Done." || echo "  ✗ Some failed."
            refresh_waybar
            echo ""; read -rp "  Press Enter to return to menu…" _ ;;
-        4) if do_os; then ask_reboot; fi; refresh_os_cache; refresh_waybar
+        4) do_userlocal; rc=$?; [[ "$rc" -eq 0 || "$rc" -eq 2 ]] && echo "  ✔ Done." || echo "  ✗ Some failed."
+           refresh_waybar
            echo ""; read -rp "  Press Enter to return to menu…" _ ;;
-        5) do_everything; refresh_os_cache; refresh_waybar
+        5) if do_os; then ask_reboot; fi; refresh_os_cache; refresh_waybar
            echo ""; read -rp "  Press Enter to return to menu…" _ ;;
-        6) show_list; refresh_waybar ;;       # less → returns straight to menu
+        6) do_everything; refresh_os_cache; refresh_waybar
+           echo ""; read -rp "  Press Enter to return to menu…" _ ;;
+        7) show_list; refresh_waybar ;;       # less → returns straight to menu
         q|Q|"") break ;;
         *) echo "  Unknown option."; sleep 1 ;;
     esac

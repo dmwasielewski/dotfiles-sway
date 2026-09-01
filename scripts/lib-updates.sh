@@ -261,6 +261,150 @@ container_is_stale() {                 # exit 0 = stale (needs attention)
     [[ "$d" -ge "$CONTAINER_STALE_DAYS" ]]
 }
 
+# ── Language packages inside containers (npm -g, pip --user) ──────────────
+# The container source above runs the DISTRO package manager (distrobox upgrade
+# / dnf), which never touches anything installed on top of it. The AI CLIs are
+# exactly that: claude, codex, codewhale and markdownlint-cli2 come from
+# `npm install -g`, shell-gpt and faster-whisper from `pip3 install --user`. So
+# the tools used every day were updated by nobody and drifted silently until
+# someone noticed by hand (BACKLOG 12).
+#
+# No package names appear here. Each container is asked what it has: if it has
+# npm, npm is asked what is outdated; likewise pip. A container with neither is
+# skipped — that is not a failure. A query that CANNOT answer is, and says so,
+# because "the check did not run" must never render as "nothing to update".
+discover_containers() {                # "kind<TAB>name" per line
+    local n
+    while IFS= read -r n; do [[ -n "$n" ]] && printf 'distrobox\t%s\n' "$n"; done < <(discover_distrobox)
+    while IFS= read -r n; do [[ -n "$n" ]] && printf 'toolbox\t%s\n' "$n"; done < <(discover_toolbox)
+}
+
+container_exec() {                     # $1=kind $2=name, rest = command line
+    local kind="$1" name="$2"; shift 2
+    case "$kind" in
+        distrobox) distrobox enter --name "$name" -- "$@" ;;
+        toolbox)   toolbox run --container "$name" "$@" ;;
+        *)         return 1 ;;
+    esac
+}
+
+# Same as container_exec but keyed on the container NAME alone — the update rows
+# carry a name, not a kind, and which runtime owns a container is discoverable.
+container_exec_by_name() {             # $1=name, rest = command line
+    local want="$1" kind name; shift
+    while IFS=$'\t' read -r kind name; do
+        [[ "$name" == "$want" ]] || continue
+        container_exec "$kind" "$want" "$@"
+        return $?
+    done < <(discover_containers)
+    return 1
+}
+
+# 97 = "this manager is not installed here", chosen so it cannot collide with a
+# manager's own exit codes. npm in particular exits 1 precisely BECAUSE it found
+# something outdated, so exit status cannot decide success — valid JSON does.
+_LANGPKG_ABSENT=97
+
+# Both emit "root<TAB>container<TAB>manager<TAB>name<TAB>cur<TAB>latest". The
+# root matters because $HOME is shared with every container: npm's global prefix
+# (~/.npm-global) and pip's user site (~/.local/lib/pythonX.Y/site-packages) are
+# literally the same directory seen from all of them. Without the root, one
+# `pip install shell-gpt` is reported once per container, and the badge count is
+# multiplied by however many containers happen to exist.
+_langpkg_npm() {                       # $1=kind $2=name → rows, rc 1 if unusable
+    local out rc
+    out="$(container_exec "$1" "$2" bash -lc \
+        "command -v npm >/dev/null 2>&1 || exit $_LANGPKG_ABSENT; npm -g root 2>/dev/null; npm -g outdated --json 2>/dev/null" 2>/dev/null)"
+    rc=$?
+    [[ "$rc" -eq "$_LANGPKG_ABSENT" ]] && return 0
+    # The assignment must sit on python3, not on printf: an env prefix applies
+    # only to the command it precedes, and printf is not the one reading it.
+    printf '%s' "$out" | CONTAINER="$2" python3 -c '
+import json, os, sys
+lines = sys.stdin.read().splitlines()
+if not lines:
+    sys.exit(1)                       # npm ran but said nothing parseable
+root, rest = lines[0].strip(), "\n".join(lines[1:]).strip()
+if not root or not rest:
+    sys.exit(1)
+try:
+    data = json.loads(rest)
+except Exception:
+    sys.exit(1)
+if not isinstance(data, dict):
+    sys.exit(1)
+for name, info in data.items():
+    cur = (info or {}).get("current") or ""
+    latest = (info or {}).get("latest") or ""
+    if cur and latest and cur != latest:
+        print("\t".join([root, os.environ["CONTAINER"], "npm", name, cur, latest]))
+'
+}
+
+_langpkg_pip() {                       # $1=kind $2=name → rows, rc 1 if unusable
+    local out rc
+    # --not-required: only what was installed on purpose. Without it a single
+    # `pip install shell-gpt` reports its whole dependency tree — 40+ rows of
+    # transitive packages nobody installed or should upgrade individually.
+    out="$(container_exec "$1" "$2" bash -lc \
+        "command -v pip3 >/dev/null 2>&1 || exit $_LANGPKG_ABSENT; python3 -c 'import site; print(site.getusersitepackages())' 2>/dev/null; pip3 list --user --not-required --outdated --format=json 2>/dev/null" 2>/dev/null)"
+    rc=$?
+    [[ "$rc" -eq "$_LANGPKG_ABSENT" ]] && return 0
+    printf '%s' "$out" | CONTAINER="$2" python3 -c '
+import json, os, sys
+lines = sys.stdin.read().splitlines()
+if not lines:
+    sys.exit(1)
+root, rest = lines[0].strip(), "\n".join(lines[1:]).strip()
+if not root or not rest:
+    sys.exit(1)
+try:
+    data = json.loads(rest)
+except Exception:
+    sys.exit(1)
+if not isinstance(data, list):
+    sys.exit(1)
+for pkg in data:
+    name = pkg.get("name") or ""
+    cur = pkg.get("version") or ""
+    latest = pkg.get("latest_version") or ""
+    if name and cur and latest and cur != latest:
+        print("\t".join([root, os.environ["CONTAINER"], "pip", name, cur, latest]))
+'
+}
+
+# Outdated language packages as "container<TAB>manager<TAB>name<TAB>cur<TAB>latest".
+# Returns non-zero if ANY query could not be answered, so callers can report
+# "could not check" instead of an all-clear built on a failed query.
+# Deduplicated by (root, manager, package, versions): the same shared directory
+# reported from three containers is one update, not three. Keeping the versions
+# in the key means genuinely separate installs sitting at different versions
+# still produce a row each.
+#
+# The union across containers is also what makes this correct where one runtime
+# answers wrongly. Observed 2026-09-01: `npm -g outdated` returns {} in the
+# Fedora toolbox and six packages in the Ubuntu distrobox for the SAME prefix —
+# the toolbox sees $HOME through /home → /var/home, so npm treats the tree as
+# linked and skips it. Taking the union means the container that CAN see the
+# packages decides, instead of the empty answer silently reading as "clean".
+langpkg_update_rows() {
+    local kind name rc=0 raw
+    raw="$(
+        while IFS=$'\t' read -r kind name <&3; do
+            [[ -z "$name" ]] && continue
+            _langpkg_npm "$kind" "$name" || echo "__LANGPKG_FAILED__"
+            _langpkg_pip "$kind" "$name" || echo "__LANGPKG_FAILED__"
+        done 3< <(discover_containers)
+    )"
+    printf '%s' "$raw" | grep -q '__LANGPKG_FAILED__' && rc=1
+    printf '%s\n' "$raw" | grep -v '__LANGPKG_FAILED__' | awk -F'\t' '
+        NF == 6 && !seen[$1 "\t" $3 "\t" $4 "\t" $5 "\t" $6]++ {
+            print $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6
+        }'
+    return "$rc"
+}
+langpkg_count() { langpkg_update_rows | grep -c . || true; }
+
 # ── User-local apps (GitHub-release tools without a package or self updater) ─
 # Most tools are covered elsewhere: packaged ones by rpm-ostree/dnf/apt, Flatpaks
 # by flatpak, and some (e.g. zed) self-update. What is left are GitHub-release

@@ -183,7 +183,7 @@ declarative profiles + capability groups; add non-destructive behavioural checks
 (`sway --validate`, desktop-file validation, systemd unit syntax, container→host
 `podman info`, deployment reconciliation). Pairs with item 3.
 
-### 🟠 12. Update module ignores every language package manager
+### 🟠 12. Update module ignores every language package manager — ✅ DONE (2026-09-01)
 The Waybar update module has four sources — Flatpak, containers, OS, user-local
 apps — and **none of them updates a single npm/pip package**. `do_containers()`
 runs `distrobox upgrade` / toolbox `dnf`, which is the *distro* package manager
@@ -201,6 +201,29 @@ run through the same container discovery already used by `discover_toolbox` /
 entry, and a `upd_record` timestamp so "last updated" works like the others.
 Found 2026-08-14 when a manual `npm i -g @openai/codex` turned out to be the
 only way codex ever gets a new version.
+
+**Done 2026-09-01.** Fifth source `langpkg_update_rows` in `lib-updates.sh`, its
+own tooltip section, menu entry 3, a `langpkg` timestamp, and
+`tests/updates/test_langpkg.sh`. First real run found 10 outdated packages that
+nothing had been updating, including `claude` 2.1.158 → 2.1.257 and `codex`
+0.147.0 → 0.152.0.
+
+Two traps the implementation had to handle, both found by running it rather than
+reasoning about it — do not "simplify" either away:
+
+- **`$HOME` is shared with every container**, so `~/.npm-global` and
+  `~/.local/lib/pythonX.Y/site-packages` are the same directory seen from all of
+  them. Rows are deduplicated by install root; without it the same four pip
+  packages were reported three times.
+- **`npm -g outdated` returns `{}` in toolbox `damianf` and six packages in
+  distrobox `damianu` for the SAME prefix.** The toolbox reaches `$HOME` through
+  `/home` → `/var/home`, so npm sees the global tree as linked and skips it
+  (`npm -g ls` prints `.npm-global/lib -> ./` there and a plain path in the
+  distrobox). The union across containers is what keeps the correct answer
+  winning. Residual risk worth knowing: if the distrobox were removed, npm
+  updates would go unreported rather than reported as unknown — the empty answer
+  is indistinguishable from a true empty one without a heuristic on that `-> ./`
+  marker.
 
 ---
 

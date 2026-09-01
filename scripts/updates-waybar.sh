@@ -65,6 +65,25 @@ compute_and_cache() {
         total=$(( total + container_warn ))
     fi
 
+    # Language packages inside containers (npm -g / pip --user). These sit ON TOP
+    # of the container's distro packages, so the container source above never
+    # touches them — see lib-updates.sh.
+    local lp_rows lp lp_rc c mgr lname lcur lnew
+    lp_rows="$(langpkg_update_rows)" && lp_rc=0 || lp_rc=$?
+    lp="$(printf '%s' "$lp_rows" | grep -c . || true)"
+    if [[ "$lp_rc" -ne 0 ]]; then
+        lines+=("Language packages: could not check (an npm/pip query failed)")
+        unknown=$(( unknown + 1 ))
+    fi
+    if [[ "$lp" -gt 0 ]]; then
+        lines+=("Language packages: $lp update(s)")
+        while IFS=$'\t' read -r c mgr lname lcur lnew; do
+            [[ -z "$lname" ]] && continue
+            lines+=("  $c ($mgr) $lname: $lcur → $lnew")
+        done <<< "$lp_rows"
+        total=$(( total + lp ))
+    fi
+
     # User-local apps (GitHub-release tools without a package/self updater, e.g. yazi)
     local ul_rows ul; ul_rows="$(userlocal_update_rows)"
     ul="$(printf '%s' "$ul_rows" | grep -c . || true)"
