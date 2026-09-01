@@ -141,6 +141,34 @@ os_cache_date() {                      # date label of the last successful check
     date -d "@$(cat "$OS_CACHE_TS_FILE")" '+%Y-%m-%d %H:%M' 2>/dev/null || echo "unknown"
 }
 
+# ── Last OS upgrade ATTEMPT ───────────────────────────────────────────────
+# An update that failed to install renders identically to one nobody has run
+# yet: both are just "OS: N packages" in the tooltip. On 2026-09-01 that cost a
+# session — a layered package's %post wrote under /var, which is read-only
+# inside rpm-ostree's scriptlet sandbox, so `rpm-ostree upgrade` aborted every
+# time and took the base update with it (the transaction is atomic). The menu
+# logged the failure and nothing carried it any further, so the badge sat amber
+# for as long as the package stayed broken and the user reported the indicator
+# as lying. It was not: it had no way to say "already tried, cannot install".
+#
+# The marker is written by whoever runs the upgrade and read by the badge, so
+# the two never disagree — the same single-source-of-truth rule as the rest of
+# this file. Nothing about any particular package is recorded here beyond the
+# error text the upgrade itself printed.
+OS_FAIL_FILE="$CACHE_DIR/os-upgrade-fail"
+os_fail_record() {                     # $1 = error text from the failed upgrade
+    mkdir -p "$CACHE_DIR"
+    { date +%s; printf '%s\n' "${1:-}"; } > "$OS_FAIL_FILE"
+}
+os_fail_clear()  { rm -f "$OS_FAIL_FILE"; }
+os_failed()      { [[ -f "$OS_FAIL_FILE" ]] && echo 1 || echo 0; }
+os_fail_date()   {
+    local ts; ts="$(sed -n '1p' "$OS_FAIL_FILE" 2>/dev/null)"
+    [[ -n "$ts" ]] || { echo "unknown"; return; }
+    date -d "@$ts" '+%Y-%m-%d %H:%M' 2>/dev/null || echo "unknown"
+}
+os_fail_reason() { sed -n '2p' "$OS_FAIL_FILE" 2>/dev/null; }
+
 os_parse_pending() {                   # $1 = raw check text
     printf '%s' "$1" | grep -q "AvailableUpdate:" && echo 1 || echo 0
 }

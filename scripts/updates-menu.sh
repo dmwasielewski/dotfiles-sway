@@ -20,6 +20,12 @@ log_line()   { printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG";
 # Run a command showing output on screen AND appending it to the log.
 # pipefail (set at top) makes the pipeline keep the command's exit code.
 run_logged() { "$@" 2>&1 | tee -a "$LOG"; }
+# The most recent "error:" line in the log — what a failed rpm-ostree
+# transaction prints as its cause. Read back from the log rather than captured
+# from the command, so run_logged keeps streaming to the terminal live.
+last_error_line() {
+    tac "$LOG" 2>/dev/null | grep -m1 -iE '^[[:space:]]*error:' | sed 's/^[[:space:]]*//'
+}
 
 # OS check uses the shared "last known good" cache from lib-updates.sh:
 # os_refresh_cache() does a live check (with retries) and falls back to the
@@ -349,9 +355,14 @@ do_os() {
     # "(staged)") to decide whether a reboot is actually warranted.
     if ! run_logged rpm-ostree upgrade; then
         log_line "FAIL rpm-ostree upgrade — see log"
+        # Keep the reason where the badge can read it. A failure that lives only
+        # in a log file is a failure nobody sees: the tooltip would go on saying
+        # "N packages available" for as long as the upgrade keeps aborting.
+        os_fail_record "$(last_error_line)"
         echo "  ✗ OS update failed (system unchanged — rpm-ostree is atomic). Log: $LOG"
         return 1
     fi
+    os_fail_clear
     if [[ "$(os_staged)" -eq 1 ]]; then
         echo "  ✔ OS update staged. Reboot required to apply."
         log_line "OK rpm-ostree upgrade (staged)"

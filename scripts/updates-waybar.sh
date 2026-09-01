@@ -100,9 +100,21 @@ compute_and_cache() {
         lines+=("OS: ${pc:-?} packages → ${nv:-new version}$stale_note")
         lines+=("  Security: $sec_high")
         lines+=("  Regular:  $reg")
+        # "Update waiting" and "update that cannot install" are different jobs
+        # for the user — one is 'run the updater', the other is 'this needs
+        # fixing, and it is blocking every OS update behind it'. Without this
+        # line they render identically and the badge looks stuck for no reason.
+        if [[ "$(os_failed)" -eq 1 ]]; then
+            lines+=("  last attempt FAILED $(os_fail_date) — this will not install as is:")
+            lines+=("    $(os_fail_reason)")
+        fi
         total=$(( total + 1 ))
     else
         lines+=("OS: up to date (booted $(os_last_label))$stale_note")
+        # Self-healing: reaching "current" means whatever failed is behind us
+        # (fixed upstream, or the package is gone). A marker that outlived its
+        # cause would be the same lie in the opposite direction.
+        os_fail_clear
     fi
 
     # Severity class — the colour encodes the action required of the user:
