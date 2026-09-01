@@ -156,9 +156,16 @@ os_cache_date() {                      # date label of the last successful check
 # this file. Nothing about any particular package is recorded here beyond the
 # error text the upgrade itself printed.
 OS_FAIL_FILE="$CACHE_DIR/os-upgrade-fail"
-os_fail_record() {                     # $1 = error text from the failed upgrade
+# What the failed attempt was trying to install. A recorded failure is only
+# worth showing while the SAME update is still pending: once upstream ships a
+# different one, the old error explains nothing and pinning it to an unrelated
+# update is the same lie in the opposite direction.
+os_check_target() {                    # $1 = raw check text
+    printf '%s|%s' "$(os_parse_version "$1")" "$(os_parse_pkgcount "$1")"
+}
+os_fail_record() {                     # $1 = error text, $2 = check target
     mkdir -p "$CACHE_DIR"
-    { date +%s; printf '%s\n' "${1:-}"; } > "$OS_FAIL_FILE"
+    { date +%s; printf '%s\n' "${1:-}"; printf '%s\n' "${2:-}"; } > "$OS_FAIL_FILE"
 }
 os_fail_clear()  { rm -f "$OS_FAIL_FILE"; }
 os_failed()      { [[ -f "$OS_FAIL_FILE" ]] && echo 1 || echo 0; }
@@ -168,6 +175,7 @@ os_fail_date()   {
     date -d "@$ts" '+%Y-%m-%d %H:%M' 2>/dev/null || echo "unknown"
 }
 os_fail_reason() { sed -n '2p' "$OS_FAIL_FILE" 2>/dev/null; }
+os_fail_target() { sed -n '3p' "$OS_FAIL_FILE" 2>/dev/null; }
 
 os_parse_pending() {                   # $1 = raw check text
     printf '%s' "$1" | grep -q "AvailableUpdate:" && echo 1 || echo 0
@@ -319,8 +327,13 @@ userlocal_probe_version() {            # $1 = probe command line
     fi
     # shellcheck disable=SC2086
     set -- $probe                      # deliberate word splitting: probe is a command line
-    script="${DOTFILES:-$HOME/dotfiles-sway}/$1"
+    local root; root="${DOTFILES:-$HOME/dotfiles-sway}"
+    script="$root/$1"
+    # Absolute paths and anything that resolves outside the repo are refused —
+    # "/usr/bin/id" and "../../usr/bin/id" must both fail, or the guarantee this
+    # comment states is not one.
     [[ "$1" != /* && -x "$script" ]] || return 0
+    [[ "$(readlink -f "$script")" == "$(readlink -f "$root")"/* ]] || return 0
     shift
     out="$(timeout 30 "$script" "$@" 2>/dev/null | head -1)" || return 0
     [[ -n "$out" ]] || return 0

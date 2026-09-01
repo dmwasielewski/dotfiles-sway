@@ -105,8 +105,15 @@ compute_and_cache() {
         # fixing, and it is blocking every OS update behind it'. Without this
         # line they render identically and the badge looks stuck for no reason.
         if [[ "$(os_failed)" -eq 1 ]]; then
-            lines+=("  last attempt FAILED $(os_fail_date) — this will not install as is:")
-            lines+=("    $(os_fail_reason)")
+            if [[ "$(os_fail_target)" == "$(os_check_target "$os_raw")" ]]; then
+                lines+=("  last attempt FAILED $(os_fail_date) — this will not install as is:")
+                lines+=("    $(os_fail_reason)")
+            else
+                # A different update is pending now, so the recorded error is
+                # about something that is no longer on offer. Showing it would
+                # blame the new update for the old one's failure.
+                os_fail_clear
+            fi
         fi
         total=$(( total + 1 ))
     else

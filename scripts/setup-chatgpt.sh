@@ -186,8 +186,17 @@ command -v update-desktop-database >/dev/null 2>&1 &&
 
 # Keep only the release we just linked. Each unpacked tree is ~1.4 GB, so the
 # yazi pattern of leaving old versions behind is not affordable here.
+# Never delete a tree something is still executing from: this is a lazily-mapped
+# Electron install (.pak files, app.asar, a zygote and a crash handler respawned
+# from disk), not a single static binary like yazi's — pulling it out from under
+# a running session breaks that session mid-use. The app autostarts on ws5, so
+# an upgrade while it is open is the normal case, not the edge one.
 while IFS= read -r old; do
     [[ "$old" == "$RELEASE_DIR" ]] && continue
+    if pgrep -f "^$old/" >/dev/null 2>&1; then
+        echo "==> $old is still running — leaving it; it will go on the next run"
+        continue
+    fi
     echo "==> Removing superseded $old"
     rm -rf "$old"
 done < <(find "$OPT_DIR" -maxdepth 1 -type d -name "$PKG-*" 2>/dev/null)

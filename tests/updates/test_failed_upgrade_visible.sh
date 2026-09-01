@@ -52,7 +52,7 @@ REASON="error: Running %post for somepkg: bwrap(/bin/sh): Child process exited w
     export PATH XDG_CACHE_HOME
     # shellcheck source=scripts/lib-updates.sh
     source "$DIR/scripts/lib-updates.sh"
-    os_fail_record "$REASON"
+    os_fail_record "$REASON" "$(os_check_target "$(os_check_raw)")"
 )
 PATH="$stub:$PATH" XDG_CACHE_HOME="$cache" bash "$DIR/scripts/updates-waybar.sh" --compute >/dev/null 2>&1
 badge="$(cat "$cache/waybar-updates.json" 2>/dev/null)"
@@ -84,7 +84,7 @@ chmod +x "$stub/rpm-ostree"
     PATH="$stub:$PATH" XDG_CACHE_HOME="$cache2"
     export PATH XDG_CACHE_HOME
     source "$DIR/scripts/lib-updates.sh"
-    os_fail_record "$REASON"
+    os_fail_record "$REASON" "|1"
 )
 PATH="$stub:$PATH" XDG_CACHE_HOME="$cache2" bash "$DIR/scripts/updates-waybar.sh" --compute >/dev/null 2>&1
 badge2="$(cat "$cache2/waybar-updates.json" 2>/dev/null)"
@@ -94,5 +94,40 @@ badge2="$(cat "$cache2/waybar-updates.json" 2>/dev/null)"
 [[ ! -f "$cache2/os-upgrade-fail" ]] \
     && { ASSERT_PASS=$((ASSERT_PASS+1)); echo "  ok: the marker file itself is removed, not just hidden"; } \
     || { ASSERT_FAIL=$((ASSERT_FAIL+1)); echo "  FAIL: marker file survives an up-to-date OS"; }
+
+# ── a failure recorded against a DIFFERENT update must not be shown ───────
+# After the offending package is gone, the next OS update is unrelated — but it
+# is still "pending", so the self-heal above (which only fires on "current")
+# never runs. Pinning yesterday's error to today's update is the same lie in the
+# opposite direction, and it is what would have kept this loop going one turn
+# longer.
+cache3="$tmp/cache3"; mkdir -p "$cache3"
+cat > "$stub/rpm-ostree" <<'STUB'
+#!/bin/bash
+if [[ "$1" == "upgrade" && "$2" == "--check" ]]; then
+    echo "AvailableUpdate:"
+    echo "        Version: 44.20260902.0 (2026-09-02T00:00:00Z)"
+    echo "           Diff: 7 upgraded"
+    exit 0
+fi
+if [[ "$1" == "status" ]]; then
+    echo '{"deployments":[{"booted":true,"staged":false,"version":"44.0","timestamp":0}]}'
+    exit 0
+fi
+exit 0
+STUB
+chmod +x "$stub/rpm-ostree"
+(
+    PATH="$stub:$PATH" XDG_CACHE_HOME="$cache3"
+    export PATH XDG_CACHE_HOME
+    source "$DIR/scripts/lib-updates.sh"
+    os_fail_record "$REASON" "|1"      # recorded against the OLD single-package update
+)
+PATH="$stub:$PATH" XDG_CACHE_HOME="$cache3" bash "$DIR/scripts/updates-waybar.sh" --compute >/dev/null 2>&1
+badge3="$(cat "$cache3/waybar-updates.json" 2>/dev/null)"
+[[ "$badge3" != *"last attempt FAILED"* ]] \
+    && { ASSERT_PASS=$((ASSERT_PASS+1)); echo "  ok: an old failure is not blamed on a different pending update"; } \
+    || { ASSERT_FAIL=$((ASSERT_FAIL+1)); echo "  FAIL: showed a stale failure against an unrelated update"; }
+assert_contains "$badge3" "OS: 7 packages" "the new update is still reported"
 
 assert_summary

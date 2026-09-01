@@ -239,6 +239,11 @@ a zero (see `AI_ERRORS.md`). Two related gaps remain:
   count, no note in the tooltip. It has a last-known-good tag cache, so the
   window is narrow, but an unauthenticated API is rate-limited to 60 requests an
   hour and a rate-limited reply is indistinguishable from "no newer release".
+  *Partly advanced 2026-09-01:* a manifest may now declare
+  `version_probe=<script in this repo> [args]` instead of `repo=`, so a tool
+  whose releases are not on GitHub (the ChatGPT desktop app) is no longer
+  skipped outright. The "silent skip on a failed lookup" gap above is unchanged
+  and applies to probes too — a failing probe reports nothing.
 - **Resume from suspend defeats the cache.** `CACHE_MAX_AGE` is 3 h, so a resume
   after that spawns a refresh immediately — typically before NetworkManager has
   connected. The result is now amber rather than a false all-clear, but it is
@@ -247,6 +252,22 @@ a zero (see `AI_ERRORS.md`). Two related gaps remain:
   does not fire either. Options: retry the refresh when a check returns unknown
   (backoff), or hook `sleep.target` to invalidate the cache on resume. Needs a
   decision before code.
+
+---
+
+### 🟡 15. Report the ChatGPT `%post` breakage to OpenAI
+From 26.831.20005 the package's `%post` does `mkdir -p /var/lib/chatgpt` and
+`touch /var/lib/chatgpt/repository.keys`. `/var` is read-only inside
+rpm-ostree's scriptlet sandbox — ostree packaging is supposed to create state
+via `systemd-tmpfiles` — and the scriptlet runs under `set -e`, so the whole
+atomic transaction aborts and **no OS update can install** while the package is
+layered. That is why the app moved to a user-local install on 2026-09-01
+(`scripts/setup-chatgpt.sh`).
+
+Filing this upstream is the only route back to a layered, OS-tracked install.
+Until then `verify.sh` fails if a layered copy reappears. Evidence to include:
+the two `journalctl -t 'rpm-ostree(chatgpt.post)'` lines and the diff between
+26.825's `%post` (no `/var` writes) and 26.831's `install_key()`.
 
 ---
 

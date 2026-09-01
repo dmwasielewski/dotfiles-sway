@@ -23,8 +23,12 @@ run_logged() { "$@" 2>&1 | tee -a "$LOG"; }
 # The most recent "error:" line in the log — what a failed rpm-ostree
 # transaction prints as its cause. Read back from the log rather than captured
 # from the command, so run_logged keeps streaming to the terminal live.
-last_error_line() {
-    tac "$LOG" 2>/dev/null | grep -m1 -iE '^[[:space:]]*error:' | sed 's/^[[:space:]]*//'
+# Anchored to this run's BEGIN marker: a `tac`-over-the-whole-log search would
+# happily report an error from an earlier, unrelated run as the reason for a
+# failure that printed none of its own (killed, aborted transfer).
+last_error_line() {                    # $1 = the BEGIN marker line for this run
+    awk -v m="$1" 'index($0,m){seen=1; next} seen' "$LOG" 2>/dev/null |
+        grep -iE '^[[:space:]]*error:' | tail -1 | sed 's/^[[:space:]]*//'
 }
 
 # OS check uses the shared "last known good" cache from lib-updates.sh:
@@ -347,7 +351,8 @@ do_userlocal() {
 
 do_os() {
     echo ""; echo "── Updating Fedora OS ───────────────────────────────"
-    log_line "BEGIN rpm-ostree upgrade"
+    local begin="BEGIN rpm-ostree upgrade"
+    log_line "$begin"
     # rpm-ostree is atomic: a failed upgrade leaves the current deployment intact.
     # NOTE: `rpm-ostree upgrade` exits 0 even when there is nothing to upgrade
     # ("No upgrade available"), so command success does NOT imply an update was
@@ -358,7 +363,7 @@ do_os() {
         # Keep the reason where the badge can read it. A failure that lives only
         # in a log file is a failure nobody sees: the tooltip would go on saying
         # "N packages available" for as long as the upgrade keeps aborting.
-        os_fail_record "$(last_error_line)"
+        os_fail_record "$(last_error_line "$begin")" "$(os_check_target "$(os_cached_raw)")"
         echo "  ✗ OS update failed (system unchanged — rpm-ostree is atomic). Log: $LOG"
         return 1
     fi
