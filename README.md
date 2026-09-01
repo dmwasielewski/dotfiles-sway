@@ -196,14 +196,14 @@ bash ~/dotfiles-sway/scripts/setup-security-container.sh
 ```
 
 12. The ChatGPT desktop app (includes Codex) is installed by `packages.sh` in
-step 3, so it needs no separate step — it is already in the deployment you booted
-in step 4. Sign in on first launch with the same OpenAI account used by
-`codex login`. To install or repair it on its own:
+step 3, so it needs no separate step. It is **user-local** — the official OpenAI
+RPM unpacked into `~/.local/opt`, not layered onto the OS — so no reboot is
+involved. Sign in on first launch with the same OpenAI account used by
+`codex login`. To install, upgrade or repair it on its own:
 ```bash
-sudo -v && bash ~/dotfiles-sway/scripts/setup-chatgpt.sh
-systemctl reboot
+bash ~/dotfiles-sway/scripts/setup-chatgpt.sh
 ```
-Its step is deliberately non-blocking: a failed 420 MB download from OpenAI's CDN
+Its step is deliberately non-blocking: a failed 435 MB download from OpenAI's CDN
 is recorded in the install state and reported by `verify.sh` instead of aborting
 the whole install.
 
@@ -515,7 +515,7 @@ dotfiles-sway/
 │   ├── setup-kvm.sh                   # KVM/QEMU setup (libvirtd, groups, network) — writes state
 │   ├── setup-neovim-config.sh         # Neovim 0.12.1 + Chris Titus Tech config symlink
 │   ├── setup-nordvpn.sh               # NordVPN CLI install + nordvpnd enable/start + group setup — writes state
-│   ├── setup-chatgpt.sh                # ChatGPT desktop app (incl. Codex): OpenAI repo + signing key + rpm-ostree — writes state
+│   ├── setup-chatgpt.sh                # ChatGPT desktop app (incl. Codex): official RPM unpacked user-local into ~/.local/opt
 │   ├── setup-adguard.sh               # AdGuard for Linux CLI install — writes state
 │   ├── setup-whispering-open.sh       # Whispering Open GitHub release download — non-blocking
 │   ├── setup-damian-container.sh      # Toolbox damianf: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
@@ -827,7 +827,12 @@ codex
 chatgpt
 ```
 
-Installed by `scripts/setup-chatgpt.sh`. ChatGPT, ChatGPT Work and Codex are three
+Installed by `scripts/setup-chatgpt.sh` into `~/.local/opt/chatgpt-<version>`.
+It is deliberately **not** layered with rpm-ostree: from version 26.831 upstream's
+`%post` writes under `/var`, which is read-only in rpm-ostree's scriptlet sandbox,
+and because an rpm-ostree transaction is atomic that one failure blocked *every*
+OS update — Fedora security updates included. `verify.sh` fails if a layered copy
+reappears. ChatGPT, ChatGPT Work and Codex are three
 workspaces inside one window — switch with the menu in the top-left corner. **There
 is no separate Codex application for Linux**; OpenAI merged the standalone Codex app
 into the ChatGPT client in July 2026. The `codex` CLI above is unaffected and both

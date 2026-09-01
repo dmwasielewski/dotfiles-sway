@@ -1,39 +1,84 @@
 #!/bin/bash
-# setup-chatgpt.sh — install the official ChatGPT desktop app on Fedora Atomic
+# setup-chatgpt.sh — install the official ChatGPT desktop app (which also hosts
+# Codex) user-local, from OpenAI's own RPM, WITHOUT layering it onto the OS.
 #
-# The app bundles ChatGPT, ChatGPT Work and Codex in one window (Codex is a
-# workspace inside it, not a separate application). Upstream ships .rpm/.deb only
-# and documents `dnf install ./chatgpt.x86_64.rpm`, which is wrong for an
-# immutable host, so this script layers it with rpm-ostree instead.
+# Why not rpm-ostree layering (which is what this script used to do):
+# On 2026-09-01 upstream's %post started doing `mkdir -p /var/lib/chatgpt`.
+# /var is READ-ONLY inside rpm-ostree's scriptlet sandbox — packages targeting
+# ostree systems have to create their state via systemd-tmpfiles — and the
+# scriptlet runs under `set -e`, so it aborted the transaction:
 #
-# It deliberately installs BY NAME from OpenAI's repository rather than layering
-# the downloaded file. A locally layered .rpm is pinned to that exact file and is
-# never seen by `rpm-ostree upgrade`, which would leave the app permanently
-# invisible to the Waybar update indicator. Installing by name puts it in the OS
-# update path like every other layered package.
+#   error: Running %post for chatgpt: bwrap(/bin/sh): Child process exited
+#   with code 1
+#   rpm-ostree(chatgpt.post): mkdir: cannot create directory
+#   '/var/lib/chatgpt': Read-only file system
 #
-# The repository is signed with a key that upstream publishes ONLY inside the
-# package's %post scriptlet — there is no public key URL (checked: /gpg,
-# /gpg.key, /RPM-GPG-KEY-chatgpt all 404). So the key is extracted from the
-# package at runtime rather than copied into this repo, which means a key
-# rotation is picked up automatically instead of silently breaking gpgcheck.
-
+# An rpm-ostree transaction is atomic and covers the base tree together with
+# every layered package, so one third-party scriptlet failing this way blocked
+# ALL OS updates — Fedora's security updates included. The app is a
+# self-contained Electron tree under /usr/lib/chatgpt with a relocatable
+# launcher (`dirname $(readlink -f $0)`) and no absolute paths in its payload
+# (checked), so it does not need to be part of the OS image at all.
+#
+# So: same official package, same signature check, unpacked into ~/.local/opt
+# instead. Native on Fedora, no container, no root, no reboot, and the OS
+# update path is left alone. Same shape as scripts/setup-yazi.sh.
+#
+# Nothing about the version is hardcoded: the version, the package filename and
+# its checksum all come from the repository metadata at runtime.
+#
+#   setup-chatgpt.sh                          install/upgrade to the latest
+#   setup-chatgpt.sh --print-latest-version   print the upstream version, exit
 set -euo pipefail
 
-DOTFILES="$HOME/dotfiles-sway"
-# shellcheck source=scripts/lib-install.sh
-source "$DOTFILES/scripts/lib-install.sh"
-setup_logging "scripts/setup-chatgpt.sh"
+REPO_BASEURL="https://persistent.oaistatic.com/codex-app-prod/linux/rpm/x86_64"
+
+OPT_DIR="$HOME/.local/opt"
+BIN_DIR="$HOME/.local/bin"
+APP_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
+MANIFEST_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles-updates"
+DL_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/chatgpt-dl"
 
 PKG="chatgpt"
-REPO_FILE="/etc/yum.repos.d/chatgpt.repo"
-KEY_FILE="/etc/pki/rpm-gpg/RPM-GPG-KEY-chatgpt"
-REPO_SECTION="openai-chatgpt"
-# $basearch is a dnf variable, expanded by the package manager — not by bash.
-# shellcheck disable=SC2016
-REPO_BASEURL='https://persistent.oaistatic.com/codex-app-prod/linux/rpm/$basearch'
-RPM_URL="https://persistent.oaistatic.com/codex-app-prod/linux/rpm/latest/chatgpt.x86_64.rpm"
-RPM_CACHE="${CHATGPT_RPM:-$HOME/Downloads/chatgpt.x86_64.rpm}"
+# The payload root inside the RPM. Derived from the launcher symlink upstream
+# ships (/usr/bin/chatgpt -> ../lib/chatgpt/codex-launcher) rather than assumed.
+PAYLOAD_LAUNCHER="usr/lib/$PKG/codex-launcher"
+
+# ── Upstream metadata (repodata — a 2.5 KB file, cheap enough to poll) ──────
+# repomd.xml names the current primary.xml.gz; primary.xml carries the version,
+# the package's location and its sha256. Reading all three from the same place
+# means the download, the integrity check and the version we record can never
+# disagree with each other.
+_primary_xml() {
+    local href
+    href="$(curl -fsSL "$REPO_BASEURL/repodata/repomd.xml" \
+            | sed -n 's:.*<location href="\(repodata/[^"]*primary\.xml\.gz\)".*:\1:p' | head -1)"
+    [[ -n "$href" ]] || return 1
+    curl -fsSL "$REPO_BASEURL/$href" | gunzip
+}
+
+upstream_version() {                   # $1 = primary.xml text
+    printf '%s' "$1" | sed -n 's:.*<version epoch="[^"]*" ver="\([^"]*\)" rel="\([^"]*\)".*:\1-\2:p' | head -1
+}
+upstream_location() {                  # $1 = primary.xml text
+    printf '%s' "$1" | sed -n 's:.*<location href="\([^"]*\)".*:\1:p' | head -1
+}
+upstream_sha256() {                    # $1 = primary.xml text
+    printf '%s' "$1" | sed -n 's:.*<checksum type="sha256" pkgid="YES">\([a-f0-9]*\)<.*:\1:p' | head -1
+}
+
+# ── --print-latest-version: the update indicator's version probe ───────────
+if [[ "${1:-}" == "--print-latest-version" ]]; then
+    primary="$(_primary_xml)" || { echo "could not read repository metadata" >&2; exit 1; }
+    ver="$(upstream_version "$primary")"
+    [[ -n "$ver" ]] || { echo "could not parse the version from repository metadata" >&2; exit 1; }
+    printf '%s\n' "$ver"
+    exit 0
+fi
+
+# shellcheck source=scripts/lib-install.sh
+source "${DOTFILES:-$HOME/dotfiles-sway}/scripts/lib-install.sh"
+setup_logging "scripts/setup-chatgpt.sh"
 
 echo ""
 echo -e "${BOLD}${CYAN}╔══════════════════════════════════════════╗${NC}"
@@ -41,207 +86,137 @@ echo -e "${BOLD}${CYAN}║   ChatGPT desktop (incl. Codex) — setup  ║${NC}"
 echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════╝${NC}"
 echo ""
 
-# --- rpm-ostree deployment state -------------------------------------------
-# Both helpers take the package name so nothing about this app is baked into
-# the logic; they mirror the checks in setup-nordvpn.sh.
+mkdir -p "$OPT_DIR" "$BIN_DIR" "$APP_DIR" "$MANIFEST_DIR" "$DL_DIR"
 
-deployment_has_pkg() {
-    PKG_NAME="$1" python3 - <<'PY'
-import json, os, subprocess, sys
+echo "==> Reading upstream repository metadata ..."
+PRIMARY="$(_primary_xml)" || { echo "ERROR: could not reach $REPO_BASEURL"; exit 1; }
+VERSION="$(upstream_version "$PRIMARY")"
+LOCATION="$(upstream_location "$PRIMARY")"
+SHA256="$(upstream_sha256 "$PRIMARY")"
+[[ -n "$VERSION" && -n "$LOCATION" && -n "$SHA256" ]] || {
+    echo "ERROR: repository metadata did not contain a version, location and checksum"; exit 1; }
+echo "    latest: $VERSION"
 
-name = os.environ["PKG_NAME"]
-try:
-    data = json.loads(subprocess.check_output(["rpm-ostree", "status", "--json"], text=True))
-except Exception:
-    sys.exit(1)
+RELEASE_DIR="$OPT_DIR/$PKG-$VERSION"
+LAUNCHER="$RELEASE_DIR/$PAYLOAD_LAUNCHER"
 
-for deployment in data.get("deployments", []):
-    requested = deployment.get("requested-packages", []) or []
-    packages = deployment.get("packages", []) or []
-    if name in requested or name in packages:
-        sys.exit(0)
-sys.exit(1)
-PY
-}
-
-staged_pkg_pending_reboot() {
-    PKG_NAME="$1" python3 - <<'PY'
-import json, os, subprocess, sys
-
-name = os.environ["PKG_NAME"]
-try:
-    data = json.loads(subprocess.check_output(["rpm-ostree", "status", "--json"], text=True))
-except Exception:
-    sys.exit(1)
-
-for deployment in data.get("deployments", []):
-    if deployment.get("staged") and not deployment.get("booted"):
-        requested = deployment.get("requested-packages", []) or []
-        packages = deployment.get("packages", []) or []
-        if name in requested or name in packages:
-            sys.exit(0)
-sys.exit(1)
-PY
-}
-
-# --- repository ------------------------------------------------------------
-
-fetch_rpm() {
-    if [[ -s "$RPM_CACHE" ]]; then
-        echo "==> Reusing already downloaded package: $RPM_CACHE"
-        return 0
-    fi
-    mkdir -p "$(dirname "$RPM_CACHE")"
-    curl -fL --retry 3 -o "$RPM_CACHE" "$RPM_URL"
-}
-
-REPOMD_CACHE="/var/cache/rpm-ostree/repomd"
-
-key_is_armoured() {
-    [[ -s "$1" ]] && head -1 "$1" 2>/dev/null | grep -q 'BEGIN PGP PUBLIC KEY BLOCK'
-}
-
-install_key() {
-    if key_is_armoured "$KEY_FILE"; then
-        echo "==> Signing key already present (ASCII-armoured) — skipping."
-        return 0
-    fi
-    if [[ -s "$KEY_FILE" ]]; then
-        echo "==> Existing key is not ASCII-armoured — replacing it."
-    fi
-    if ! sudo -n true >/dev/null 2>&1; then
-        echo "sudo credentials are required to install $KEY_FILE; run 'sudo -v' and rerun" >&2
-        return 1
-    fi
-    # Pull the base64 key out of the package's own %post scriptlet. Upstream
-    # writes it there and nowhere else.
-    local key_b64
-    key_b64="$(rpm -qp --scripts "$RPM_CACHE" 2>/dev/null |
-        sed -n "s/^SIGNING_KEY_BASE64='\(.*\)'$/\1/p")"
-    if [[ -z "$key_b64" ]]; then
-        echo "Could not find SIGNING_KEY_BASE64 in $RPM_CACHE — upstream changed the scriptlet." >&2
-        return 1
-    fi
-
-    # Upstream stores the key as a raw binary keyring and its own %post writes it
-    # out unchanged. dnf tolerates that; rpm-ostree does NOT — it fails the whole
-    # install with "PKI file ... contains no valid public key" (observed
-    # 2026-08-14, after resolving and downloading all 447 MB). Re-armour it.
-    local workdir
-    workdir="$(mktemp -d)"
-    # shellcheck disable=SC2064
-    # This form expands $workdir now, so a stray firing only repeats a harmless
-    # rm — but the trap still outlives the function, so clear it as it fires.
-    # shellcheck disable=SC2064
-    trap "rm -rf '$workdir'; trap - RETURN" RETURN
-    chmod 700 "$workdir"
-    printf '%s' "$key_b64" | base64 -d > "$workdir/key.bin"
-    if ! GNUPGHOME="$workdir" gpg --batch --quiet --import "$workdir/key.bin" 2>/dev/null; then
-        echo "Extracted key from $RPM_CACHE is not a valid OpenPGP key." >&2
-        return 1
-    fi
-    GNUPGHOME="$workdir" gpg --batch --armor --export > "$workdir/key.asc" 2>/dev/null
-    if ! key_is_armoured "$workdir/key.asc"; then
-        echo "Failed to ASCII-armour the signing key." >&2
-        return 1
-    fi
-
-    sudo -n mkdir -p "$(dirname "$KEY_FILE")"
-    sudo -n tee "$KEY_FILE" < "$workdir/key.asc" >/dev/null
-    sudo -n chmod 0644 "$KEY_FILE"
-}
-
-# rpm-ostree does not read gpgkey from /etc at install time: it copies the key
-# into $REPOMD_CACHE/<repo>-<release>-<arch>/ on the first metadata refresh and
-# then trusts that copy. Fixing only the source file leaves the stale one in
-# place, so the install keeps failing with the same error. Compare the two
-# rather than tracking whether we just wrote the key — that stays correct even
-# if a previous run died between writing the key and clearing the cache.
-drop_stale_metadata() {
-    local cached stale=0
-    while IFS= read -r cached; do
-        [[ -n "$cached" ]] || continue
-        cmp -s "$cached" "$KEY_FILE" || stale=1
-    done < <(find "$REPOMD_CACHE" -maxdepth 2 -name "$(basename "$KEY_FILE")" \
-                  -path "*/$REPO_SECTION-*" 2>/dev/null)
-
-    if [[ "$stale" -eq 0 ]]; then
-        echo "==> Cached metadata already matches the installed key — nothing to drop."
-        return 0
-    fi
-    if ! sudo -n true >/dev/null 2>&1; then
-        echo "sudo credentials are required to clear the rpm-ostree metadata cache; run 'sudo -v' and rerun" >&2
-        return 1
-    fi
-    echo "==> Cached key differs from $KEY_FILE — dropping rpm-ostree metadata cache."
-    sudo -n rpm-ostree cleanup -m
-}
-
-ensure_repo() {
-    if [[ -f "$REPO_FILE" ]]; then
-        echo "==> Repository already configured — skipping."
-        return 0
-    fi
-    if ! sudo -n true >/dev/null 2>&1; then
-        echo "sudo credentials are required to write $REPO_FILE; run 'sudo -v' and rerun" >&2
-        return 1
-    fi
-    # skip_if_unavailable is written in from the start, not patched in later:
-    # rpm-ostree aborts its WHOLE metadata refresh when any one enabled repo is
-    # unreachable, which is exactly how the NordVPN repo used to freeze the
-    # Waybar update indicator on a stale value.
-    sudo -n tee "$REPO_FILE" >/dev/null <<EOF
-[$REPO_SECTION]
-name=ChatGPT
-baseurl=$REPO_BASEURL
-enabled=1
-type=rpm-md
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=file://$KEY_FILE
-skip_if_unavailable = True
-EOF
-    sudo -n chmod 0644 "$REPO_FILE"
-}
-
-ensure_repo_resilient() {
-    [[ -f "$REPO_FILE" ]] || return 0
-    grep -q '^[[:space:]]*skip_if_unavailable' "$REPO_FILE" && return 0
-    if ! sudo -n true >/dev/null 2>&1; then
-        echo "sudo credentials are required to add skip_if_unavailable to $REPO_FILE; run 'sudo -v' and rerun" >&2
-        return 1
-    fi
-    # Heals a repo file written by upstream's own %post, which omits the flag.
-    sudo -n sed -i "/^\[$REPO_SECTION/a skip_if_unavailable = True" "$REPO_FILE"
-}
-
-run_step "CHATGPT_RPM"       "Downloading ChatGPT package (signing key source)" fetch_rpm
-run_step "CHATGPT_KEY"       "Installing OpenAI signing key"                    install_key
-run_step "CHATGPT_REPO"      "Configuring ChatGPT repository"                   ensure_repo
-run_step "CHATGPT_REPO_RESILIENT" "Making ChatGPT repo non-fatal when offline"  ensure_repo_resilient
-run_step "CHATGPT_METADATA"  "Dropping cached metadata holding the old key"      drop_stale_metadata
-
-if command -v chatgpt >/dev/null 2>&1; then
-    echo "==> ChatGPT already installed — skipping install."
-    step_done "CHATGPT_APP"
-elif staged_pkg_pending_reboot "$PKG"; then
-    echo "==> ChatGPT is already queued in a staged rpm-ostree deployment — reboot required."
-    step_done "CHATGPT_APP"
-elif deployment_has_pkg "$PKG"; then
-    echo "==> ChatGPT is already requested in rpm-ostree — skipping install."
-    step_done "CHATGPT_APP"
+if [[ -x "$LAUNCHER" ]]; then
+    echo "==> $PKG $VERSION already installed in $RELEASE_DIR"
 else
-    run_step "CHATGPT_APP" "Installing ChatGPT desktop app" sudo -n rpm-ostree install "$PKG"
+    RPM="$DL_DIR/$(basename "$LOCATION")"
+    if [[ -s "$RPM" ]] && printf '%s  %s\n' "$SHA256" "$RPM" | sha256sum -c --status; then
+        echo "==> Reusing the verified package already downloaded: $RPM"
+    else
+        echo "==> Downloading $LOCATION (~440 MB) ..."
+        curl -fL -C - --retry 3 -o "$RPM" "$REPO_BASEURL/$LOCATION"
+        echo "==> Verifying checksum ..."
+        printf '%s  %s\n' "$SHA256" "$RPM" | sha256sum -c --status || {
+            echo "ERROR: sha256 does not match the repository metadata — refusing to install."
+            rm -f "$RPM"; exit 1; }
+    fi
+
+    # Integrity check. Two independent things are verified:
+    #
+    #   1. the sha256 that repodata.xml (a separate HTTPS fetch) states for this
+    #      package — so a corrupted or swapped download is caught above;
+    #   2. rpm's own header and payload digests, plus the key ID the package is
+    #      signed with, printed so a key rotation is visible instead of silent.
+    #
+    # What is deliberately NOT done is a full OpenPGP verification against the
+    # signing key. Two reasons, both checked rather than assumed:
+    #
+    #   - rpm 6 refuses to create its transaction lock anywhere but the system
+    #     dbpath ("can't create transaction lock ... Permission denied", even in
+    #     a writable directory we own), and that dbpath is read-only on an ostree
+    #     system — so a key cannot be imported into any keyring without root;
+    #   - upstream ships the signing key ONLY inside the package's own %post
+    #     scriptlet; there is no public key URL (/gpg, /gpg.key,
+    #     /RPM-GPG-KEY-chatgpt all 404). A signature checked against a key that
+    #     travelled inside the signed artefact proves internal consistency, not
+    #     provenance: whoever could swap the package could swap the key with it.
+    #
+    # So the real trust anchor here is TLS to the vendor's host — which is also
+    # what it was for the layered install, whose gpgcheck used that same
+    # package-embedded key. Nothing weaker than before; the repodata checksum is
+    # in fact one check more.
+    echo "==> Verifying package integrity ..."
+    # `|| true`: rpmkeys exits non-zero on NOKEY (the signing key is not in any
+    # keyring, and per the note above it cannot be) — the digest lines below are
+    # what this checks, so the exit code must not end the script under `set -e`.
+    sig_out="$(rpmkeys -Kv "$RPM" 2>&1 || true)"
+    if ! printf '%s\n' "$sig_out" | grep -q 'Header SHA256 digest: OK' ||
+       ! printf '%s\n' "$sig_out" | grep -q 'Payload SHA256 digest: OK'; then
+        echo "ERROR: rpm digests do not verify for $RPM — refusing to install."
+        printf '%s\n' "$sig_out"; exit 1
+    fi
+    echo "    digests OK"
+    echo "    signed with: $(printf '%s\n' "$sig_out" |
+                             sed -n 's/.*signature, key ID \([0-9a-f]*\).*/\1/p' | head -1)"
+
+    echo "==> Unpacking into $RELEASE_DIR ..."
+    rm -rf "$RELEASE_DIR.partial"
+    mkdir -p "$RELEASE_DIR.partial"
+    ( cd "$RELEASE_DIR.partial" && rpm2cpio "$RPM" | cpio -idm --quiet )
+    [[ -x "$RELEASE_DIR.partial/$PAYLOAD_LAUNCHER" ]] || {
+        echo "ERROR: $PAYLOAD_LAUNCHER not found in the package — upstream changed its layout."
+        rm -rf "$RELEASE_DIR.partial"; exit 1; }
+    # Rename only once the tree is complete, so an interrupted unpack can never
+    # leave a half-extracted directory that looks like a finished install.
+    mv -T "$RELEASE_DIR.partial" "$RELEASE_DIR"
+    rm -f "$RPM"                       # ~440 MB; the release dir is the artefact now
 fi
 
+ln -sfn "$LAUNCHER" "$BIN_DIR/$PKG"
+
+# Desktop entry: start from the one upstream ships and rewrite only the two
+# lines that assume a system-wide install, so the MIME handlers, categories and
+# the codex:// scheme stay exactly as upstream defined them.
+PACKAGED_DESKTOP="$RELEASE_DIR/usr/share/applications/$PKG.desktop"
+ICON_SRC="$RELEASE_DIR/usr/share/pixmaps/$PKG.png"
+if [[ -f "$PACKAGED_DESKTOP" ]]; then
+    sed -e "s:^Exec=.*:Exec=$LAUNCHER %U:" \
+        -e "s:^Icon=.*:Icon=$ICON_SRC:" \
+        "$PACKAGED_DESKTOP" > "$APP_DIR/$PKG.desktop"
+    echo "==> Wrote $APP_DIR/$PKG.desktop"
+else
+    echo "!! $PKG.desktop not found in the package — the app launcher entry was not written."
+fi
+command -v update-desktop-database >/dev/null 2>&1 &&
+    update-desktop-database "$APP_DIR" 2>/dev/null || true
+
+# Keep only the release we just linked. Each unpacked tree is ~1.4 GB, so the
+# yazi pattern of leaving old versions behind is not affordable here.
+while IFS= read -r old; do
+    [[ "$old" == "$RELEASE_DIR" ]] && continue
+    echo "==> Removing superseded $old"
+    rm -rf "$old"
+done < <(find "$OPT_DIR" -maxdepth 1 -type d -name "$PKG-*" 2>/dev/null)
+
+# Update manifest, so the Waybar update app can see a new release. The version
+# does not come from GitHub, so the manifest names a probe command instead of a
+# repo; lib-updates.sh dispatches on which field is present.
+cat > "$MANIFEST_DIR/$PKG" << MANIFEST
+name=$PKG
+installed_version=$VERSION
+version_probe=scripts/setup-chatgpt.sh --print-latest-version
+updater=scripts/setup-chatgpt.sh
+MANIFEST
+
 echo ""
-echo -e "${GREEN}${BOLD}ChatGPT desktop setup finished.${NC}"
-echo ""
-echo -e " Reboot to activate:  ${CYAN}systemctl reboot${NC}"
-echo -e " Then launch with:    ${CYAN}chatgpt${NC}  (or from the app launcher)"
-echo ""
-echo -e " Codex is a workspace ${BOLD}inside${NC} this app — switch with the menu in the"
-echo -e " top-left corner. There is no separate Codex application for Linux."
-echo -e " The ${CYAN}codex${NC} CLI in toolbox ${CYAN}damianf${NC} stays as it is; both use the"
-echo -e " same OpenAI account."
-echo ""
+echo -e "${GREEN}✔ $PKG $VERSION installed in $RELEASE_DIR${NC}"
+echo "   launcher: $BIN_DIR/$PKG   (ensure ~/.local/bin is on PATH)"
+
+# The layered copy, if any, must go — it is what blocks `rpm-ostree upgrade`.
+# Removing it changes the OS deployment, so it needs root and a reboot: report
+# it, do not do it silently from a setup script.
+if rpm -q "$PKG" >/dev/null 2>&1; then
+    echo ""
+    echo -e "${YELLOW}!! $PKG is ALSO layered onto the OS image ($(rpm -q --qf '%{VERSION}-%{RELEASE}' "$PKG")).${NC}"
+    echo -e "${YELLOW}   While it is layered, every 'rpm-ostree upgrade' aborts on its %post${NC}"
+    echo -e "${YELLOW}   scriptlet and no OS update — security updates included — can install.${NC}"
+    echo -e "${YELLOW}   Remove it and reboot:${NC}"
+    echo ""
+    echo -e "${YELLOW}     sudo rpm-ostree uninstall $PKG && systemctl reboot${NC}"
+    echo ""
+    echo -e "${YELLOW}   Until that reboot, /usr/bin/$PKG still points at the layered copy.${NC}"
+fi

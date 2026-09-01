@@ -562,42 +562,43 @@ fi
 # ── 5b. ChatGPT desktop app ──────────────────────────────────────────────
 section "5b. ChatGPT desktop (incl. Codex)"
 
-CHATGPT_REPO_FILE="/etc/yum.repos.d/chatgpt.repo"
+# The app is installed user-local (~/.local/opt), NOT layered onto the OS image.
+# See scripts/setup-chatgpt.sh for why: upstream's %post writes under /var, which
+# is read-only inside rpm-ostree's scriptlet sandbox, and the failure aborts the
+# whole atomic transaction — every OS update with it.
+CHATGPT_LAUNCHER="$HOME/.local/bin/chatgpt"
+CHATGPT_MANIFEST="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles-updates/chatgpt"
 
-if host which chatgpt &>/dev/null 2>&1; then
-    pass "ChatGPT desktop app"
-elif host rpm-ostree status --json 2>/dev/null | python3 -c \
-        'import json,sys; d=json.load(sys.stdin); sys.exit(0 if any(dep.get("staged") and not dep.get("booted") and ("chatgpt" in (dep.get("requested-packages") or []) or "chatgpt" in (dep.get("packages") or [])) for dep in d.get("deployments",[])) else 1)' 2>/dev/null; then
-    warn "ChatGPT desktop app is staged — reboot to activate it"
+if [[ -x "$CHATGPT_LAUNCHER" ]]; then
+    pass "ChatGPT desktop app  ($(readlink -f "$CHATGPT_LAUNCHER" | sed 's:.*/opt/::; s:/usr/lib/.*::'))"
 else
-    fail "ChatGPT desktop app  MISSING" "sudo -v && bash ~/dotfiles-sway/scripts/setup-chatgpt.sh"
+    fail "ChatGPT desktop app  MISSING" "bash ~/dotfiles-sway/scripts/setup-chatgpt.sh"
 fi
 
-# rpm-ostree rejects the raw binary keyring that upstream's %post writes
-# ("PKI file ... contains no valid public key") and fails the install only after
-# downloading everything. dnf accepts it, so this is easy to reintroduce.
-CHATGPT_KEY_FILE="/etc/pki/rpm-gpg/RPM-GPG-KEY-chatgpt"
-if host test -f "$CHATGPT_KEY_FILE"; then
-    if host head -1 "$CHATGPT_KEY_FILE" 2>/dev/null | grep -q 'BEGIN PGP PUBLIC KEY BLOCK'; then
-        pass "ChatGPT signing key is ASCII-armoured"
-    else
-        fail "ChatGPT signing key is not ASCII-armoured  (rpm-ostree will reject it)" \
-             "sudo -v && bash ~/dotfiles-sway/scripts/setup-chatgpt.sh"
-    fi
+if [[ -f "${XDG_DATA_HOME:-$HOME/.local/share}/applications/chatgpt.desktop" ]]; then
+    pass "ChatGPT desktop entry"
+else
+    fail "ChatGPT desktop entry  MISSING  (the app would not appear in the launcher)" \
+         "bash ~/dotfiles-sway/scripts/setup-chatgpt.sh"
 fi
 
-# The repo must exist AND tolerate an unreachable host, or one OpenAI outage
-# aborts the whole rpm-ostree metadata refresh and freezes the update indicator.
-if host test -f "$CHATGPT_REPO_FILE"; then
-    if host grep -q '^[[:space:]]*skip_if_unavailable' "$CHATGPT_REPO_FILE"; then
-        pass "ChatGPT repo present and non-fatal when offline"
-    else
-        fail "ChatGPT repo missing skip_if_unavailable  (an OpenAI outage would freeze the update indicator)" \
-             "sudo -v && bash ~/dotfiles-sway/scripts/setup-chatgpt.sh"
-    fi
+# Without the manifest the app is invisible to the update module — it is in no
+# distro repo and has no self-updater, so nothing else would ever notice a
+# release.
+if [[ -f "$CHATGPT_MANIFEST" ]]; then
+    pass "ChatGPT update manifest"
 else
-    fail "ChatGPT repo  MISSING  (app would never receive updates)" \
-         "sudo -v && bash ~/dotfiles-sway/scripts/setup-chatgpt.sh"
+    fail "ChatGPT update manifest  MISSING  (new releases would never be detected)" \
+         "bash ~/dotfiles-sway/scripts/setup-chatgpt.sh"
+fi
+
+# A leftover layered copy is not cosmetic: while it is in the deployment, every
+# `rpm-ostree upgrade` aborts on its %post and NO OS update can install.
+if host rpm -q chatgpt >/dev/null 2>&1; then
+    fail "chatgpt is STILL layered onto the OS  (this blocks every OS update)" \
+         "sudo rpm-ostree uninstall chatgpt && systemctl reboot"
+else
+    pass "chatgpt is not layered onto the OS image"
 fi
 
 # ── 5b. AdGuard for Linux ────────────────────────────────────────────────

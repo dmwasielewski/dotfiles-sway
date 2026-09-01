@@ -83,7 +83,7 @@ dotfiles-sway/
     ├── setup-neovim-config.sh         ← Neovim Chris Titus Tech config + plugin sync (binary from the package manager)
     ├── setup-zed.sh                   ← Zed GUI editor: official upstream binary, user-local in ~/.local/opt (self-updates)
     ├── setup-nordvpn.sh               ← NordVPN CLI install + nordvpnd enable/start + group setup — writes state
-    ├── setup-chatgpt.sh                ← ChatGPT desktop app (incl. Codex): OpenAI repo + key + rpm-ostree — writes state
+    ├── setup-chatgpt.sh               ← ChatGPT desktop app (incl. Codex): official RPM unpacked user-local into ~/.local/opt
     ├── setup-adguard.sh               ← AdGuard for Linux CLI install — writes state
     ├── setup-whispering-open.sh       ← Whispering Open latest GitHub release download — non-blocking
     ├── setup-damian-container.sh      ← Toolbox damianf: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
@@ -737,12 +737,12 @@ ShellGPT API configuration is automated by `scripts/configure-shellgpt.sh` from 
 
 ## ChatGPT desktop app (includes Codex)
 
-OpenAI shipped an official Linux desktop app on 2026-08-11 (preview). Fedora 44 is
-on its supported list. Installed by `scripts/setup-chatgpt.sh`, which `packages.sh`
-runs automatically (via `run_step_warn`, so it is **non-blocking** — a failed
-420 MB third-party download must not abandon a fresh unattended install). The
-launcher and `chatgpt` binary come from the package itself, and the reboot it
-needs is the one `packages.sh` already requires.
+OpenAI shipped an official Linux desktop app on 2026-08-11 (preview). It is
+installed **user-local** by `scripts/setup-chatgpt.sh` — the official OpenAI RPM,
+unpacked into `~/.local/opt/chatgpt-<version>` with a `~/.local/bin/chatgpt`
+symlink and a `.desktop` entry. No rpm-ostree layer, no root, no reboot.
+`packages.sh` runs it via `run_step_warn`, so a failed 435 MB third-party
+download never abandons a fresh unattended install.
 
 **There is no separate Codex application for Linux.** OpenAI merged the standalone
 Codex app into the ChatGPT client in July 2026, so ChatGPT, ChatGPT Work and Codex
@@ -750,25 +750,49 @@ are three workspaces in one window — switch with the menu in the top-left corn
 The `codex` CLI in toolbox `damianf` is unaffected and stays; both use the same
 OpenAI account.
 
-Three things about this install are deliberate and must not be "simplified":
+### Why it must NOT be layered with rpm-ostree (2026-09-01)
 
-1. **`rpm-ostree`, not `dnf`.** Upstream documents `sudo dnf install ./chatgpt.x86_64.rpm`,
-   which is wrong for an immutable host.
-2. **Installed BY NAME from OpenAI's repo, not by layering the downloaded file.**
-   A locally layered `.rpm` is pinned to that exact file and is invisible to
-   `rpm-ostree upgrade` forever — the app would never appear in the Waybar update
-   indicator. Installing by name puts it in the normal OS update path.
-3. **The signing key is extracted from the package at runtime.** Upstream publishes
-   it *only* inside the `%post` scriptlet as `SIGNING_KEY_BASE64`; there is no public
-   key URL (`/gpg`, `/gpg.key`, `/RPM-GPG-KEY-chatgpt` all return 404). Extracting it
-   per-run means a key rotation is followed automatically instead of silently
-   breaking `gpgcheck`. Key as of 2026-08-14: RSA 4096, "Codex Linux Repository",
-   fingerprint `3BFA0E4AE8B8CC16A2D9BA684A3B4A566C4660E4`.
+It used to be layered by name from OpenAI's repo. On 2026-09-01 version
+26.831.20005 changed its `%post` to write under `/var`:
 
-`skip_if_unavailable = True` is written into `/etc/yum.repos.d/chatgpt.repo` from the
-start — upstream's own `%post` omits it, and without it an unreachable OpenAI host
-would abort the entire `rpm-ostree` metadata refresh and freeze the update indicator,
-exactly as the NordVPN repo used to.
+```
+error: Running %post for chatgpt: bwrap(/bin/sh): Child process exited with code 1
+rpm-ostree(chatgpt.post): mkdir: cannot create directory '/var/lib/chatgpt':
+Read-only file system
+```
+
+`/var` is read-only inside rpm-ostree's scriptlet sandbox — packages targeting
+ostree systems must create their state via `systemd-tmpfiles` — and the scriptlet
+runs under `set -e`. An rpm-ostree transaction is **atomic and covers the base
+tree together with every layered package**, so this one third-party scriptlet
+aborted `rpm-ostree upgrade` entirely: no Fedora update, security updates
+included, could install while it stayed layered.
+
+The app is a self-contained Electron tree under `usr/lib/chatgpt` with a
+relocatable launcher (`dirname $(readlink -f $0)`) and no absolute paths in its
+payload (checked across all 7345 files), so it never needed to be part of the OS
+image. Do not propose putting it back into the OS layer unless upstream fixes the
+scriptlet — `verify.sh` fails if a layered copy reappears.
+
+Three things about the install are deliberate:
+
+1. **Nothing is pinned or hardcoded.** The version, the package filename and its
+   sha256 all come from the repository metadata (`repodata/primary.xml`) at
+   runtime. `setup-chatgpt.sh --print-latest-version` reads the same metadata and
+   is the version probe the update module uses.
+2. **Integrity is checked, provenance is honestly not.** The sha256 from repodata
+   is verified, and rpm's own header/payload digests with it; the signing key ID
+   is printed so a rotation is visible. A full OpenPGP check is deliberately not
+   attempted: rpm 6 cannot create its transaction lock outside the system dbpath
+   (read-only on ostree, so no user-local key import), and upstream ships the key
+   ONLY inside the package's own `%post` — there is no public key URL (`/gpg`,
+   `/gpg.key`, `/RPM-GPG-KEY-chatgpt` all 404). A signature verified against a key
+   that travelled inside the signed artefact proves consistency, not provenance.
+   TLS to the vendor host is the real anchor — as it was for the layered install,
+   whose `gpgcheck` used that same embedded key.
+3. **Only one release directory is kept.** Each unpacked tree is ~1.4 GB, so the
+   `setup-yazi.sh` habit of leaving old versions behind is not affordable; the
+   script prunes superseded directories.
 
 Claude and WhatsApp remain ordinary Firefox tabs/bookmarks — no PWA launchers.
 
@@ -817,7 +841,7 @@ plus a Firefox tab until an official Fedora package exists; see backlog item 13.
 - [x] Power button — rofi power menu (shutdown/reboot/suspend/hibernate/logout)
 - [x] Voice typing — push-to-talk `Mod+T` with local Whisper AI (faster-whisper, no cloud)
 - [x] Whispering Open release installer — non-blocking GitHub download with desktop launcher
-- [x] ChatGPT desktop app (incl. Codex) — official OpenAI repo, name-tracked rpm-ostree layer
+- [x] ChatGPT desktop app (incl. Codex) — official OpenAI RPM, unpacked user-local (never layered: its %post breaks rpm-ostree)
 
 ## What is planned / in progress
 
