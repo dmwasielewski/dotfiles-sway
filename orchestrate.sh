@@ -73,10 +73,20 @@ phase_P2() {
 
 phase_P3() {
     remove_provisioning_sudoers
-    systemctl --user disable dotfiles-phase2.service 2>/dev/null || true
     rm -rf "$STAGE"
+    # Record completion BEFORE the service disables itself. On 2026-09-02 this
+    # ran in the other order and P3 never got past the disable: systemd
+    # terminated the job in the same second, so INSTALL_COMPLETE was never
+    # written and the three containers phase 2 had just built were SIGTERMed out
+    # of the service cgroup (all three showed "Exited (143)"). Phase 2 itself had
+    # succeeded — verify.sh inside the guest reported 163 passed, 0 failed — and
+    # the run still looked unfinished.
     orch_set INSTALL_COMPLETE "$(date -Is)"
     echo "install complete."
+    # Last, deliberately: this service is what is executing this function, so
+    # removing it is the one step that can cut the phase short. Nothing after it
+    # needs to run.
+    systemctl --user disable dotfiles-phase2.service 2>/dev/null || true
 }
 
 case "${1:-run}" in

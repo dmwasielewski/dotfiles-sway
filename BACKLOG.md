@@ -108,6 +108,44 @@ unattended path, the RETURN trap outliving its function, `rpm -q` missing
 already-requested packages so no resume could work, and `chmod +x` dirtying the
 repo so `git pull` silently stopped.
 
+## ✅ END TO END, ON A CLEAN GUEST (2026-09-02)
+
+The whole thing finally ran start to finish, and phase 2's own `verify.sh`
+inside the guest reported **163 passed, 0 failed**. Linger confirmed a second
+time, on a fresh install, with the tightest timing yet:
+
+```
+15:07:19  guest shuts down for the new deployment
+15:07:30  guest is up
+15:07:35  Starting dotfiles-phase2.service    ← 5 s after boot, nobody logged in
+```
+
+Three earlier attempts died before ever reaching this point, each for a
+different reason and each now fixed in code: the subnet collision above; the
+NordVPN firewall silently dropping the guest's DHCP on the virtual bridge
+(confirmed by behaviour — VPN off, lease in 20 s; VPN on, never in 15 minutes);
+and the host suspending mid-install, which killed the guest's connection to the
+ostree mirror (`[28] Timeout was reached`) — `create-fedora-sway-vm.sh` now holds
+a `systemd-inhibit` sleep lock for the run.
+
+**Two more bugs that only this run could expose, both fixed:**
+
+- `dotfiles-phase2.service` set no `TimeoutStartSec` while the user manager's
+  default is 45 s. Phase 2 legitimately takes ~16 minutes (three containers and
+  their toolchains); systemd killed it with "start operation timed out" one
+  second after it entered P3, and the three freshly built containers were
+  SIGTERMed out of the service cgroup (`Exited (143)`). Now
+  `TimeoutStartSec=infinity` — a provisioning run is bounded by downloads, not
+  by anything systemd should second-guess.
+- `phase_P3` disabled its own service *before* recording `INSTALL_COMPLETE`, so
+  a P3 cut short at that exact step left a finished install looking unfinished.
+  The disable is now the last thing P3 does, guarded by
+  `tests/orchestrate/test_p3_order.sh` (verified red against the old order).
+
+**Still open:** the two fixes above have not themselves been through a full VM
+run — the guest that proved the rest was provisioned by the *old* unit. The next
+clean run is what closes this item completely.
+
 ### 🟠 6. Harden the kickstart — ✅ DONE (partial, 2026-06-11)
 **Fixed:** plaintext password `damian` removed — `rootpw --lock` + a no-password
 account reachable only by the injected SSH key (the VM script already logs in by

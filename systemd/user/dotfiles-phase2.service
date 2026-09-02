@@ -4,6 +4,13 @@ After=default.target
 
 [Service]
 Type=oneshot
+# Phase 2 builds three containers and installs their toolchains; it took 15m49s
+# on 2026-09-02 and was killed mid-finalize with "start operation timed out",
+# one second after it entered P3. The user manager's DefaultTimeoutStartUSec is
+# 45s and this unit set no timeout of its own. A provisioning run has no
+# meaningful upper bound — it is bounded by downloads, not by anything systemd
+# should second-guess — so there must be no start timeout at all.
+TimeoutStartSec=infinity
 ExecStart=%h/dotfiles-sway/orchestrate.sh resume
 # Do not fail the boot if a phase needs another login; the service stays enabled
 # and retries on the next start until orchestrate.sh disables it in finalize.
