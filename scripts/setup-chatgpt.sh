@@ -191,9 +191,25 @@ command -v update-desktop-database >/dev/null 2>&1 &&
 # from disk), not a single static binary like yazi's — pulling it out from under
 # a running session breaks that session mid-use. The app autostarts on ws5, so
 # an upgrade while it is open is the normal case, not the edge one.
+# Whether anything is executing out of a directory. Asked through /proc rather
+# than by matching command lines: on 2026-09-02 the pgrep pattern was built from
+# $HOME ("/home/damian/...") while the running process reported
+# "/var/home/damian/..." — the same directory by a different name, since /home is
+# a symlink to /var/home on Fedora Atomic. The guard never matched and this
+# script deleted the 1.4 GB tree out from under the running app. Comparing
+# resolved paths cannot be fooled by which spelling a cmdline happens to use.
+dir_in_use() {                         # $1 = directory
+    local dir exe
+    dir="$(readlink -f "$1")"
+    for exe in /proc/[0-9]*/exe; do
+        [[ "$(readlink -f "$exe" 2>/dev/null)" == "$dir"/* ]] && return 0
+    done
+    return 1
+}
+
 while IFS= read -r old; do
     [[ "$old" == "$RELEASE_DIR" ]] && continue
-    if pgrep -f "^$old/" >/dev/null 2>&1; then
+    if dir_in_use "$old"; then
         echo "==> $old is still running — leaving it; it will go on the next run"
         continue
     fi

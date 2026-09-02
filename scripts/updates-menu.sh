@@ -388,7 +388,27 @@ do_langpkg() {
         local ok=0
         case "$mgr" in
             npm) run_logged container_exec_by_name "$c" npm i -g "$name@latest" && ok=1 ;;
-            pip) run_logged container_exec_by_name "$c" pip3 install --user -U "$name" && ok=1 ;;
+            pip)
+                if run_logged container_exec_by_name "$c" pip3 install --user -U "$name"; then
+                    ok=1
+                elif grep -q 'externally-managed-environment' <<< "$(tail -20 "$LOG")"; then
+                    # PEP 668: Debian/Ubuntu mark their Python as externally
+                    # managed and pip refuses to touch it. The repo's own setup
+                    # scripts already install into these containers with
+                    # --break-system-packages (setup-ubuntu-dev-container.sh,
+                    # setup-security-container.sh), so the update path has to
+                    # reach the same place the install did — otherwise every pip
+                    # package in an Ubuntu container is detected as outdated
+                    # forever and can never be updated (observed 2026-09-02: all
+                    # four failed while every npm one succeeded).
+                    # Retried rather than passed up front, so the flag is only
+                    # used where pip actually demands it — same shape as the
+                    # --no-static-deltas flatpak retry.
+                    echo "    pip refuses an externally-managed environment — retrying the way setup installs here"
+                    run_logged container_exec_by_name "$c" \
+                        pip3 install --user --break-system-packages -U "$name" && ok=1
+                fi
+                ;;
             *)   echo "    ✗ unknown manager '$mgr' — skipping"; rc=1; continue ;;
         esac
         if [[ "$ok" -eq 1 ]]; then
