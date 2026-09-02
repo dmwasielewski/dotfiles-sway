@@ -9,6 +9,30 @@
 
 set -euo pipefail
 
+# ── Keep the host awake for the whole run ─────────────────────────────────
+# The install is a ~40-minute unattended download into the guest; this host is a
+# laptop that suspends on idle after 30 minutes (sway/config.d/90-swayidle.conf)
+# and on a closed lid. On 2026-09-01 it suspended two minutes into a run and woke
+# 17 hours later: the guest's connection to the ostree mirror had long since died
+# and anaconda ended on
+#   PayloadInstallationError: ... [28] Timeout was reached (24)
+# at 89% of 70527 objects — an hour of downloading thrown away, and the script
+# would have gone on waiting for an SSH that was never coming.
+#
+# So take a sleep inhibitor for the duration and re-exec under it. --mode=block
+# because a delay lock only postpones the suspend; the point is to prevent it
+# while the guest is mid-install. It is released the moment this script exits, so
+# nothing about the host's normal idle behaviour changes outside this run.
+if [[ -z "${VM_INHIBITED:-}" ]] && command -v systemd-inhibit >/dev/null 2>&1; then
+    export VM_INHIBITED=1
+    exec systemd-inhibit --what=sleep:idle --mode=block \
+        --who="create-fedora-sway-vm.sh" \
+        --why="Fedora Sway VM install in progress (suspending kills the guest's downloads)" \
+        "$0" "$@"
+fi
+[[ -z "${VM_INHIBITED:-}" ]] && \
+    echo "!! systemd-inhibit not available — the host may suspend mid-install and break the run" >&2
+
 DOTFILES="$HOME/dotfiles-sway"
 source "$DOTFILES/scripts/lib-install.sh"
 setup_logging "scripts/create-fedora-sway-vm.sh"
@@ -230,7 +254,14 @@ SSH_PUBKEY_ESCAPED="$(escape_sed "$SSH_PUBKEY")"
 
 if [[ -z "$VM_OSTREE_URL" ]]; then
     echo -e "${CYAN}==> Resolving Fedora ostree mirror...${NC}"
-    VM_OSTREE_URL="$(curl -fsSL "$VM_OSTREE_MIRRORLIST" | awk 'NF {print; exit}')"
+    # Retries, and a failure that does not abort: this is the FIRST network call
+    # of a 40-minute unattended run, and under `set -e` one transient blip threw
+    # the whole run away before it started (2026-09-02, seconds after the host
+    # resumed from suspend: "curl: (35) TLS connect error ... unexpected eof").
+    # `|| true` hands the empty-result case to the check below, which reports it
+    # properly instead of dying on an exit status.
+    VM_OSTREE_URL="$(curl -fsSL --retry 3 --retry-all-errors --connect-timeout 10 \
+        "$VM_OSTREE_MIRRORLIST" 2>/dev/null | awk 'NF {print; exit}' || true)"
 fi
 
 if [[ -z "$VM_OSTREE_URL" ]]; then
