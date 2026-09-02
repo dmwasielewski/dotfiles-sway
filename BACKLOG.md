@@ -346,22 +346,6 @@ a zero (see `AI_ERRORS.md`). Two related gaps remain:
 
 ---
 
-### 🟡 15. Report the ChatGPT `%post` breakage to OpenAI
-From 26.831.20005 the package's `%post` does `mkdir -p /var/lib/chatgpt` and
-`touch /var/lib/chatgpt/repository.keys`. `/var` is read-only inside
-rpm-ostree's scriptlet sandbox — ostree packaging is supposed to create state
-via `systemd-tmpfiles` — and the scriptlet runs under `set -e`, so the whole
-atomic transaction aborts and **no OS update can install** while the package is
-layered. That is why the app moved to a user-local install on 2026-09-01
-(`scripts/setup-chatgpt.sh`).
-
-Filing this upstream is the only route back to a layered, OS-tracked install.
-Until then `verify.sh` fails if a layered copy reappears. Evidence to include:
-the two `journalctl -t 'rpm-ostree(chatgpt.post)'` lines and the diff between
-26.825's `%post` (no `/var` writes) and 26.831's `install_key()`.
-
----
-
 ## Small open items
 
 - **yazi**: ✅ Sway keybind bound — `Mod+Y` opens yazi in a new foot terminal (2026-06-11). Still optional: a shell hook to `cd` into yazi's last dir on exit.

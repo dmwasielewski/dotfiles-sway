@@ -1164,3 +1164,49 @@ rpm-ostree and (b) configures that same thing in the same run. On an image-based
 system those two halves are separated by a reboot, so the second half belongs in
 the phase *after* it. Ask of any setup step: *could this have worked at the
 moment it ran?*
+
+## A third-party package's `%post` can block every OS update on ostree
+
+**Problem (2026-09-01).** The ChatGPT desktop app was layered by name from
+OpenAI's rpm repo. Version 26.831.20005 changed its `%post` to do
+`mkdir -p /var/lib/chatgpt` and `touch /var/lib/chatgpt/repository.keys`. `/var`
+is **read-only inside rpm-ostree's scriptlet sandbox** — packages targeting
+ostree are expected to create their state with `systemd-tmpfiles` — and the
+scriptlet runs under `set -e`:
+
+```
+error: Running %post for chatgpt: bwrap(/bin/sh): Child process exited with code 1
+rpm-ostree(chatgpt.post): mkdir: cannot create directory '/var/lib/chatgpt':
+Read-only file system
+```
+
+An rpm-ostree transaction is **atomic over the base tree together with every
+layered package**, so this one third-party scriptlet aborted `rpm-ostree
+upgrade` entirely. 26 Fedora packages, two of them security updates, could not
+install for as long as the package stayed layered. The failure was visible only
+in `~/.local/state/dotfiles-updates.log`; the Waybar indicator showed "1 package
+available" — indistinguishable from an update nobody had run yet.
+
+**What this costs to diagnose:** the user reported "the indicator is lying". It
+was not. Three separate things had to be checked before the cause was clear:
+the update log (an upgrade HAD been attempted and failed), `journalctl -t
+'rpm-ostree(chatgpt.post)'` (the actual mkdir error), and a diff of the old and
+new package scriptlets (`rpm -qp --scripts`) to prove the `%post` had changed.
+
+**Fixes applied, all still in the repo:**
+- The app is installed **user-local** now (`scripts/setup-chatgpt.sh` unpacks the
+  same official RPM into `~/.local/opt`). Do not propose layering it again.
+- `verify.sh` fails if a layered copy or the leftover
+  `/etc/yum.repos.d/chatgpt.repo` reappears — the repo file is not inert: once
+  the package is uninstalled its GPG key goes with it and every
+  `rpm-ostree upgrade --check` then dies on "Failed to download gpg key".
+- The update module records the failed attempt (`~/.cache/os-upgrade-fail`) and
+  shows it in the tooltip, so "tried and cannot install" no longer renders
+  identically to "not run yet".
+
+**The general rule:** on an ostree host, a layered third-party package is a
+single point of failure for the whole OS update path. Prefer user-local
+installation for anything that is a self-contained tree with a relocatable
+launcher. Deciding not to report this upstream was Damian's call (2026-09-02) —
+it is recorded here instead.
+
