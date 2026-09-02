@@ -137,6 +137,17 @@ OS_CACHE_TS_FILE="$CACHE_DIR/os-check.ts"
 
 # Refresh the cache from a live check (3 retries for transient repo hiccups).
 # Echoes freshness: "fresh" (just checked OK) | "stale" (using old cache) | "none".
+# Why the last check failed, kept next to the cache. "Could not check" was
+# always reported as "repo offline", which on 2026-09-02 was simply untrue and
+# sent the user looking in the wrong place: removing the layered chatgpt package
+# took its GPG key with it but left /etc/yum.repos.d/chatgpt.repo behind, so
+# every check died on
+#   error: Loading sack: ... Failed to download gpg key for repo 'openai-chatgpt'
+# and the badge quietly served a cached result for an update already installed.
+# Guessing the cause is the same mistake as guessing the result.
+OS_ERROR_FILE="$CACHE_DIR/os-check.error"
+os_check_error() { sed -n '1p' "$OS_ERROR_FILE" 2>/dev/null; }
+
 os_refresh_cache() {
     local out try
     for try in 1 2 3; do
@@ -145,10 +156,19 @@ os_refresh_cache() {
             mkdir -p "$CACHE_DIR"
             printf '%s' "$out" > "$OS_CACHE_FILE"
             date +%s > "$OS_CACHE_TS_FILE"
+            rm -f "$OS_ERROR_FILE"
             echo "fresh"; return
         fi
         sleep 1
     done
+    mkdir -p "$CACHE_DIR"
+    # Keep whatever the check actually said. An empty $out means the check was
+    # skipped for the lock, which is not an error and must not be recorded as one.
+    if [[ -n "$out" ]]; then
+        printf '%s\n' "$out" | grep -iE '^[[:space:]]*error:' | tail -1 |
+            sed 's/^[[:space:]]*//' > "$OS_ERROR_FILE"
+        [[ -s "$OS_ERROR_FILE" ]] || printf '%s\n' "$out" | tail -1 > "$OS_ERROR_FILE"
+    fi
     [[ -f "$OS_CACHE_FILE" ]] && echo "stale" || echo "none"
 }
 os_cached_raw() { cat "$OS_CACHE_FILE" 2>/dev/null; }

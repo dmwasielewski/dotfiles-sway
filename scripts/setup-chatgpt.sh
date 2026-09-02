@@ -215,6 +215,20 @@ echo ""
 echo -e "${GREEN}✔ $PKG $VERSION installed in $RELEASE_DIR${NC}"
 echo "   launcher: $BIN_DIR/$PKG   (ensure ~/.local/bin is on PATH)"
 
+# The rpm-md repo from the layered days must go too. It is not inert: once the
+# package is uninstalled its GPG key goes with it, and the repo file left behind
+# still points at that key, so every `rpm-ostree upgrade --check` dies on
+# "Failed to download gpg key for repo 'openai-chatgpt'". This install fetches
+# from the vendor URL directly and needs no repo at all.
+if [[ -f /etc/yum.repos.d/chatgpt.repo ]]; then
+    echo ""
+    echo -e "${YELLOW}!! /etc/yum.repos.d/chatgpt.repo is left over from the layered install.${NC}"
+    echo -e "${YELLOW}   Nothing uses it now, and once the layer is gone it breaks every OS${NC}"
+    echo -e "${YELLOW}   update check (its GPG key is uninstalled with the package). Remove it:${NC}"
+    echo ""
+    echo -e "${YELLOW}     sudo rm -f /etc/yum.repos.d/chatgpt.repo${NC}"
+fi
+
 # The layered copy, if any, must go — it is what blocks `rpm-ostree upgrade`.
 # Removing it changes the OS deployment, so it needs root and a reboot: report
 # it, do not do it silently from a setup script.

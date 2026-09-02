@@ -592,6 +592,19 @@ else
          "bash ~/dotfiles-sway/scripts/setup-chatgpt.sh"
 fi
 
+# The rpm-md repo is a leftover from when the app was layered, and it is not
+# harmless: `rpm-ostree uninstall chatgpt` takes the GPG key with it but leaves
+# the repo file pointing at it, so EVERY `rpm-ostree upgrade --check` then dies
+# on "Failed to download gpg key for repo 'openai-chatgpt'" and the update
+# indicator silently serves a cached result (observed 2026-09-02). The
+# user-local install fetches from the vendor URL directly and needs no repo.
+if host test -f /etc/yum.repos.d/chatgpt.repo; then
+    fail "leftover /etc/yum.repos.d/chatgpt.repo  (breaks every OS update check)" \
+         "sudo rm -f /etc/yum.repos.d/chatgpt.repo"
+else
+    pass "no leftover ChatGPT rpm-md repo"
+fi
+
 # A leftover layered copy is not cosmetic: while it is in the deployment, every
 # `rpm-ostree upgrade` aborts on its %post and NO OS update can install.
 if host rpm -q chatgpt >/dev/null 2>&1; then

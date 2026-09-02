@@ -101,7 +101,10 @@ compute_and_cache() {
     os_fresh="$(os_refresh_cache)"
     os_raw="$(os_cached_raw)"
     os_state="$(os_parse_state "$os_raw")"
-    [[ "$os_fresh" == "stale" ]] && stale_note=" (as of $(os_cache_date), repo offline)"
+    # Say what actually happened, not a guess at it: the check may be failing for
+    # a reason that has nothing to do with the network.
+    local os_err; os_err="$(os_check_error)"
+    [[ "$os_fresh" == "stale" ]] && stale_note=" (as of $(os_cache_date) — the check is failing)"
 
     if [[ "$(os_staged)" -eq 1 ]]; then
         os_is_staged=1; lines+=("OS: staged update — reboot to apply"); total=$(( total + 1 ))
@@ -109,7 +112,8 @@ compute_and_cache() {
         # Never checked and no last-known-good to fall back on. This used to add
         # nothing to the badge, so "I have no idea" rendered identically to
         # "all clear".
-        lines+=("OS: could not check (repo unreachable, no cached result)")
+        lines+=("OS: could not check, and there is no cached result to fall back on")
+        [[ -n "$os_err" ]] && lines+=("    $os_err")
         unknown=$(( unknown + 1 ))
     elif [[ "$os_state" == "pending" ]]; then
         local nv pc reg
@@ -119,6 +123,9 @@ compute_and_cache() {
         lines+=("OS: ${pc:-?} packages → ${nv:-new version}$stale_note")
         lines+=("  Security: $sec_high")
         lines+=("  Regular:  $reg")
+        # A stale figure is only as good as the reason it is stale — print it, so
+        # "this update is already installed" is diagnosable from the tooltip.
+        [[ "$os_fresh" == "stale" && -n "$os_err" ]] && lines+=("    $os_err")
         # "Update waiting" and "update that cannot install" are different jobs
         # for the user — one is 'run the updater', the other is 'this needs
         # fixing, and it is blocking every OS update behind it'. Without this
