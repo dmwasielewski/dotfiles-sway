@@ -450,8 +450,28 @@ if host podman container exists "$UBUNTU_DEV_CONTAINER" 2>/dev/null; then
         elif grep -qx -- "$tool" <<<"$UBUNTU_TOOLS"; then
             pass "$label"
         else
-            fail "$label  MISSING in $UBUNTU_DEV_CONTAINER container" \
-                 "bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh"
+            # A miss here has been wrong before. On 2026-08-19 four tools were
+            # reported MISSING in a container that had them, while six others in
+            # the SAME batch probe passed and the install state recorded all ten
+            # as installed; re-probing by hand found all four present. The
+            # mechanism was never established, and two obvious stories do not
+            # survive contact with the evidence: a cold-container repro on the
+            # host (2026-09-02) did not reproduce it, and "~/.local/bin missing
+            # from PATH" cannot explain it either — `rg` lives in that same
+            # directory and passed.
+            #
+            # So re-probe the single tool before calling it missing, and when the
+            # second probe disagrees with the first, say so instead of quietly
+            # passing. This keeps an unattended install from failing on a ghost
+            # while making the ghost visible for the first time — a silent retry
+            # would have destroyed the only evidence there is.
+            if host distrobox enter --name "$UBUNTU_DEV_CONTAINER" -- \
+                    bash -lc 'command -v "$1" >/dev/null 2>&1' _ "$tool" 2>/dev/null; then
+                warn "$label — absent from the batch probe but present on a second look (BACKLOG 11: please report this line)"
+            else
+                fail "$label  MISSING in $UBUNTU_DEV_CONTAINER container" \
+                     "bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh"
+            fi
         fi
     }
 

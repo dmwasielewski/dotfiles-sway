@@ -191,8 +191,38 @@ not CI plumbing.
 - ✅ **README idempotency claim corrected** (2026-06-11) — the "all scripts are safe to rerun and skip completed steps" line now honestly says re-running re-executes most steps and overwrites state (no state-driven resume; some steps are destructive on rerun). True idempotent convergence is still items 1 & 7.
 - ✅ **Swallowed failures now recorded** (2026-06-11) — `setup.sh` yazi, Zed, the Podman socket and cgroup delegation use `run_step_warn` / explicit `step_done`/`step_failed`, so they appear in the install-state summary instead of vanishing into a plain echo. **Still TODO:** have `verify.sh` check every warning-only capability it claims is installed.
 
-### 🟠 11. Verification: separate required / optional / personal / test-only
-**Now blocking, with evidence (2026-08-19).** `verify.sh --profile post-reboot`
+### 🟠 11. Verification: separate required / optional / personal / test-only — ✅ THE BLOCKING PART IS DONE (2026-09-02)
+
+`verify.sh` now has four outcomes, not two — `pass` / `warn` / `pending` / `fail`
+— and each of the twelve failures below is classified: `win11` is a warning (a
+check whose fix is "create it manually" must not gate an automated install), the
+libvirt group is `pending` ("takes effect after the next login"), and a container
+that cannot be queried at all is a warning rather than ten separate failures.
+
+**Evidence it no longer blocks:** on 2026-09-02 the orchestrator's own
+`verify.sh --profile post-reboot`, run inside a clean guest at the end of phase
+2, reported **163 passed, 0 failed**. The claim below that "P2 cannot pass on a
+clean machine" is superseded by that run.
+
+**Still open, and still unexplained:** the four disappearing tools. Two obvious
+explanations were tested and both failed:
+
+- a cold-container repro on the host (2026-09-02) did **not** reproduce it —
+  `bat`, `fd`, `sgpt`, `claude` all resolved on the first probe of a
+  just-stopped container;
+- "`~/.local/bin` was not on PATH" cannot explain it either: `rg` lives in that
+  same directory and passed in the original observation.
+
+A repro that does not reproduce disproves nothing, so this is narrowed, not
+closed. `check_ubuntu_dev_tool` now re-probes a single tool before calling it
+missing and reports "absent from the batch probe but present on a second look"
+when the two disagree — an unattended install no longer fails on the ghost, and
+the next occurrence leaves a trace instead of vanishing. A silent retry would
+have destroyed the only evidence there is.
+
+---
+
+**Original entry (2026-08-19), kept for the evidence:** `verify.sh --profile post-reboot`
 is the last step of orchestrator phase P2, so whatever it fails on, the
 unattended install fails on. In the test VM it reported 12 failures on an
 install that had actually worked:
