@@ -99,7 +99,23 @@ flatpak_last_label() {
 # ── rpm-ostree (Fedora OS) ────────────────────────────────────────────────
 # The check is slow and network-flaky, so callers run os_check_raw ONCE and
 # pass the captured text to the os_parse_* helpers (no repeated subshell calls).
-os_check_raw()  { rpm-ostree upgrade --check 2>&1 || true; }   # call once, capture
+# rpm-ostree serialises everything through a single daemon transaction, so the
+# badge's background check and a foreground upgrade cannot both run. On
+# 2026-09-02 that hit the user directly: an OS update started from the menu died
+# instantly with
+#   error: Transaction in progress: upgrade --check
+# because our own indicator happened to be refreshing at that moment. The two
+# now take the same lock and the priority is obvious — an update the user asked
+# for beats a background refresh. The menu waits its turn (blocking, bounded);
+# the badge skips the round and falls back to its last-known-good cache, which
+# it already knows how to report honestly as "(as of DATE)".
+OS_LOCK_FILE="$CACHE_DIR/os-check.lock"
+os_check_raw()  {                      # call once, capture
+    mkdir -p "$CACHE_DIR"
+    # No output when the lock is busy → os_parse_state() reads "unknown" → the
+    # stale-cache path. That is the correct answer here: we did not check.
+    flock -n "$OS_LOCK_FILE" -c 'rpm-ostree upgrade --check 2>&1' || true
+}
 # staged_from_json: echo 1 if any deployment is staged (downloaded, pending the
 # next reboot), else 0. Reads `rpm-ostree status --json` on stdin so it is unit-
 # testable without rpm-ostree. The "staged" boolean is the authoritative signal —

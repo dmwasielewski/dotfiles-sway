@@ -411,7 +411,9 @@ do_os() {
     # ("No upgrade available"), so command success does NOT imply an update was
     # staged. Ask the deployment state itself (os_staged checks status for
     # "(staged)") to decide whether a reboot is actually warranted.
-    if ! run_logged rpm-ostree upgrade; then
+    # Blocking, bounded: the user asked for this, so it waits for a background
+    # refresh to finish rather than dying on "Transaction in progress".
+    if ! run_logged flock -w 300 "$OS_LOCK_FILE" rpm-ostree upgrade; then
         log_line "FAIL rpm-ostree upgrade — see log"
         # Keep the reason where the badge can read it. A failure that lives only
         # in a log file is a failure nobody sees: the tooltip would go on saying
