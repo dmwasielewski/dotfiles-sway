@@ -138,14 +138,35 @@ fi
 echo "==> Installing Flatpaks..."
 flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
 
+# One app failing must not abandon the install. On 2026-09-02 a clean-guest run
+# died here: JDownloader's Flathub manifest downloads its own jar from
+# installer.jdownloader.org, that third-party host answered with
+# "[35] SSL connect error", and because this function's failure propagated it
+# took the whole of orchestrator phase P1 with it — eleven other apps that had
+# installed fine, and every step after them. The same reasoning packages.sh
+# already applies to the ChatGPT download: a third party having a bad day is not
+# a reason to lose an unattended install.
+#
+# Failures are collected and reported at the end instead, so nothing is silently
+# skipped either — the run continues AND says exactly what is missing.
+FLATPAK_FAILED=()
 install_flatpak_app() {
     local app_id="$1"
 
     if flatpak list --app --columns=application 2>/dev/null | grep -Fxq "$app_id"; then
         echo "==> Flatpak $app_id already installed — skipping"
-    else
-        flatpak install -y --user flathub "$app_id"
+    elif ! flatpak install -y --user flathub "$app_id"; then
+        echo "!! Flatpak $app_id FAILED to install — continuing"
+        FLATPAK_FAILED+=("$app_id")
     fi
+}
+
+report_failed_flatpaks() {
+    [[ "${#FLATPAK_FAILED[@]}" -eq 0 ]] && return 0
+    echo ""
+    echo "!! These Flatpak apps did not install:"
+    printf '   • %s\n' "${FLATPAK_FAILED[@]}"
+    echo "   Re-run this script to retry them; verify.sh reports them as missing."
 }
 
 install_flatpak_app io.mpv.Mpv
@@ -165,6 +186,7 @@ install_flatpak_app com.vixalien.sticky
 install_flatpak_app com.simplenote.Simplenote
 install_flatpak_app org.libreoffice.LibreOffice
 install_flatpak_app org.kde.kdenlive
+report_failed_flatpaks
 
 echo "==> Installing Whispering Open from GitHub release..."
 run_step_warn "WHISPERING_OPEN_SETUP" "Installing Whispering Open from GitHub release" \

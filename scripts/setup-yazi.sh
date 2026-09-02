@@ -30,6 +30,9 @@ if [[ -x "$RELEASE_DIR/yazi" ]]; then
 else
     echo "==> Installing yazi $VERSION ..."
     # Download under $HOME (some sandboxes block writing fetched files to /tmp).
+    # mkdir first: on a clean guest ~/.cache does not exist yet and mktemp fails
+    # with "No such file or directory" (observed 2026-09-02 in the validation VM).
+    mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}"
     tmp="$(mktemp -d "${XDG_CACHE_HOME:-$HOME/.cache}/yazi-dl.XXXXXX")"
     trap 'rm -rf "$tmp"' EXIT
     for attempt in 1 2 3 4; do
