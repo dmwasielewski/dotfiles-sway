@@ -16,6 +16,8 @@ SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
 source "$SCRIPT_DIR/lib-updates.sh"
 
 CACHE_FILE="$CACHE_DIR/waybar-updates.json"
+LASTREAD_FILE="${XDG_RUNTIME_DIR:-/tmp}/waybar-updates.lastread"
+RENDER_LOG="${XDG_STATE_HOME:-$HOME/.local/state}/waybar-updates-stalls.log"
 CACHE_MAX_AGE=10800    # background-refresh the cache when older than 3 hours
 
 json_escape() { sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g' | awk '{printf "%s\\n", $0}' | sed '$ s/\\n$//'; }
@@ -158,7 +160,8 @@ compute_and_cache() {
     # turn it red; only an actually staged update (awaiting reboot) is red.
     # A source that could not be checked counts as "needs your attention" (amber),
     # never as "nothing to do" (grey). Grey must mean "I checked, and it is clean".
-    local klass
+    local klass prev_klass
+    prev_klass="$(sed -n 's/.*"class":"\([^"]*\)".*/\1/p' "$CACHE_FILE" 2>/dev/null)"
     if   [[ "$total" -eq 0 && "$unknown" -eq 0 ]]; then klass="uptodate"
     elif [[ "$os_is_staged" -eq 1 ]];              then klass="critical"
     else                                                klass="warning"; fi
@@ -180,6 +183,40 @@ compute_and_cache() {
     # this very script ("updates-waybar.sh"), which would signal/kill ourselves
     # and any concurrent instance. Only the real Waybar binary is named "waybar".
     pkill -RTMIN+8 -x waybar 2>/dev/null || true
+
+    # A signal that changes nothing on screen is the failure this whole module
+    # keeps circling back to: the state is right, the user sees something else.
+    # Only checked when the CLASS changes, because that is the only case where a
+    # missed refresh is visible — and it is rare enough that recovery can be
+    # blunt.
+    [[ "$klass" == "$prev_klass" ]] && return 0
+    ensure_waybar_repainted "$klass" "$prev_klass"
+}
+
+# Did Waybar actually re-run our exec after the signal? The exec stamps
+# LASTREAD_FILE every time it runs, so a stamp newer than the signal proves the
+# repaint happened. If it did not, restart the bar: sway spawns Waybar through
+# `swaybar_command` and does NOT respawn it when it dies (verified 2026-09-06),
+# so `swaymsg reload` is the way back — and it is what fixed the live case.
+# Whatever the underlying Waybar fault is, it is not ours to fix; going on
+# showing the user a stale colour is.
+ensure_waybar_repainted() {
+    local klass="$1" prev="$2" signalled stamp
+    signalled="$(date +%s)"
+    pgrep -x waybar >/dev/null 2>&1 || return 0   # no bar running: nothing to repaint
+    # Waybar's poll is 60s but the signal should land at once; 8s is generous for
+    # the signal path and short enough that a stale colour is never on screen for
+    # long. Overridable so the test does not have to wait.
+    sleep "${WAYBAR_REPAINT_GRACE:-8}"
+    stamp="$(cat "$LASTREAD_FILE" 2>/dev/null || echo 0)"
+    [[ "$stamp" =~ ^[0-9]+$ ]] || stamp=0
+    [[ "$stamp" -ge "$signalled" ]] && return 0   # it repainted — nothing to do
+
+    mkdir -p "$(dirname "$RENDER_LOG")"
+    printf '[%s] waybar did not re-run the updates exec after a %s→%s change (last read %s) — reloading sway bars\n' \
+        "$(date '+%Y-%m-%d %H:%M:%S')" "${prev:-none}" "$klass" \
+        "$([[ "$stamp" -gt 0 ]] && date -d "@$stamp" '+%H:%M:%S' || echo never)" >> "$RENDER_LOG"
+    swaymsg reload >/dev/null 2>&1 || true
 }
 
 # Spawn the heavy worker fully detached so Waybar doesn't wait on it.
@@ -199,6 +236,14 @@ fi
 # keeps the icon correct: it signals Waybar when done. Waybar's poll interval is
 # therefore just a slow heartbeat, so it can be long — no fast 5s polling needed.
 SESSION_MARKER="${XDG_RUNTIME_DIR:-/tmp}/waybar-updates.session"
+# Proof that Waybar actually re-ran this exec. Written on every poll and every
+# signal, and read by the watchdog in --compute below. Without it there is no way
+# to tell "the badge is correct" from "Waybar stopped asking" — on 2026-09-06 the
+# icon sat red for 38 minutes while this script, run by hand, returned
+# class "uptodate"; the clock in the same bar was ticking, so Waybar was alive and
+# had simply stopped refreshing this one module. Restarting Waybar fixed it
+# instantly, which is what proved where the fault was.
+printf '%s' "$(date +%s)" > "$LASTREAD_FILE" 2>/dev/null
 need_refresh=0
 
 if [[ -f "$CACHE_FILE" ]]; then

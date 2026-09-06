@@ -1210,3 +1210,40 @@ installation for anything that is a self-contained tree with a relocatable
 launcher. Deciding not to report this upstream was Damian's call (2026-09-02) —
 it is recorded here instead.
 
+## Waybar can go on rendering a module it has stopped refreshing
+
+**Problem (2026-09-06).** The update indicator sat RED for 38 minutes on a system
+that was fully up to date. Everything on our side was correct: the cache file
+said `class:"uptodate"`, running `~/.local/bin/updates-waybar` by hand printed
+`uptodate`, and `rpm-ostree status` showed the new deployment booted with nothing
+staged. Sending `SIGRTMIN+8` changed nothing. The clock in the SAME bar was
+ticking, so Waybar was alive — it had simply stopped re-running that one module's
+exec. Killing and restarting Waybar fixed it instantly, which is what located the
+fault.
+
+**What was ruled out, by experiment rather than reasoning:** the obvious theory
+was CSS class accumulation — that Waybar adds `uptodate` without removing
+`critical`, and `.critical` wins because it is defined last in `style.css`. It is
+wrong. Writing `critical` to the cache and signalling turned the icon red;
+writing `uptodate` and signalling turned it grey again, with no restart. Waybar
+replaces the class correctly.
+
+**Why the earlier mitigation was not enough.** `waybar/config` already carries
+`"interval": 60` for exactly this class of fault, added on 2026-08-18 after a
+Waybar process that had been up four days stopped acting on the signal. This
+process had been up 39 minutes and neither the signal nor the 60s poll reached
+the module.
+
+**Fix:** the module's Waybar-facing mode now stamps
+`$XDG_RUNTIME_DIR/waybar-updates.lastread` on every run, so "did Waybar actually
+re-run the exec" is a measurable fact. After a compute that CHANGES the class,
+`ensure_waybar_repainted` waits 8s and checks that stamp; if Waybar never asked,
+it appends to `~/.local/state/waybar-updates-stalls.log` and runs `swaymsg
+reload` — sway spawns Waybar through `swaybar_command` and does **not** respawn
+it when it dies, so reload is the way back. Recovery is logged, never silent: the
+underlying Waybar fault is still unexplained and a silent repair would destroy
+the only evidence of it.
+
+**The general rule this keeps proving:** verifying the state is not verifying
+what the user sees. `grim` on the bar is a two-second check and it is the only
+one that settles the question.
