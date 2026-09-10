@@ -321,7 +321,7 @@ exists, add `scripts/setup-claude-desktop.sh` modelled on `setup-chatgpt.sh`
 a free workspace, and cover it in `verify.sh`. Until then Claude stays as the
 `claude` CLI in toolbox `damianf` plus a Firefox tab.
 
-### 🟠 14. The update module still has two blind spots after the 2026-08-18 fix
+### 🟠 14. The update module still has two blind spots after the 2026-08-18 fix — ✅ DONE (2026-09-10)
 `flatpak_count` and the OS branch now say "could not check" instead of inventing
 a zero (see `AI_ERRORS.md`). Two related gaps remain:
 
@@ -343,6 +343,26 @@ a zero (see `AI_ERRORS.md`). Two related gaps remain:
   does not fire either. Options: retry the refresh when a check returns unknown
   (backoff), or hook `sleep.target` to invalidate the cache on resume. Needs a
   decision before code.
+
+  **Decided and done 2026-09-10 — backoff.** Chosen over the resume hook because
+  it fixes the whole class rather than one trigger: a resumed laptop, an
+  unreachable repo and an rpm-ostree transaction held by something else all
+  produce the same "no straight answer", and only the first is a resume. A round
+  that does not get one schedules a retry at 1 / 5 / 15 / 30 minutes, reset the
+  moment a check succeeds. The retry fires on a *skipped* round too, not only an
+  errored one — when the lock is busy the check is not an error, but it is not an
+  answer either, and it must not cost three hours. That gap was found by running
+  it: the first version scheduled nothing in exactly the case that had just
+  occurred on this machine.
+
+  **The silent skip is fixed too.** `userlocal_update_rows` returns non-zero when
+  a version could not be determined, and `userlocal_latest_tag` no longer uses
+  `curl -f` — that hid the status code, and a 403 from the rate limiter is the
+  case worth naming. The tooltip now says "GitHub API rate limit reached (60/hour
+  unauthenticated)" instead of quietly reporting nothing. A cached tag still
+  counts as a real answer; only a total blank is "could not check". Tests:
+  `test_retry_backoff.sh`, and `test_userlocal_probe.sh` now asserts the failure
+  is *signalled* rather than swallowed.
 
 ---
 
