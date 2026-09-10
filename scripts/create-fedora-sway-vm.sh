@@ -169,8 +169,20 @@ diagnose_no_ip() {
         # guest then boots, sends DISCOVERs and is answered by nothing.
         if command -v nordvpn >/dev/null 2>&1; then
             echo -e "${YELLOW}  VPN:           $(nordvpn status 2>/dev/null | awk -F': ' '/^Status/{print $2}')${NC}" >&2
-            echo -e "${YELLOW}                 if connected, allowlist the VM subnet:${NC}" >&2
-            echo -e "${YELLOW}                 nordvpn allowlist add subnet $(vm_network_subnet)${NC}" >&2
+            echo -e "${YELLOW}                 firewall: $(nordvpn settings 2>/dev/null | awk -F': ' '/^Firewall:/{print $2}')${NC}" >&2
+            # Established by single-variable test on 2026-09-10, on a live guest,
+            # with the tunnel up throughout: the NordVPN FIREWALL drops the guest's
+            # DHCP. Neither documented mitigation helps — `allowlist add subnet` was
+            # tried twice and `lan-discovery on` once, all with the firewall enabled,
+            # and DHCP failed every time; with the firewall off the lease arrived in
+            # seconds. A subnet rule cannot work here in any case: DHCP begins as a
+            # broadcast to 255.255.255.255 from a client that has no address yet, so
+            # there is no subnet for such a rule to match on. The earlier advice here
+            # named the right culprit and the wrong cure for a week.
+            echo -e "${YELLOW}                 NordVPN's firewall blocks the guest's DHCP. Allowlisting the${NC}" >&2
+            echo -e "${YELLOW}                 subnet does NOT help, and neither does LAN Discovery — both${NC}" >&2
+            echo -e "${YELLOW}                 were tested. For the duration of the run:${NC}" >&2
+            echo -e "${YELLOW}                   nordvpn set firewall off     # and 'on' again afterwards${NC}" >&2
         fi
     fi
 

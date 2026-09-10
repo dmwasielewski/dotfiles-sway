@@ -1247,3 +1247,43 @@ the only evidence of it.
 **The general rule this keeps proving:** verifying the state is not verifying
 what the user sees. `grim` on the bar is a two-second check and it is the only
 one that settles the question.
+
+## Two variables changed at once is not a confirmed cause
+
+**The mistake (2026-09-01).** A test VM never got a DHCP lease. I disconnected
+NordVPN *and* rebuilt the VM from scratch, the lease arrived in 20 seconds, and I
+reported the VPN firewall as "confirmed by behaviour". Two variables had moved.
+The conclusion happened to name the right culprit, but the reasoning did not
+support it — and the *remedy* I derived from it was wrong and shipped in
+`diagnose_no_ip` for nine days, telling the user to run a command that does
+nothing for this problem.
+
+**What a single-variable test showed (2026-09-10).** Same guest, same boot, tunnel
+up throughout, one `nmcli device connect enp1s0` per row:
+
+| NordVPN firewall | allowlist subnet | LAN Discovery | DHCP |
+|---|---|---|---|
+| enabled  | no  | off | fails |
+| enabled  | yes | off | fails |
+| enabled  | no  | on  | fails |
+| disabled | no  | off | **lease in seconds** |
+
+So the firewall is the cause, and **neither documented mitigation helps**.
+`nordvpn allowlist add subnet` cannot help even in principle: DHCP starts as a
+broadcast to 255.255.255.255 from a client with no address yet, so a subnet rule
+has nothing to match on. The workaround is `nordvpn set firewall off` for the
+duration of the run.
+
+**Two process errors worth naming, both mine:**
+
+- *Concluding from a two-variable change.* The fix is cheap — change one thing,
+  observe, change it back.
+- *Testing in a window where nothing was being tested.* After adding the
+  allowlist I watched for five minutes and reported "it did not help". The guest
+  was sitting at anaconda's error prompt that whole time and was not requesting
+  DHCP at all. A negative result from an experiment that never ran is worth less
+  than no result, because it feels like evidence.
+
+**How the guest was inspected without SSH** (there was no network, by definition):
+`virsh send-key` types into the console and `virsh screenshot` reads it back.
+That loop is what produced the table above.
