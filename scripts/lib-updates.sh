@@ -470,13 +470,30 @@ userlocal_latest_tag() {               # $1=repo
         [[ "$age" -lt 10800 ]] && { cat "$cache_f"; return; }
     fi
     # Capture before parsing — piping curl into grep -m1 trips SIGPIPE under pipefail.
-    json="$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null)"
+    # -f is deliberately NOT used: it hides the status code, and a 403 from the
+    # rate limiter is exactly the case worth naming. Unauthenticated GitHub allows
+    # 60 requests an hour, and "you are rate limited" is indistinguishable from
+    # "no newer release" once the body is thrown away.
+    local status
+    status="$(curl -sSL -o "$cache_f.body" -w '%{http_code}' \
+        "https://api.github.com/repos/$repo/releases/latest" 2>/dev/null || echo 000)"
+    json="$(cat "$cache_f.body" 2>/dev/null)"; rm -f "$cache_f.body"
     tag="$(printf '%s' "$json" | grep -m1 '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/')"
-    if [[ -n "$tag" ]]; then
+    if [[ "$status" == "200" && -n "$tag" ]]; then
         mkdir -p "$USERLOCAL_TAG_CACHE"; printf '%s' "$tag" > "$cache_f"
-        printf '%s' "$tag"; return
+        printf '%s' "$tag"; return 0
     fi
-    cat "$cache_f" 2>/dev/null          # offline → last known (even past the TTL)
+    if [[ "$status" == "403" || "$status" == "429" ]] &&
+       grep -qi 'rate limit' <<< "$json"; then
+        _ul_set_error "GitHub API rate limit reached (60/hour unauthenticated) — versions unknown until it resets"
+    elif [[ "$status" == "000" ]]; then
+        _ul_set_error "GitHub API unreachable — versions unknown"
+    else
+        _ul_set_error "GitHub API returned HTTP $status — versions unknown"
+    fi
+    # A cached tag is a real answer; only a total blank is "could not check".
+    if [[ -s "$cache_f" ]]; then cat "$cache_f"; return 0; fi
+    return 1
 }
 
 # Is $2 a strictly newer version than $1? (a leading "v" is ignored)
@@ -522,21 +539,40 @@ userlocal_probe_version() {            # $1 = probe command line
 }
 
 # Outdated user-local tools as "name<TAB>installed<TAB>latest".
+# Returns non-zero if any tool's version could NOT be determined, so the caller
+# can say "could not check" instead of an all-clear. This used to `continue`
+# silently: an unauthenticated GitHub API allows 60 requests an hour, and once
+# the failure was swallowed a rate-limited reply looked exactly like "no newer
+# release". The same rule the OS and Flatpak sources already follow.
+# Through a FILE, not a variable: userlocal_latest_tag is called inside a
+# command substitution, so anything it assigns dies with that subshell.
+USERLOCAL_ERROR_FILE="$CACHE_DIR/userlocal-check.error"
+_ul_set_error() { mkdir -p "$CACHE_DIR"; printf '%s' "$1" > "$USERLOCAL_ERROR_FILE"; }
+userlocal_error()  { cat "$USERLOCAL_ERROR_FILE" 2>/dev/null; }
+
 userlocal_update_rows() {
-    local m name repo probe inst latest
+    local m name repo probe inst latest rc=0
+    rm -f "$USERLOCAL_ERROR_FILE"
     while IFS= read -r m; do
         [[ -z "$m" ]] && continue
         name="$(_ul_field "$m" name)"; repo="$(_ul_field "$m" repo)"
         probe="$(_ul_field "$m" version_probe)"
         inst="$(_ul_field "$m" installed_version)"
         [[ -z "$inst" ]] && continue
-        if   [[ -n "$repo" ]];  then latest="$(userlocal_latest_tag "$repo")"
+        if   [[ -n "$repo" ]];  then latest="$(userlocal_latest_tag "$repo")" || rc=1
         elif [[ -n "$probe" ]]; then latest="$(userlocal_probe_version "$probe")"
         else continue; fi
-        [[ -z "$latest" ]] && continue           # unknown/offline → don't flag
+        if [[ -z "$latest" ]]; then
+            rc=1
+            [[ -n "$probe" && ! -s "$USERLOCAL_ERROR_FILE" ]] &&
+                _ul_set_error "version probe for ${name:-$probe} could not answer"
+            continue
+        fi
         _ul_newer "$inst" "$latest" && printf '%s\t%s\t%s\n' "${name:-$repo}" "$inst" "${latest#v}"
     done < <(userlocal_manifests)
+    return "$rc"
 }
+
 userlocal_count() { userlocal_update_rows | grep -c . || true; }
 
 # Absolute path of a manifest's updater script, resolved against the dotfiles repo.

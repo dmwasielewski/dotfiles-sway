@@ -17,6 +17,14 @@ source "$SCRIPT_DIR/lib-updates.sh"
 
 CACHE_FILE="$CACHE_DIR/waybar-updates.json"
 LASTREAD_FILE="${XDG_RUNTIME_DIR:-/tmp}/waybar-updates.lastread"
+# When a check could not answer, retry sooner than the ordinary 3h cache life.
+# A failed check used to freeze its "could not check" for the full three hours —
+# so a laptop resumed before NetworkManager had connected, an unreachable repo,
+# or an rpm-ostree transaction held by something else all cost three hours of a
+# stale answer. The backoff fixes the whole class instead of guessing at one
+# cause: 1 min, then 5, then 15, capped at 30, reset the moment a check succeeds.
+RETRY_FILE="$CACHE_DIR/waybar-updates.retry"
+RETRY_BACKOFF=(60 300 900 1800)
 RENDER_LOG="${XDG_STATE_HOME:-$HOME/.local/state}/waybar-updates-stalls.log"
 CACHE_MAX_AGE=10800    # background-refresh the cache when older than 3 hours
 
@@ -87,8 +95,14 @@ compute_and_cache() {
     fi
 
     # User-local apps (GitHub-release tools without a package/self updater, e.g. yazi)
-    local ul_rows ul; ul_rows="$(userlocal_update_rows)"
+    local ul_rows ul ul_rc
+    ul_rows="$(userlocal_update_rows)" && ul_rc=0 || ul_rc=$?
     ul="$(printf '%s' "$ul_rows" | grep -c . || true)"
+    if [[ "$ul_rc" -ne 0 ]]; then
+        lines+=("User-local apps: could not check")
+        [[ -n "$(userlocal_error)" ]] && lines+=("    $(userlocal_error)")
+        unknown=$(( unknown + 1 ))
+    fi
     if [[ "$ul" -gt 0 ]]; then
         lines+=("User-local apps: $ul update(s)")
         while IFS=$'\t' read -r uname ucur unew; do
@@ -170,6 +184,27 @@ compute_and_cache() {
     tooltip="$(printf '%s\n' "${lines[@]}")"
     result="$(emit "⬆" "$klass" "$tooltip")"
 
+    # Schedule the next attempt whenever this round did not get a straight answer.
+    # Two distinct cases, and missing either one leaves a stale badge for 3h:
+    #   - unknown > 0: a source said outright that it could not be queried;
+    #   - the OS check was not "fresh": it fell back to the last-known-good cache,
+    #     either because a repo failed or because another rpm-ostree transaction
+    #     held the lock and this round skipped. Skipping is not an error — but it
+    #     is also not an answer, and it must not cost three hours.
+    local want_retry=0
+    [[ "$unknown" -gt 0 ]] && want_retry=1
+    [[ "$os_fresh" != "fresh" ]] && want_retry=1
+    if [[ "$want_retry" -eq 1 ]]; then
+        local tries idx
+        tries="$(sed -n '1p' "$RETRY_FILE" 2>/dev/null)"
+        [[ "$tries" =~ ^[0-9]+$ ]] || tries=0
+        idx="$tries"; [[ "$idx" -ge "${#RETRY_BACKOFF[@]}" ]] && idx=$(( ${#RETRY_BACKOFF[@]} - 1 ))
+        mkdir -p "$CACHE_DIR"
+        printf '%s\n%s\n' "$(( tries + 1 ))" "$(( $(date +%s) + RETRY_BACKOFF[idx] ))" > "$RETRY_FILE"
+    else
+        rm -f "$RETRY_FILE"
+    fi
+
     # Write atomically so Waybar never reads a half-written file.
     mkdir -p "$CACHE_DIR"
     printf '%s\n' "$result" > "$CACHE_FILE.tmp" && mv -f "$CACHE_FILE.tmp" "$CACHE_FILE"
@@ -250,6 +285,11 @@ if [[ -f "$CACHE_FILE" ]]; then
     cat "$CACHE_FILE"
     age=$(( $(date +%s) - $(stat -c %Y "$CACHE_FILE" 2>/dev/null || echo 0) ))
     [[ "$age" -ge "$CACHE_MAX_AGE" ]] && need_refresh=1   # periodic discovery of new updates
+    # A pending retry from a check that could not answer.
+    if [[ -f "$RETRY_FILE" ]]; then
+        retry_at="$(sed -n '2p' "$RETRY_FILE" 2>/dev/null)"
+        [[ "$retry_at" =~ ^[0-9]+$ ]] && [[ "$(date +%s)" -ge "$retry_at" ]] && need_refresh=1
+    fi
 else
     emit "⬆" "uptodate" "Checking for updates…"           # no cache yet
     need_refresh=1
