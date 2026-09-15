@@ -293,6 +293,23 @@ reasoning about it — do not "simplify" either away:
   is indistinguishable from a true empty one without a heuristic on that `-> ./`
   marker.
 
+### 🟠 15. Empty rpm-ostree package cache blocks every OS update — ✅ DONE (2026-09-15)
+
+The update menu repeatedly failed while importing `nordvpn-5.4.0-1.x86_64` as
+unverifiable. The repository key was correct and the remote RPM was healthy
+(46,332,208 bytes), but rpm-ostree had retained zero-byte CLI and GUI RPM files
+under `/var/cache/rpm-ostree/repomd` and reused them on every attempt. Because
+base and layered packages form one atomic deployment, that third-party cache
+entry also blocked 97 Fedora updates, including seven security advisories.
+
+**Done:** `do_os` now recognizes only the conjunction of a verification error
+and a zero-byte cached RPM, runs `rpm-ostree cleanup -m`, and retries exactly
+once. It never disables GPG verification or loops. "Update everything" now
+attempts Fedora first, continues the independent Flatpak/container/language/
+user-local steps after an OS failure, and delays the reboot prompt until those
+steps finish. Hermetic regressions: `test_os_cache_recovery.sh` and
+`test_os_first.sh`.
+
 ---
 
 ## Planned features (from CLAUDE.md "What is planned")

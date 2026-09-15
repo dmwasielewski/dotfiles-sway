@@ -420,10 +420,11 @@ Dark muted blue-slate palette — low contrast, easy on the eyes.
 
 ### Updates indicator
 
-The `custom/updates` module (`⬆` icon) tracks pending updates across four sources, with all detection logic shared in `scripts/lib-updates.sh`:
+The `custom/updates` module (`⬆` icon) tracks pending updates across five sources, with all detection logic shared in `scripts/lib-updates.sh`:
 
 - **Flatpak** apps
 - **Containers** (auto-discovered distrobox + toolbox; flagged stale past a threshold)
+- **Language packages** (`npm -g` / `pip --user` inside discovered containers)
 - **Fedora OS** (`rpm-ostree`; uses a last-known-good cache so it still reports when the repo is offline). A **staged** update (downloaded, pending the next reboot) is detected from the local `rpm-ostree status --json` `staged` field (`staged_from_json` in `lib-updates.sh`) — this reads ground truth on disk, needs **no network**, and so is reported correctly even when the upgrade *check* cannot reach a repo. (The previous detector grepped the human-readable status for the literal `(staged)`, which current rpm-ostree no longer prints, so a real pending-reboot update went unreported and showed amber instead of red.)
 - **User-local apps** — GitHub-release tools that are in no distro repo and have no self-updater (e.g. `yazi`). Each such tool self-registers a key=value manifest under `~/.local/share/dotfiles-updates/` when its setup script installs it; the detector discovers manifests dynamically (no tool names hardcoded), compares the installed version against the latest GitHub tag (`sort -V`, with a 3 h last-known-good tag cache for offline), and updating re-runs the tool's own setup script. Tools covered elsewhere deliberately do **not** register here — Neovim comes from the package manager, and Zed self-updates.
 
@@ -439,11 +440,11 @@ OS pending packages and security updates count toward the badge (amber) but neve
 
 - **Push:** every `--compute` run atomically rewrites `~/.cache/waybar-updates.json`, then signals Waybar (`pkill -RTMIN+8 -x waybar`; the module declares `"signal": 8`) to redraw at once.
 - **Per-session refresh:** the first default-mode run of a login session (marker in `$XDG_RUNTIME_DIR`, wiped on reboot) forces one recompute, so a staged update applied by a reboot is reflected immediately on next login.
-- **Periodic discovery:** Waybar polls only once an hour (`interval: 3600`) as a slow heartbeat; that run recomputes when the cache is older than `CACHE_MAX_AGE` (3 h), catching new upstream packages.
+- **Periodic discovery:** Waybar reads the cheap JSON cache every 60 seconds as a safety net; that run recomputes only when the cache is older than `CACHE_MAX_AGE` (3 h), catching new upstream packages.
 
-Because the push handles instant feedback, there is no fast 5 s polling — idle wake-ups drop from ~720/h to 1/h. No systemd timer is needed.
+Because the push handles instant feedback, there is no fast 5 s repository polling: the minute heartbeat is cache-only and the expensive discovery runs at most every 3 h. No systemd timer is needed.
 
-**Interaction:** left-click runs `updates-do` (apply updates). The update menu (`updates-menu`) recomputes the cache via `updates-waybar --compute` after **every** option and on exit (via an `EXIT` trap — covers Cancel/Ctrl-C), and again before the reboot prompt so the icon turns red while you decide. A recompute reads ground truth, so an update that silently failed keeps the badge lit instead of falsely clearing it.
+**Interaction:** left-click runs `updates-do` (apply updates). "Update everything" attempts Fedora first, then continues with Flatpak, containers, language packages and user-local apps even if the OS step fails; the reboot prompt waits until all independent work is finished. If rpm-ostree reports a verification failure while its repo cache contains a zero-byte RPM, the menu runs `rpm-ostree cleanup -m` and retries exactly once. It never disables `gpgcheck` or retries a genuinely non-empty, invalidly signed package. The menu recomputes the cache via `updates-waybar --compute` after **every** option and on exit (via an `EXIT` trap — covers Cancel/Ctrl-C), and again before the reboot prompt so the icon turns red while you decide. A recompute reads ground truth, so an update that silently failed keeps the badge lit instead of falsely clearing it.
 
 All three scripts (`updates-waybar`, `updates-do`, `updates-menu`) are symlinked into `~/.local/bin` by `setup.sh`; `lib-updates.sh` is resolved next to them and needs no separate symlink.
 

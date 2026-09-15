@@ -429,18 +429,34 @@ do_os() {
     # rpm-ostree is atomic: a failed upgrade leaves the current deployment intact.
     # NOTE: `rpm-ostree upgrade` exits 0 even when there is nothing to upgrade
     # ("No upgrade available"), so command success does NOT imply an update was
-    # staged. Ask the deployment state itself (os_staged checks status for
-    # "(staged)") to decide whether a reboot is actually warranted.
+    # staged. Ask the deployment state itself (os_staged reads the JSON staged
+    # flag) to decide whether a reboot is actually warranted.
     # Blocking, bounded: the user asked for this, so it waits for a background
     # refresh to finish rather than dying on "Transaction in progress".
     if ! run_logged flock -w 300 "$OS_LOCK_FILE" rpm-ostree upgrade; then
-        log_line "FAIL rpm-ostree upgrade — see log"
-        # Keep the reason where the badge can read it. A failure that lives only
-        # in a log file is a failure nobody sees: the tooltip would go on saying
-        # "N packages available" for as long as the upgrade keeps aborting.
-        os_fail_record "$(last_error_line "$begin")" "$(os_check_target "$(os_cached_raw)")"
-        echo "  ✗ OS update failed (system unchanged — rpm-ostree is atomic). Log: $LOG"
-        return 1
+        local reason; reason="$(last_error_line "$begin")"
+        if os_failure_is_empty_cache "$reason"; then
+            echo "  ⚠ Empty rpm-ostree cache entry detected — clearing repository metadata and retrying once…"
+            log_line "RECOVERY empty rpm-ostree RPM cache — cleanup -m, then one retry"
+            if run_logged rpm-ostree cleanup -m \
+                && run_logged flock -w 300 "$OS_LOCK_FILE" rpm-ostree upgrade; then
+                log_line "RECOVERED rpm-ostree upgrade after cleanup -m"
+            else
+                reason="$(last_error_line "$begin")"
+                log_line "FAIL rpm-ostree upgrade after cache recovery — see log"
+                os_fail_record "$reason" "$(os_check_target "$(os_cached_raw)")"
+                echo "  ✗ OS update failed after one cache-recovery retry (system unchanged). Log: $LOG"
+                return 1
+            fi
+        else
+            log_line "FAIL rpm-ostree upgrade — see log"
+            # Keep the reason where the badge can read it. A failure that lives only
+            # in a log file is a failure nobody sees: the tooltip would go on saying
+            # "N packages available" for as long as the upgrade keeps aborting.
+            os_fail_record "$reason" "$(os_check_target "$(os_cached_raw)")"
+            echo "  ✗ OS update failed (system unchanged — rpm-ostree is atomic). Log: $LOG"
+            return 1
+        fi
     fi
     os_fail_clear
     if [[ "$(os_staged)" -eq 1 ]]; then
@@ -567,13 +583,18 @@ trap refresh_waybar EXIT
 # ── Run "everything" with continue-on-error + summary ─────────────────────
 do_everything() {
     local r_fp r_ct r_lp r_ul r_os
+    do_os;         r_os=$?
     do_flatpak;    r_fp=$?
     do_containers; r_ct=$?
     do_langpkg;    r_lp=$?
     do_userlocal;  r_ul=$?
-    do_os;         r_os=$?
     echo ""; bar
     echo "  Results:"
+    case "$r_os" in
+        0) echo "    ✔ Fedora OS staged (reboot to apply)" ;;
+        2) echo "    ✔ Fedora OS up to date" ;;
+        *) echo "    ✗ Fedora OS failed" ;;
+    esac
     [[ "$r_fp" -eq 0 ]] && echo "    ✔ Flatpak apps updated"      || echo "    ✗ Flatpak apps failed"
     [[ "$r_ct" -eq 0 ]] && echo "    ✔ Containers updated"        || echo "    ✗ Some containers failed"
     case "$r_lp" in
@@ -585,11 +606,6 @@ do_everything() {
         0) echo "    ✔ User-local apps updated" ;;
         2) echo "    ✔ User-local apps up to date" ;;
         *) echo "    ✗ Some user-local apps failed" ;;
-    esac
-    case "$r_os" in
-        0) echo "    ✔ Fedora OS staged (reboot to apply)" ;;
-        2) echo "    ✔ Fedora OS up to date" ;;
-        *) echo "    ✗ Fedora OS failed" ;;
     esac
     if [[ "$r_fp" -ne 0 || "$r_ct" -ne 0 || "$r_os" -eq 1 \
           || ( "$r_ul" -ne 0 && "$r_ul" -ne 2 ) \
@@ -619,7 +635,7 @@ while true; do
     echo "    3) Update language packages (npm/pip inside containers, no reboot)"
     echo "    4) Update user-local apps   (no reboot)"
     echo "    5) Update Fedora OS         (reboot required)"
-    echo "    6) Update everything        (apps → containers → language → user-local → OS)"
+    echo "    6) Update everything        (OS → apps → containers → language → user-local)"
     echo "    7) Show update list"
     echo "    q) Cancel"
     echo ""

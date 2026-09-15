@@ -110,11 +110,35 @@ flatpak_last_label() {
 # the badge skips the round and falls back to its last-known-good cache, which
 # it already knows how to report honestly as "(as of DATE)".
 OS_LOCK_FILE="$CACHE_DIR/os-check.lock"
+RPMOSTREE_REPOMD_DIR="${RPMOSTREE_REPOMD_DIR:-/var/cache/rpm-ostree/repomd}"
 os_check_raw()  {                      # call once, capture
     mkdir -p "$CACHE_DIR"
     # No output when the lock is busy → os_parse_state() reads "unknown" → the
     # stale-cache path. That is the correct answer here: we did not check.
     flock -n "$OS_LOCK_FILE" -c 'rpm-ostree upgrade --check 2>&1' || true
+}
+
+# A cancelled/interrupted rpm-ostree download can leave a zero-byte .rpm under
+# repomd. A later upgrade reuses that path and reports a misleading GPG
+# verification failure forever, even though the repository and key are healthy.
+# Only classify the failure as recoverable when BOTH signals are present: the
+# transaction said verification failed, and the trusted rpm-ostree cache root
+# actually contains an empty RPM. Never weaken or bypass signature checking.
+os_failure_is_empty_cache() {          # $1 = rpm-ostree error text
+    [[ "$1" == *"cannot be verified"* || "$1" == *"could not be verified"* ]] || return 1
+    local path
+    while IFS= read -r path; do
+        # The path must be named as a complete whitespace-delimited token in the
+        # error, live under the expected cache root, and be an existing empty
+        # regular file. This avoids prefix collisions such as foo.rpm matching
+        # a genuine signature failure for the non-empty foo.rpm.rpm.
+        case "$path" in
+            "$RPMOSTREE_REPOMD_DIR"/*)
+                [[ -f "$path" && ! -s "$path" ]] && return 0
+                ;;
+        esac
+    done < <(printf '%s\n' "$1" | grep -oE '/[^[:space:]]+\.rpm' || true)
+    return 1
 }
 # staged_from_json: echo 1 if any deployment is staged (downloaded, pending the
 # next reboot), else 0. Reads `rpm-ostree status --json` on stdin so it is unit-

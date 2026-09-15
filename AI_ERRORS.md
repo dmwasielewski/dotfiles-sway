@@ -81,6 +81,26 @@ whether a reboot is warranted. Return three states, not two: `0` staged (offer
 reboot), `2` nothing changed (no reboot prompt), `1` failed. Never infer "staged"
 from the upgrade command's exit code alone.
 
+## rpm-ostree reports a GPG failure for a zero-byte cached RPM
+
+**Symptom:** every Fedora update fails at `importing RPMs` with `package ...
+cannot be verified`, although the configured GPG key matches the vendor and the
+remote package is healthy. Inspect the named file: the 2026-09-15 NordVPN case
+left both 5.4.0 RPMs under `/var/cache/rpm-ostree/repomd` at exactly zero bytes,
+and rpm-ostree kept reusing those placeholders instead of downloading again.
+
+**Safe recovery:** only when the transaction reports a verification failure and
+the rpm-ostree repo cache actually contains a zero-byte `.rpm`, run
+`rpm-ostree cleanup -m` and retry the upgrade exactly once. If cleanup or retry
+fails, retain the real error and stop retrying. `updates-menu.sh` implements this
+through `os_failure_is_empty_cache`; `test_os_cache_recovery.sh` reproduces it
+without touching the host.
+
+**Never fix this with `gpgcheck=0`.** A non-empty package with an invalid
+signature is a real security failure and must remain blocked. Do not remove a
+layered package automatically either; that changes the installed system and can
+require an additional deployment/reboot.
+
 **Trap 5 — "I closed the app but it still shows the old version after update."**
 A running app keeps the OLD version in memory until its background process is
 killed. Closing the window — including Sway's `Alt+Shift+Q` (`kill`, which only
