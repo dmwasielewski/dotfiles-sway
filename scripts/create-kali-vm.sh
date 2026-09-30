@@ -227,8 +227,13 @@ VIRT_INSTALL_ARGS=(
     --vcpus "$VM_CPUS"
     --memory "$VM_RAM_MB"
     --os-variant "$OS_VARIANT"
-    --disk "vol=$DISK_POOL/$DISK_VOL,bus=virtio,boot.order=2"
-    --disk "vol=$ISO_POOL/$ISO_VOL,device=cdrom,boot.order=1"
+    --disk "vol=$DISK_POOL/$DISK_VOL,bus=virtio"
+    --disk "vol=$ISO_POOL/$ISO_VOL,device=cdrom"
+    # virt-install refuses to run without an explicit install method, and a
+    # cdrom passed as --disk is not one. --boot states it, and also fixes the
+    # order: installer first, then the disk it installs onto. (Note that
+    # --print-xml skips this check, so it cannot catch the omission.)
+    --boot cdrom,hd
     --network "network=$NETWORK,model=virtio"
     --graphics spice
     --video qxl
@@ -248,7 +253,18 @@ fi
 info "Creating the domain"
 virt-install "${VIRT_INSTALL_ARGS[@]}"
 
-ok "domain '$VM_NAME' created and booting from the installer"
+# The installer menu gives about one second before it starts speech synthesis
+# on its own, and this guest has no sound card, so it then sits forever probing
+# for one. Tapping a key stops that countdown; DOWN followed by UP leaves the
+# highlighted entry where it was.
+info "Stopping the installer's speech-synthesis countdown"
+for _ in $(seq 1 40); do
+    "${VIRSH[@]}" send-key "$VM_NAME" --codeset linux KEY_DOWN >/dev/null 2>&1 || true
+    "${VIRSH[@]}" send-key "$VM_NAME" --codeset linux KEY_UP   >/dev/null 2>&1 || true
+    sleep 0.5
+done
+
+ok "domain '$VM_NAME' created, sitting at the installer menu"
 cat <<EOF
 
   The installer is now running. Drive it yourself:
