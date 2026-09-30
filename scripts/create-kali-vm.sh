@@ -233,7 +233,7 @@ VIRT_INSTALL_ARGS=(
     # cdrom passed as --disk is not one. --boot states it, and also fixes the
     # order: installer first, then the disk it installs onto. (Note that
     # --print-xml skips this check, so it cannot catch the omission.)
-    --boot cdrom,hd
+    --boot "cdrom,hd"
     --network "network=$NETWORK,model=virtio"
     --graphics spice
     --video qxl
