@@ -315,10 +315,10 @@ steps finish. Hermetic regressions: `test_os_cache_recovery.sh` and
 ## Planned features (from CLAUDE.md "What is planned")
 
 - 🟠 **Windows Server 2022 VM** — Active Directory lab (AD Sysadmin Lab project)
-- 🟡 **Kali Linux VM** — `scripts/create-kali-vm.sh` builds the guest; the install
-  itself is interactive, so it is done when the installer has been clicked through.
-  The guest must share a libvirt network with the Windows guest it is meant to reach;
-  the script refuses to guess when the existing guests are split across networks.
+- ✅ **Kali Linux VM** — built by `scripts/create-kali-vm.sh` and installed on
+  2026-09-30. Sits on the `default` network with the Windows guest, so the two are
+  separate hosts on one segment: `192.168.122.61` (kali) and `192.168.122.107`
+  (win11). Installer media ejected; the persistent config boots `vda` at order 1.
 - 🟡 **virtiofs fully working in Windows 11** (VirtioFsSvc setup)
 - 🟡 **`gh auth login` automation**
 - 🟠 **Full idempotency audit** of `setup.sh` / `packages.sh` / post-reboot scripts (overlaps items 4 & 7)

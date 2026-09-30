@@ -349,7 +349,7 @@ Host hardware: **Ryzen 5 5600H** (6c/12t), **38 GB RAM**, **1.8 TB NVMe**. All t
 |---|---|---|---|---|
 | Windows 11 Pro | 4 | 8 GB | 80 GB qcow2 | Installed |
 | Windows Server 2022 | 2 | 4 GB | 60 GB | Planned |
-| Kali Linux | 2 | 4 GB | 40 GB | Planned |
+| Kali Linux | 2 | 4 GB | 40 GB | Installed |
 
 **Windows 11 specifics:**
 - Requires TPM 2.0 + Secure Boot (OVMF secboot firmware)
