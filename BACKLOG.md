@@ -323,23 +323,34 @@ steps finish. Hermetic regressions: `test_os_cache_recovery.sh` and
 - 🟡 **`gh auth login` automation**
 - 🟠 **Full idempotency audit** of `setup.sh` / `packages.sh` / post-reboot scripts (overlaps items 4 & 7)
 
-### 🟡 13. Claude Desktop — wait for a native Fedora package
-Anthropic shipped an official Claude Desktop for Linux on 2026-06-30 (beta:
-Chat, Cowork, Code). It is **.deb only**, via `https://downloads.claude.ai/claude-desktop/apt/stable`,
-officially Ubuntu 22.04+ / Debian 12+. There is no RPM and Fedora is not
-supported; Anthropic says more distributions are planned, with no date.
+### ✅ 13. Claude Desktop — installed user-local from the .deb (2026-10-01)
+Anthropic still ships this as a .deb and nothing else: `apt/stable` exists,
+every RPM path under `downloads.claude.ai/claude-desktop` returns 404. Waiting
+for an RPM turned out to be the wrong conclusion, and this entry used to say so.
+A .deb is an `ar` archive holding a tar, so `scripts/setup-claude-desktop.sh`
+unpacks it into `~/.local/opt` exactly the way `setup-chatgpt.sh` unpacks an RPM
+— the user-local pattern that replaced the layered install removes the need for
+a native package altogether.
 
-Installing it into the Ubuntu distrobox `damianu` and exporting it with
-`distrobox-export --app` was investigated and **rejected by Damian on
-2026-08-14**: GUI applications he uses daily must live in the Fedora layer, not
-in a container. The container stays a development environment, not an app
-delivery mechanism. Do not re-propose this route — see the rule in `CLAUDE.md`.
+Nothing is layered onto the ostree deployment, and nothing runs in a container:
+the distrobox route stays rejected (2026-08-14), because a GUI application used
+daily belongs in the Fedora layer.
 
-**Do:** periodically re-check for an RPM or an official Fedora repo. When one
-exists, add `scripts/setup-claude-desktop.sh` modelled on `setup-chatgpt.sh`
-(name-tracked rpm-ostree layer, `skip_if_unavailable` on the repo), route it to
-a free workspace, and cover it in `verify.sh`. Until then Claude stays as the
-`claude` CLI in toolbox `damianf` plus a Firefox tab.
+Checked rather than assumed: all ten shared libraries the package declares are
+present in the base image, and the kernel allows unprivileged user namespaces
+(`user.max_user_namespaces` is non-zero, no AppArmor restriction), so Electron
+can use its namespace sandbox even though the unpacked `chrome-sandbox` does not
+carry the setuid bit `dpkg` would have given it. No `--no-sandbox`.
+
+Integrity is a three-link chain, each fetched over TLS from the vendor: Release
+states the checksum of Packages, Packages states the checksum of the .deb, and
+the .deb is verified against it before anything is unpacked.
+
+**Follow-ups, once it is confirmed on screen:** a sway `assign` rule for the
+workspace, and `verify.sh` coverage. The `assign` rule needs the Wayland
+`app_id` read from a running window, not guessed — the package declares
+`StartupWMClass=com.anthropic.Claude`, which is strong evidence but not the
+measurement.
 
 ### 🟠 14. The update module still has two blind spots after the 2026-08-18 fix — ✅ DONE (2026-09-10)
 `flatpak_count` and the OS branch now say "could not check" instead of inventing
