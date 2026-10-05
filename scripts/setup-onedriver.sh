@@ -45,6 +45,7 @@ mkdir -p "$HOME/.config/systemd/user" "$HOME/.local/share/applications" \
 ln -sfn "$DOTFILES/systemd/user/onedriver@.service" "$HOME/.config/systemd/user/onedriver@.service"
 ln -sfn "$DOTFILES/applications/onedriver-launcher.desktop" "$HOME/.local/share/applications/onedriver-launcher.desktop"
 ln -sfn "$ROOT/current/onedriver.svg" "$HOME/.local/share/icons/hicolor/scalable/apps/onedriver.svg"
+ln -sf "$DOTFILES/scripts/onedrive-waybar.py" "$HOME/.local/bin/onedrive-waybar"
 mkdir -p "$HOME/OneDrive"
 systemctl --user daemon-reload
 # A successful replacement retires only repo-managed old launchers/manifests.

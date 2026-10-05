@@ -60,6 +60,7 @@ mkdir -p ~/.local/bin
 ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.local/bin/deepseek
 ln -sf "$DOTFILES/scripts/deepseek-wrapper.sh"                 ~/.local/bin/deepseek-tui
 ln -sf "$DOTFILES/scripts/adguard-waybar.sh"                   ~/.local/bin/adguard-waybar
+ln -sf "$DOTFILES/scripts/onedrive-waybar.py" "$HOME/.local/bin/onedrive-waybar"
 ln -sf "$DOTFILES/scripts/nordvpn-waybar.sh"                   ~/.local/bin/nordvpn-waybar
 ln -sf "$DOTFILES/scripts/nordvpn-whitelist-domain.sh"         ~/.local/bin/nordvpn-whitelist-domain
 ln -sf "$DOTFILES/scripts/updates-waybar.sh"                   ~/.local/bin/updates-waybar

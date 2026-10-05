@@ -28,6 +28,7 @@
         "custom/updates",
         "clock",
         "tray",
+        "custom/onedriver",
         "custom/adguard",
         "custom/nordvpn",
         "custom/power"
@@ -61,6 +62,14 @@
         "interval": 10,
         "tooltip": true,
         "on-click": "$HOME/.local/bin/adguard-waybar toggle"
+    },
+    "custom/onedriver": {
+        "format": "{text}",
+        "exec": "$HOME/.local/bin/onedrive-waybar",
+        "return-type": "json",
+        "interval": 30,
+        "tooltip": true,
+        "on-click": "$HOME/.local/bin/onedrive-waybar open"
     },
     "custom/nordvpn": {
         "exec": "$HOME/.local/bin/nordvpn-waybar",

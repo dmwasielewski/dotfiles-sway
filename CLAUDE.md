@@ -90,6 +90,7 @@ dotfiles-sway/
     ├── setup-ubuntu-dev-container.sh  ← Distrobox damianu: Ubuntu 26.04 dev/AI CLI parity — writes state
     ├── configure-shellgpt.sh          ← Non-interactive ShellGPT config from private env/API files
     ├── adguard-waybar.sh              ← AdGuard Waybar status helper (AG + click toggle)
+    ├── onedrive-waybar.py               # OneDrive mounted/account availability and launcher focus
     ├── nordvpn-waybar.sh              ← NordVPN Waybar status helper (VPN + click toggle)
     ├── nordvpn-whitelist-domain.sh    ← NordVPN: rofi prompt → allowlist a domain (right-click VPN icon)
     ├── lib-updates.sh                 ← Shared update-detection logic (Waybar indicator + menu)
@@ -1102,6 +1103,33 @@ Restart the drive from the GUI after an update to load the new version.
 Keep the package helper on the host's Fedora major release when migrating the OS.
 `verify.sh` checks binaries, links, service, FUSE and update metadata. An unmounted
 `~/OneDrive` is **pending** user login/mounting, not an installation failure.
+
+### OneDrive icon beside the clock
+
+The Waybar cloud icon, in the tray/app group beside AdGuard and NordVPN, checks **~/OneDrive** every 30 seconds. Green means the
+folder is mounted and an authenticated Microsoft Graph root-metadata request
+succeeded; red means Microsoft cannot be reached; amber means a login, permission,
+service or status-check problem; grey means the folder is not mounted. Hover for
+the reason and click to open/focus **Onedriver**. Start drive on login is still
+configured in Onedriver, not through the indicator.
+
+This is an availability check, **not confirmation that a file upload finished**.
+It requests only metadata, never downloads the whole drive, changes cloud files,
+or refreshes tokens. Tokens remain private and are never printed. Offline files
+must already be cached; a cloud-only file requires a working connection. Cache
+is not a permanent offline backup. Red does not prove the entire Internet is down:
+DNS, a VPN, Microsoft or the local connection can also prevent access.
+
+`scripts/onedrive-waybar.py` uses host Python 3 standard libraries and the existing
+onedriver token. Both `setup.sh` and `scripts/setup-onedriver.sh` install the helper
+symlink; `scripts/verify.sh` checks it. Default XDG paths and `cacheDir` in
+`~/.config/onedriver/config.yml` are supported. The indicator monitors ~/OneDrive;
+other mount folders require adapting the helper. After changing Waybar config,
+reload its single process with `pkill -SIGUSR2 -x waybar`.
+
+Troubleshooting: open Onedriver, check the mount switch, then verify login and
+network access. User-service logs: `journalctl --user -u 'onedriver@*' -n 50`.
+Do not publish `auth_tokens.json` or its contents.
 
 ### Migration from OneDriveGUI
 

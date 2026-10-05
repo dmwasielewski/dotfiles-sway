@@ -1325,3 +1325,12 @@ MIME default, `xdg-mime query default inode/directory` returned
 `dev.zed.Zed.desktop`, so onedriver's browse action opened Zed. Set the default
 explicitly to `thunar.desktop` in setup and verify it. Keep the editor's directory
 support for opening projects; it does not need to be removed.
+
+## OneDrive availability is not upload confirmation
+
+The `custom/onedriver` Waybar indicator checks the ~/OneDrive FUSE mount and an
+authenticated Microsoft Graph metadata request. Green must not be described as
+all files uploaded or permanent offline availability. Do not refresh account
+tokens in the indicator, print token contents or put bearer tokens into command
+arguments. Validate both error classifications and actual on-screen rendering.
+Keep the module in the application/tray group beside AdGuard and NordVPN.
