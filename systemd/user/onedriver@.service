@@ -1,0 +1,12 @@
+[Unit]
+Description=OneDrive files on demand at %f
+
+[Service]
+ExecStart=%h/.local/bin/onedriver %f
+ExecStopPost=/usr/bin/fusermount3 -uz %f
+Restart=on-abnormal
+RestartSec=3
+RestartForceExitStatus=2
+
+[Install]
+WantedBy=default.target

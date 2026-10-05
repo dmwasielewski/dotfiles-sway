@@ -1,9 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=OneDriveGUI
-Comment=Synchronize Microsoft OneDrive files
-Exec=onedrive-gui
-Icon=folder-cloud
-Terminal=false
-Categories=Network;FileTransfer;
-Keywords=OneDrive;Microsoft;cloud;sync;

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Onedriver
+Comment=Open Microsoft OneDrive files on demand
+Type=Application
+Exec=onedriver-launcher
+Icon=onedriver
+Terminal=false
+Categories=Network;FileTransfer;
+Keywords=OneDrive;Microsoft;cloud;

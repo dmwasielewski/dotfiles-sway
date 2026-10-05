@@ -1308,11 +1308,12 @@ duration of the run.
 `virsh send-key` types into the console and `virsh screenshot` reads it back.
 That loop is what produced the table above.
 
-## AppImage library environment must not leak into the native OneDrive client
+## Verify the OneDrive access model before selecting a client
 
-OneDriveGUI bundles its own libraries. A native Fedora `onedrive` launched as a
-child must use host libraries plus its matching D runtime, rather than the GUI's
-`LD_LIBRARY_PATH`/`LD_PRELOAD`. The repo `onedrive-wrapper.sh` explicitly resets
-those variables and execs the native binary, so GUI Stop/termination targets the
-actual sync process. A container CLI wrapper would complicate child termination;
-the package container is therefore used only at install/update time.
+The first OneDrive install used abraunegg's client + OneDriveGUI. That provides
+local bidirectional synchronization but cannot download file content only when
+opened. The user wanted the Windows-style on-demand workflow on a laptop.
+The permanent setup uses onedriver instead, and retires the full-sync autostart.
+Check this requirement before installation. Exclusion lists and selective sync
+are not an equivalent user experience. Also inspect the actual displayed window
+before giving tab-by-tab UI instructions: Sway tiling can clip the settings tabs.

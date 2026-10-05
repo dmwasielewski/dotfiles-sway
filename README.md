@@ -1112,54 +1112,66 @@ evil-winrm -i <target> -u <user> -p <password>
 enum4linux-ng <target>
 ```
 
-## OneDrive on Fedora Sway Atomic
+## OneDrive files on demand (onedriver)
 
-Run after `packages.sh` and the first reboot (Distrobox must exist):
+OneDrive is provided by **onedriver**, a native network filesystem: cloud files
+are listed in a local folder and their contents are downloaded when an app reads
+them. This matches the laptop requirement to avoid downloading the whole drive.
 
 ```bash
-bash ~/dotfiles-sway/scripts/setup-onedrive.sh
+bash ~/dotfiles-sway/scripts/setup-onedriver.sh
 ```
 
-The unattended orchestrator runs this in phase P2. Manual bootstrap users run
-this command once after reboot. It installs abraunegg's OneDrive Client and
-OneDriveGUI **user-local on the Fedora host**, without host sudo or another
-reboot. A rootless Fedora Distrobox named `onedrive` supplies the official Fedora
-RPM and its D runtime libraries; it is a package extraction/update environment,
-not the runtime for daily synchronization and not another dev container.
-This package helper is separate from `damianf`/`damianu` dev-tool parity.
-The native client and GUI live in `~/.local/opt/onedrive-client` and
-`~/.local/opt/onedrive-gui`; wrappers and the desktop entry are repo symlinks.
-The GUI's official AppImage is extracted to avoid requiring FUSE.
-Client version and host library compatibility are checked before activation.
+The unattended orchestrator runs this in phase P2 after Distrobox is available.
+Manual bootstrap users run it after `packages.sh` and the first reboot.
+`setup-onedrive.sh` remains a compatibility alias to the new installer.
+Both `onedriver` and `onedriver-launcher` run **on the Fedora host**, installed
+user-local under `~/.local/opt/onedriver` and linked into `~/.local/bin`.
+A rootless Distrobox named `onedrive` is used only to retrieve the RPM from
+upstream's `jstaf/onedriver` COPR with package signature checking enabled.
+No third-party repository or RPM is added to the Atomic host; no extra reboot or
+host sudo is needed. Host FUSE and binary library compatibility are checked.
+The helper is separate from `damianf`/`damianu` dev-container parity.
 
 ### First login (manual post-install step)
 
-1. Press **Super+D**, search **OneDriveGUI**, and create a profile in its wizard.
-2. Sign in to Microsoft in your browser; choose **~/OneDrive** as the local sync
-   folder. Select which folders to sync before starting if the cloud is large.
-3. Enable **Auto-sync on GUI startup** in profile settings and press **Play**.
-4. Optional: enable **Start OneDriveGUI minimized** in GUI settings for the tray.
+1. **Super+D → Onedriver**, click **+**, and select the empty **~/OneDrive** folder.
+2. Sign in with the existing Microsoft account in the login window.
+3. The drive appears at **~/OneDrive**. Use it from Thunar, yazi or other apps.
+4. Use the gear beside the drive → **Start drive on login** for automatic mounting.
 
-Sway starts the GUI on login only after `~/.config/onedrive-gui/profiles` exists.
-The launcher lock prevents duplicate GUI processes. Sway handles autostart;
-do not enable an additional standalone `onedrive.service` for the same profile.
-The GUI must keep running to manage synchronization; closing/terminating it can
-stop sync. This is local bidirectional sync, not Windows Files On-Demand.
+The repo installs a user-local `onedriver@.service` template. The GUI enables its
+instance for the selected folder; a fresh install does not enable a mount or
+open an authentication prompt before the user chooses the account.
+Account tokens and cache stay private under `~/.cache/onedriver`; optional config
+is `~/.config/onedriver/config.yml`. They are never committed to this repo.
+Fresh systems recreate the application and service, then need Microsoft login
+and the mount/autostart choice once. Closing the launcher does not stop an active
+systemd mount. The GUI switch controls whether the drive is mounted.
 
-**Private data:** Microsoft tokens, account profiles, sync databases, GUI settings
-and `~/OneDrive` stay outside this repository. They are not symlinked into git.
-A fresh installation recreates the apps automatically, then requires Microsoft
-login and profile/folder selection again. Installation never starts cloud sync.
+Downloaded files occupy cache space. Already cached files can be read offline;
+the filesystem is read-only offline. Programs generating previews/thumbnails can
+also read files and trigger downloads. Avoid indexing or thumbnailing the entire
+mount if conserving space is the goal. Upstream also notes limitations with
+multi-gigabyte files because data is loaded into memory; this is not full parity
+with the official Windows client.
 
-**Updates:** both apps register manifests for the existing Waybar **User-local
-apps** updater. The client version probe queries the Fedora package container;
-the GUI probe reads the upstream latest release redirect. Re-running
-`setup-onedrive.sh` updates the client RPM and D runtime and installs the latest
-GUI. Stop sync/exit OneDriveGUI before updating, then reopen it. Keep the package
-container on the same Fedora release as the host; recreate/migrate it when
-upgrading Fedora major versions. Setup checks the new client on the host before
-switching releases. `verify.sh` checks the payload, symlinks, update manifests
-and package container; missing Microsoft login is **pending**, not failure.
+### Updates and verification
 
-Upstream: [OneDrive Client](https://github.com/abraunegg/onedrive),
-[OneDriveGUI](https://github.com/bpozdena/OneDriveGUI).
+The existing Waybar **User-local apps** updater discovers the onedriver manifest.
+Its version probe queries COPR through the package container; the installer
+updates that package and validates the native binaries before switching releases.
+Restart the drive from the GUI after an update to load the new version.
+Keep the package helper on the host's Fedora major release when migrating the OS.
+`verify.sh` checks binaries, links, service, FUSE and update metadata. An unmounted
+`~/OneDrive` is **pending** user login/mounting, not an installation failure.
+
+### Migration from OneDriveGUI
+
+The installer retires the old repo-managed OneDriveGUI launchers, update manifests
+and GUI autostart entry. Sway no longer starts that full-sync GUI. Old application
+payloads, account configuration/tokens and the previous local sync directory
+(e.g. `~/OneDrive_damianw@hotmail.com`) are preserved. Stop the old synchronization
+before migration and use a separate empty folder for the new mount.
+
+Upstream documentation: [onedriver](https://github.com/jstaf/onedriver).

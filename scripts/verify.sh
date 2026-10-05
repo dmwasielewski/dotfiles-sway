@@ -292,39 +292,38 @@ else
     fail "Thunderbird  MISSING" "flatpak install -y --user flathub org.mozilla.thunderbird_esr"
 fi
 
-# OneDrive is installed after distrobox becomes available (post-reboot).
+# Native on-demand filesystem; authentication is a separate user step.
 if profile_includes "$PROFILE" containers; then
-    section "OneDrive client and GUI"
-    ONEDRIVE_FIX="bash ~/dotfiles-sway/scripts/setup-onedrive.sh"
-    if host "$HOME/.local/bin/onedrive" --version >/dev/null; then
-        pass "OneDrive native client runs on host"
-    else
-        fail "OneDrive client missing or cannot load host libraries" "$ONEDRIVE_FIX"
-    fi
-    for item in "$HOME/.local/bin/onedrive" "$HOME/.local/bin/onedrive-gui" \
-                "$HOME/.local/share/applications/OneDriveGUI.desktop"; do
-        if symlink_ok "$item"; then pass "OneDrive symlink: $item"
-        else fail "OneDrive symlink missing: $item" "$ONEDRIVE_FIX"; fi
+    section "OneDrive files on demand (onedriver)"
+    ONEDRIVER_FIX="bash ~/dotfiles-sway/scripts/setup-onedriver.sh"
+    for binary in onedriver onedriver-launcher; do
+        if host "$HOME/.local/bin/$binary" --version >/dev/null; then
+            pass "$binary loads host libraries"
+        else fail "$binary missing or cannot load" "$ONEDRIVER_FIX"; fi
     done
-    if [[ -x "$HOME/.local/opt/onedrive-gui/current/AppRun" ]]; then
-        pass "OneDriveGUI payload installed"
-    else
-        fail "OneDriveGUI payload missing" "$ONEDRIVE_FIX"
-    fi
-    for manifest in onedrive-client onedrive-gui; do
-        if [[ -s "$HOME/.local/share/dotfiles-updates/$manifest" ]]; then
-            pass "OneDrive update manifest: $manifest"
-        else fail "OneDrive update manifest missing: $manifest" "$ONEDRIVE_FIX"; fi
+    for item in "$HOME/.local/bin/onedriver" "$HOME/.local/bin/onedriver-launcher" \
+                "$HOME/.local/share/applications/onedriver-launcher.desktop" \
+                "$HOME/.config/systemd/user/onedriver@.service" \
+                "$HOME/.local/share/icons/hicolor/scalable/apps/onedriver.svg"; do
+        if symlink_ok "$item"; then pass "Onedriver symlink: $item"
+        else fail "Onedriver symlink missing: $item" "$ONEDRIVER_FIX"; fi
     done
+    if [[ -s "$HOME/.local/share/dotfiles-updates/onedriver" ]]; then
+        pass "Onedriver update manifest"
+    else fail "Onedriver update manifest missing" "$ONEDRIVER_FIX"; fi
     if host podman container exists onedrive; then
-        pass "OneDrive Fedora package container"
+        pass "Onedriver package extraction container"
+    else fail "Onedriver package container missing (updates)" "$ONEDRIVER_FIX"; fi
+    if host test -r /dev/fuse && host test -w /dev/fuse && host which fusermount3 >/dev/null; then
+        pass "Host FUSE available"
+    else fail "Host FUSE unavailable" "Check /dev/fuse and fusermount3 on the host"; fi
+    if [[ -d "$HOME/OneDrive" ]]; then
+        pass "Default on-demand mount directory exists"
+    else fail "~/OneDrive mount directory missing" "$ONEDRIVER_FIX"; fi
+    if host mountpoint -q "$HOME/OneDrive"; then
+        pass "~/OneDrive is mounted (content transfers not tested)"
     else
-        fail "OneDrive package container missing (needed for updates)" "$ONEDRIVE_FIX"
-    fi
-    if [[ -s "$HOME/.config/onedrive-gui/profiles" ]]; then
-        pass "OneDriveGUI profiles created (sync/login not checked)"
-    else
-        pending "OneDrive Microsoft login and profile setup" "Super+D → OneDriveGUI"
+        pending "Onedriver Microsoft login and mount" "Super+D → Onedriver → + → ~/OneDrive"
     fi
 fi
 

@@ -334,5 +334,4 @@ assign [app_id="(?i)^chatgpt$"] workspace number 5
 
 exec_always systemctl --user import-environment LC_TIME
 
-# OneDriveGUI manages sync profiles; no login wizard before a profile exists.
-exec ~/.local/bin/onedrive-gui --autostart
+# Onedriver mounts are started by enabled systemd user instances, not a GUI autostart.
