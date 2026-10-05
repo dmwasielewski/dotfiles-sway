@@ -327,6 +327,13 @@ if profile_includes "$PROFILE" containers; then
     fi
 fi
 
+section "Default folder opener"
+if [[ "$(host xdg-mime query default inode/directory)" == thunar.desktop ]]; then
+    pass "Thunar opens folders from desktop apps"
+else
+    fail "Default folder opener is not Thunar" "xdg-mime default thunar.desktop inode/directory"
+fi
+
 # ── 4. Fonts ──────────────────────────────────────────────────────────────
 section "4. Fonts"
 

@@ -95,6 +95,11 @@ run_step_warn "YAZI_INSTALLED" "Setting up yazi" bash "$DOTFILES/scripts/setup-y
 # stays the terminal editor. The asset is ~140 MB, so this can take a while.
 run_step_warn "ZED_INSTALLED" "Setting up Zed" bash "$DOTFILES/scripts/setup-zed.sh"
 
+# Zed advertises inode/directory to open project folders. Explicitly select the
+# GUI file manager for apps using xdg-open/GIO (including onedriver).
+run_step "DIRECTORY_HANDLER" "Setting Thunar as the default folder opener" \
+    xdg-mime default thunar.desktop inode/directory
+
 # Use versioned git hooks from this repo, including the gitleaks pre-push check.
 if git -C "$DOTFILES" rev-parse --is-inside-work-tree &>/dev/null; then
     git -C "$DOTFILES" config core.hooksPath .githooks

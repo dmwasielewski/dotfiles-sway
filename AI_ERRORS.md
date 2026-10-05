@@ -1317,3 +1317,11 @@ The permanent setup uses onedriver instead, and retires the full-sync autostart.
 Check this requirement before installation. Exclusion lists and selective sync
 are not an equivalent user experience. Also inspect the actual displayed window
 before giving tab-by-tab UI instructions: Sway tiling can clip the settings tabs.
+
+## Registering a code editor can change the implicit folder opener
+
+Zed's user-local desktop entry advertises `inode/directory`. With no explicit
+MIME default, `xdg-mime query default inode/directory` returned
+`dev.zed.Zed.desktop`, so onedriver's browse action opened Zed. Set the default
+explicitly to `thunar.desktop` in setup and verify it. Keep the editor's directory
+support for opening projects; it does not need to be removed.

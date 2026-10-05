@@ -1175,3 +1175,11 @@ payloads, account configuration/tokens and the previous local sync directory
 before migration and use a separate empty folder for the new mount.
 
 Upstream documentation: [onedriver](https://github.com/jstaf/onedriver).
+
+### Default folder opener
+
+`setup.sh` explicitly sets `thunar.desktop` as the `inode/directory` default after
+installing Zed. Onedriver and other GUI apps using GIO/xdg-open then open folders
+in Thunar. Without an explicit default, Zed's desktop entry (which advertises
+`inode/directory` for project folders) can be chosen instead. Yazi remains the
+terminal file manager via its existing shortcut. `verify.sh` checks this handler.
