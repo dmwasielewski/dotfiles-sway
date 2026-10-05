@@ -27,9 +27,9 @@
         "battery",
         "custom/updates",
         "clock",
+        "custom/adguard",
         "tray",
         "custom/onedriver",
-        "custom/adguard",
         "custom/nordvpn",
         "custom/power"
     ],

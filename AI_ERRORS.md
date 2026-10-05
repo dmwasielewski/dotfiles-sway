@@ -1333,4 +1333,5 @@ authenticated Microsoft Graph metadata request. Green must not be described as
 all files uploaded or permanent offline availability. Do not refresh account
 tokens in the indicator, print token contents or put bearer tokens into command
 arguments. Validate both error classifications and actual on-screen rendering.
-Keep the module in the application/tray group beside AdGuard and NordVPN.
+Keep the module immediately between the app tray (including ChatGPT) and NordVPN;
+AdGuard precedes that group. Individual tray icons are ordered by the tray itself.
