@@ -1107,6 +1107,9 @@ Keep the package helper on the host's Fedora major release when migrating the OS
 
 ### OneDrive icon beside the clock
 
+Waybar uses `spacing: 0` across the whole bar: no vertical gaps between modules.
+Keep the existing internal icon padding for readability.
+
 The Waybar cloud icon, in the app group beside the tray (including ChatGPT), AdGuard and NordVPN, in one horizontal `group/apps` with the shared slate background (#1e2230) and no internal spacing or separators, checks **~/OneDrive** every 30 seconds. Green means the
 folder is mounted and an authenticated Microsoft Graph root-metadata request
 succeeded; red means Microsoft cannot be reached; amber means a login, permission,

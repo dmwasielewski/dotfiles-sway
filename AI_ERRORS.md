@@ -1337,4 +1337,5 @@ Keep the module beside the app tray (including ChatGPT), followed by AdGuard and
 NordVPN. Keep them inside horizontal `group/apps` with the shared #1e2230
 background and no internal gaps, borders or shadows. Transparent OneDrive
 background exposes the darker bar; global module spacing looks like separators.
+Use `spacing: 0` across the whole bar; retain internal padding for readable icons.
 Do not move AdGuard out of this app group. Individual tray icons are ordered by the tray itself.
