@@ -45,6 +45,7 @@ returned to their initial OFF/disconnected state; Tailscale remained enabled.
 | Peer MagicDNS name via system resolver | PASS | Timeout | Timeout | Timeout | PASS |
 | TCP connection to Proxmox panel port | PASS | PASS | Timeout | Timeout | PASS |
 | HTTPS certificate verification for Proxmox by LAN IP | Certificate error | Certificate error | Connection timeout | Connection timeout | Certificate error |
+| OneDrive account metadata availability (supplemental run) | PASS | PASS | PASS | PASS | PASS |
 | Authenticated Proxmox UI / guest inventory | NOT TESTED | NOT TESTED | NOT TESTED | NOT TESTED | NOT TESTED |
 | Each guest application / NAS file share | NOT TESTED | NOT TESTED | NOT TESTED | NOT TESTED | NOT TESTED |
 | Remote home-subnet access through Tailscale | NOT CONFIGURED | NOT CONFIGURED | NOT CONFIGURED | NOT CONFIGURED | NOT CONFIGURED |
@@ -79,6 +80,24 @@ firewall rules, policy routing or another interaction. AdGuard correlates with
 the MagicDNS timeout, but the exact resolver interaction is not yet identified.
 No firewall protection was disabled, no broad allowlist was installed, and no
 configuration remedy has been verified or added to the installer.
+
+## OneDrive follow-up
+
+The user observed a lost OneDrive connection during the earlier network tests.
+After restoring the baseline, the drive remained mounted and the existing
+Waybar helper reported connected. A separate continuous A/B/C/D/A2 run then
+checked the helper twice in each case, with 32 seconds between checks. Both
+checks reported connected in every case, including NordVPN alone and both
+programs together. Toggle states were checked before and after each case.
+
+The helper makes an authenticated read-only Microsoft Graph drive-root metadata
+request using the existing account token. No token was printed or refreshed,
+and no cloud file was created or changed. These results establish account
+metadata reachability at the times tested, not completed uploads, full file
+synchronization or the rendered tray icon state. The reported outage was not
+reproduced; a brief interruption during network switching remains a hypothesis,
+not an established cause. Do not describe OneDrive as consistently blocked by
+NordVPN on the basis of the earlier observation.
 
 ## Remaining work and required access
 
