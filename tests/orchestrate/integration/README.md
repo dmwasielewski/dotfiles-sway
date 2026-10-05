@@ -13,7 +13,7 @@ sudo credential, harvests secrets to `~/.local/state/dotfiles-secrets`, and runs
 
 - **P0** writes the scoped `/etc/sudoers.d/10-dotfiles-provisioning`, records `REPO_COMMIT`.
 - **P1** runs `setup.sh` + `packages.sh`, enables `dotfiles-phase2.service` (linger), reboots.
-- **P2** (the user service, after reboot) runs hardware/KVM/container setups, applies the
+- **P2** (the user service, after reboot) runs hardware/Tailscale/KVM/container setups, applies the
   vault manifest, and `verify.sh --profile post-reboot`.
 - **P3** removes the sudoers drop-in, disables the service, wipes the staging, records `INSTALL_COMPLETE`.
 

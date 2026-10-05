@@ -83,6 +83,7 @@ dotfiles-sway/
     ├── setup-neovim-config.sh         ← Neovim Chris Titus Tech config + plugin sync (binary from the package manager)
     ├── setup-zed.sh                   ← Zed GUI editor: official upstream binary, user-local in ~/.local/opt (self-updates)
     ├── setup-nordvpn.sh               ← NordVPN CLI install + nordvpnd enable/start + group setup — writes state
+    ├── setup-tailscale.sh              # Tailscale repository, post-reboot daemon/operator/tray setup
     ├── setup-chatgpt.sh               ← ChatGPT desktop app (incl. Codex): official RPM unpacked user-local into ~/.local/opt
     ├── setup-adguard.sh               ← AdGuard for Linux CLI install — writes state
     ├── setup-whispering-open.sh       ← Whispering Open latest GitHub release download — non-blocking
@@ -169,6 +170,7 @@ systemctl reboot
 ### Step 3 — Post-reboot scripts (run in this order)
 
 ```bash
+bash ~/dotfiles-sway/scripts/setup-tailscale.sh      # daemon + tray after reboot
 bash ~/dotfiles-sway/scripts/check-hardware.sh       # verify GPU/VA-API/KVM
 bash ~/dotfiles-sway/scripts/setup-kvm.sh            # enable libvirtd, add user to groups
 # Log out and back in for group changes to take effect
@@ -196,6 +198,7 @@ Managed by `packages.sh`. Install with `rpm-ostree install`, requires reboot.
 
 | Package | Purpose |
 |---|---|
+| `tailscale` | Official host VPN daemon and Linux tray |
 | `mako` | Notification daemon |
 | `libva-utils` | VA-API hardware acceleration tools |
 | `clipman` | Clipboard history manager |
@@ -1037,6 +1040,7 @@ These require human interaction — document them so nothing is forgotten after 
 | GitHub CLI login | `damianf` → `gh auth login` |
 | MCP integrations (Gmail, Calendar, Drive, Slack) | `claude.ai` → Settings → Integrations |
 | Bluetooth pairing | `bluetoothctl` → `power on` → `scan on` → `pair <MAC>` |
+| Tailscale login | Tray menu → Log in, or `tailscale up` after post-reboot setup |
 | NordVPN login | `nordvpn login` or, if browser callback fails, `nordvpn login --token <token>` |
 | AdGuard first-time setup | `adguard-cli activate` → `adguard-cli configure` → `adguard-cli start` |
 | Thunderbird account setup | In-app after Flatpak install |
@@ -1160,3 +1164,40 @@ installing Zed. Onedriver and other GUI apps using GIO/xdg-open then open folder
 in Thunar. Without an explicit default, Zed's desktop entry (which advertises
 `inode/directory` for project folders) can be chosen instead. Yazi remains the
 terminal file manager via its existing shortcut. `verify.sh` checks this handler.
+
+
+## Tailscale — host daemon and Waybar tray
+
+`packages.sh` runs `scripts/setup-tailscale.sh --repo-only` before layering
+`tailscale` from the official stable Fedora repository with rpm-ostree. Package
+and repository signature checks stay enabled. Updates use the existing Fedora
+OS updater; do not use `tailscale update` on the Atomic host.
+
+After reboot, unattended `orchestrate.sh` phase P2 runs
+`scripts/setup-tailscale.sh`: enable/start `tailscaled`, set the current user as
+operator, symlink `systemd/tailscale-systray.service` into the user manager and
+enable it for `graphical-session.target`. The official Linux tray is beta and
+uses the existing Waybar `tray` inside `group/apps`, beside the clock, with a
+transparent dark icon. It starts/stops with the Sway graphical session and
+systemd prevents duplicate instances. No extra tray app or Flatpak is needed.
+All installer steps use the shared timestamped log and install-state tracking.
+
+Manual bootstrap users must run this after the first reboot:
+
+```bash
+sudo -v
+bash ~/dotfiles-sway/scripts/setup-tailscale.sh
+```
+
+**Manual post-install login:** click the Tailscale tray → Log in, or run
+`tailscale up` and follow the browser link. Account authentication is deliberately
+not part of unattended setup. Never commit auth keys or `/var/lib/tailscale`.
+The menu manages connection and exit-node selection. Do not automatically select
+an exit node, enable subnet routing, or change NordVPN/AdGuard settings.
+
+`verify.sh` checks the host package, daemon, operator and enabled session service;
+when a graphical session is active it also checks the running tray. Account
+login/disconnection is pending user action, not a failed installation.
+Diagnostics: `systemctl --user status tailscale-systray` and
+`journalctl --user -u tailscale-systray -n 50`. The tray order is chosen by Waybar.
+Official reference: https://tailscale.com/docs/features/client/linux-systray

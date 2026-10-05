@@ -47,6 +47,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - AI terminal tools in `damianf` toolbox and `damianu` distrobox: Claude Code, OpenAI Codex CLI, DeepSeek TUI, ShellGPT (`sgpt`)
 - Dev language toolchains in both dev containers: Go, Rust (`rustup` + `rust-analyzer`, into the shared `~/.cargo`), Python tooling (`pipx` + `uv`)
 - DevOps stack in both dev containers: `podman`/`docker` CLI (per-OS) plus a home-local, OS-agnostic set — `kubectl`, `helm`, `kind`, `k9s`, `opentofu` (`tofu`), `ansible`, `yq` — installed by `scripts/install-devops-tools.sh` with runtime-discovered versions
+- Tailscale host daemon with official Waybar tray and session autostart
 - NordVPN CLI with Waybar status/toggle helper (click to connect/disconnect)
 - AdGuard for Linux CLI with Waybar toggle helper (click to enable/disable)
 - LibreOffice — open source office suite (Writer, Calc, Impress)
@@ -96,8 +97,10 @@ Bootstrap will:
 systemctl reboot
 ```
 
-5. After reboot verify hardware:
+5. After reboot configure Tailscale and verify hardware:
 ```bash
+sudo -v
+bash ~/dotfiles-sway/scripts/setup-tailscale.sh      # daemon + tray after reboot
 bash ~/dotfiles-sway/scripts/check-hardware.sh
 ```
 
@@ -398,7 +401,7 @@ Flathub deprecated the plain `org.mozilla.Thunderbird` ID in favour of
 ### Position & size
 - Position: **bottom**
 - Height: **25px**
-- Module spacing: 4px
+- Module spacing: 0px; app icons share the existing group background
 
 ### Colour theme
 Dark muted blue-slate palette — low contrast, easy on the eyes.
@@ -533,6 +536,7 @@ dotfiles-sway/
 │   ├── setup-kvm.sh                   # KVM/QEMU setup (libvirtd, groups, network) — writes state
 │   ├── setup-neovim-config.sh         # Neovim 0.12.1 + Chris Titus Tech config symlink
 │   ├── setup-nordvpn.sh               # NordVPN CLI install + nordvpnd enable/start + group setup — writes state
+│   ├── setup-tailscale.sh              # Tailscale repository, post-reboot daemon/operator/tray setup
 │   ├── setup-chatgpt.sh                # ChatGPT desktop app (incl. Codex): official RPM unpacked user-local into ~/.local/opt
 │   ├── setup-adguard.sh               # AdGuard for Linux CLI install — writes state
 │   ├── setup-whispering-open.sh       # Whispering Open GitHub release download — non-blocking
@@ -1235,3 +1239,40 @@ installing Zed. Onedriver and other GUI apps using GIO/xdg-open then open folder
 in Thunar. Without an explicit default, Zed's desktop entry (which advertises
 `inode/directory` for project folders) can be chosen instead. Yazi remains the
 terminal file manager via its existing shortcut. `verify.sh` checks this handler.
+
+
+## Tailscale — host daemon and Waybar tray
+
+`packages.sh` runs `scripts/setup-tailscale.sh --repo-only` before layering
+`tailscale` from the official stable Fedora repository with rpm-ostree. Package
+and repository signature checks stay enabled. Updates use the existing Fedora
+OS updater; do not use `tailscale update` on the Atomic host.
+
+After reboot, unattended `orchestrate.sh` phase P2 runs
+`scripts/setup-tailscale.sh`: enable/start `tailscaled`, set the current user as
+operator, symlink `systemd/tailscale-systray.service` into the user manager and
+enable it for `graphical-session.target`. The official Linux tray is beta and
+uses the existing Waybar `tray` inside `group/apps`, beside the clock, with a
+transparent dark icon. It starts/stops with the Sway graphical session and
+systemd prevents duplicate instances. No extra tray app or Flatpak is needed.
+All installer steps use the shared timestamped log and install-state tracking.
+
+Manual bootstrap users must run this after the first reboot:
+
+```bash
+sudo -v
+bash ~/dotfiles-sway/scripts/setup-tailscale.sh
+```
+
+**Manual post-install login:** click the Tailscale tray → Log in, or run
+`tailscale up` and follow the browser link. Account authentication is deliberately
+not part of unattended setup. Never commit auth keys or `/var/lib/tailscale`.
+The menu manages connection and exit-node selection. Do not automatically select
+an exit node, enable subnet routing, or change NordVPN/AdGuard settings.
+
+`verify.sh` checks the host package, daemon, operator and enabled session service;
+when a graphical session is active it also checks the running tray. Account
+login/disconnection is pending user action, not a failed installation.
+Diagnostics: `systemctl --user status tailscale-systray` and
+`journalctl --user -u tailscale-systray -n 50`. The tray order is chosen by Waybar.
+Official reference: https://tailscale.com/docs/features/client/linux-systray

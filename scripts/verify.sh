@@ -567,6 +567,51 @@ else
     fail "Distrobox '$UBUNTU_DEV_CONTAINER'  NOT FOUND" "bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh"
 fi
 
+# Tailscale is configured after the package-layering reboot (P2).
+section "5c. Tailscale"
+TS_FIX="bash ~/dotfiles-sway/scripts/setup-tailscale.sh"
+if rpm_installed tailscale; then
+    pass "Tailscale host package"
+else
+    fail "Tailscale host package missing" "bash ~/dotfiles-sway/packages.sh; systemctl reboot"
+fi
+if host systemctl is-enabled --quiet tailscaled && host systemctl is-active --quiet tailscaled; then
+    pass "Tailscale daemon enabled and running"
+else
+    fail "Tailscale daemon not ready" "$TS_FIX"
+fi
+if symlink_ok "$HOME/.config/systemd/user/tailscale-systray.service" && host systemctl --user is-enabled --quiet tailscale-systray.service; then
+    pass "Tailscale tray autostart"
+else
+    fail "Tailscale tray autostart missing" "$TS_FIX"
+fi
+if host systemctl --user is-active --quiet graphical-session.target; then
+    if host systemctl --user is-active --quiet tailscale-systray.service; then
+        pass "Tailscale tray running in graphical session"
+    else
+        fail "Tailscale tray not running" "$TS_FIX"
+    fi
+fi
+if TS_PREFS="$(host tailscale debug prefs)"; then
+    if printf '%s' "$TS_PREFS" | python3 -c 'import json,os,sys; sys.exit(json.load(sys.stdin).get("OperatorUser") != os.environ["USER"])'; then
+        pass "Tailscale user operator"
+    else
+        fail "Tailscale user operator missing" "$TS_FIX"
+    fi
+else
+    fail "Cannot query Tailscale preferences" "$TS_FIX"
+fi
+if TS_STATUS="$(host tailscale status --json)"; then
+    TS_STATE="$(printf '%s' "$TS_STATUS" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("BackendState", "Unknown"))')"
+    if [[ "$TS_STATE" == Running ]]; then
+        pass "Tailscale connected"
+    else
+        pending "Tailscale account/connection ($TS_STATE)" "Use Tailscale tray menu or run: tailscale up"
+    fi
+else
+    fail "Cannot query Tailscale status" "$TS_FIX"
+fi
+
 # ── 5b. NordVPN ──────────────────────────────────────────────────────────
 section "5b. NordVPN"
 
@@ -960,6 +1005,7 @@ echo    "     • codex login  (OpenAI/ChatGPT account)"
 echo    "     • gh auth login  (GitHub CLI)"
 echo    "     • MCP: Gmail, Calendar, Drive, Slack — log in at claude.ai → Integrations"
 echo    "     • Bluetooth — pair via bluetoothctl"
+echo    "     • Tailscale — tray menu → Log in, or tailscale up"
 echo    "     • NordVPN — run nordvpn login, or use nordvpn login --token <token> if browser callback fails"
 echo    "       Daily use: nordvpn connect | nordvpn status | nordvpn disconnect"
 echo    "     • AdGuard for Linux — adguard-cli activate && adguard-cli configure && adguard-cli start"

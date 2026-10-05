@@ -1,0 +1,13 @@
+[Unit]
+Description=Tailscale system tray
+PartOf=graphical-session.target
+After=graphical-session.target
+ConditionPathExists=/usr/bin/tailscale
+
+[Service]
+ExecStart=/usr/bin/tailscale systray --theme=dark:nobg
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

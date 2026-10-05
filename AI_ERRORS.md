@@ -1346,6 +1346,16 @@ Damian chats in Polish, but his system UI is English. Keep new status messages,
 tooltips, menus and notifications in English, including every OneDrive failure
 state. OneDrive left click opens settings; do not describe it as an on/off toggle.
 
+
+## Tailscale RPM installation does not start the session tray
+
+2026-10-06: after installing and booting tailscale-1.102.5, `tailscaled` was
+inactive and no tray autostart existed. A layered package alone is not finished
+setup. Configure the repository in P1, then enable the daemon, operator and
+repo-managed graphical-session tray service in P2 after reboot. Do not tell the
+user to run `tailscale systray` before the binary is installed. Account login
+remains pending user action; never report a tray registration as a connected VPN.
+
 ## OneDrive must be covered in both installation paths
 
 `orchestrate.sh` phase P2 installs Onedriver automatically. The manual bootstrap

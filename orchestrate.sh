@@ -42,6 +42,7 @@ phase_P2() {
     # tolerant. The rest build the environment the install is for — a failure
     # there must stop the run rather than be papered over by the final verify.
     bash "$HERE/scripts/check-hardware.sh"            || true
+    bash "$HERE/scripts/setup-tailscale.sh"           || return 1
     bash "$HERE/scripts/setup-kvm.sh"                 || return 1
 
     # NordVPN is layered by packages.sh during P1, so the binary does not exist

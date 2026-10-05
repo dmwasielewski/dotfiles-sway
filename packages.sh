@@ -39,8 +39,13 @@ echo "==> Layering system packages (reboot required after)..."
 #             yazi previews images directly via foot's sixel support.
 # age         - file encryption for the secrets vault's repo backup (vault.age).
 #             cryptsetup (LUKS2 for the vault) is already in the base image.
-PACKAGES="mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer virt-install bridge-utils wtype alsa-utils neovim gitleaks ripgrep fd-find fzf wl-clipboard python3-virtualenv ShellCheck libwebp-tools nodejs npm make webkit2gtk4.1 ffmpegthumbnailer age"
+PACKAGES="mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer virt-install bridge-utils wtype alsa-utils neovim gitleaks ripgrep fd-find fzf wl-clipboard python3-virtualenv ShellCheck libwebp-tools nodejs npm make webkit2gtk4.1 ffmpegthumbnailer age tailscale"
 
+# Configure the vendor repo before the single package-layering transaction.
+run_step TAILSCALE_REPO_SETUP "Preparing Tailscale repository" \
+    bash "$DOTFILES/scripts/setup-tailscale.sh" --repo-only
+
+# tailscale: official host daemon and Linux tray (configured after reboot in P2).
 # Intel GPU check
 if lspci | grep -qi "Intel.*Graphics"; then
     echo "==> Intel GPU detected - adding intel-media-driver"
