@@ -1058,22 +1058,6 @@ NordVPN notes:
 - Daily AdGuard CLI usage: `adguard-cli status`, `adguard-cli start`, `adguard-cli stop`. The Waybar `AG` icon also toggles protection on click.
 - `scripts/adguard-waybar.sh` is symlinked to `~/.local/bin/adguard-waybar` and shows `AG` on the Waybar (colour indicates state: green enabled, red disabled, amber needs-setup).
 
-### Container ownership and failed npm/pip checks
-
-Container discovery assigns one runtime owner to each name. A Distrobox created
-from a Fedora Toolbox image can appear in both CLI lists; Distrobox takes
-precedence and that name is excluded from Toolbox updates and language queries.
-The menu and Waybar indicator share this logic through scripts/lib-updates.sh.
-A duplicate Toolbox entry must not trigger a sudo workaround or recreation of an
-otherwise working Distrobox.
-
-If the initial npm/pip check failed, selecting language updates (also through
-Update everything) retries it once after container updates. Persistent failures
-name the container and manager in the menu and indicator. The XDG cache file
-update-langpkg-errors holds these names, without tokens or raw registry stderr.
-An npm JSON error object or nonzero pip result is a failure, not an empty update
-set. Updates are skipped until the query succeeds; no package list is guessed.
-
 ## OneDrive files on demand (onedriver)
 
 OneDrive is provided by **onedriver**, a native network filesystem: cloud files

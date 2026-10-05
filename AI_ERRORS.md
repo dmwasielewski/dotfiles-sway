@@ -1364,20 +1364,6 @@ setup.sh next-step output and both installation guides. Microsoft sign-in and
 Start drive on login are separate manual post-install steps. Never claim that
 GitHub restores the account session or its cached cloud files.
 
-## Distrobox can inherit the Toolbox image label
-
-On 2026-10-06 the onedrive Distrobox (fedora-toolbox:44 image) appeared in both
-CLI lists. Update everything upgraded it through Distrobox, then tried Toolbox,
-which rejected it as too old. The same duplicate made the aggregate npm/pip
-check fail. This is not a broken container or sudo policy.
-
-Exclude Distrobox-owned names in discover_toolbox for all consumers, without
-hardcoding onedrive or removing image labels. Retry a failed initial language
-query once at action time, identify the container/manager, and reject npm JSON
-errors as all-clear. Regression tests cover mixed ownership, empty Distrobox
-lists, execution routing and successful/persistent retry outcomes. Run update
-tests with an isolated HOME so real user-local manifests cannot affect fixtures.
-
 ## A Running Tailscale client does not prove usable homelab access
 
 2026-10-06: controlled four-case AdGuard/NordVPN tests left Tailscale Running
