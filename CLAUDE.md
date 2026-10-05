@@ -175,6 +175,7 @@ bash ~/dotfiles-sway/scripts/setup-kvm.sh            # enable libvirtd, add user
 bash ~/dotfiles-sway/scripts/setup-damian-container.sh   # dev toolbox
 bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-container.sh # Ubuntu dev distrobox
 bash ~/dotfiles-sway/scripts/setup-security-container.sh # security distrobox
+bash ~/dotfiles-sway/scripts/setup-onedriver.sh          # native OneDrive + Waybar indicator
 ```
 
 ### Step 4 — Manual post-install steps (not automated yet)
@@ -183,6 +184,7 @@ bash ~/dotfiles-sway/scripts/setup-security-container.sh # security distrobox
 - Pair Bluetooth devices manually via `bluetoothctl`
 - Set up virtual machines — see KVM section below
 - Log in to: Bitwarden, Obsidian, Spotify, GitHub (gh auth login)
+- OneDrive: Onedriver → add ~/OneDrive → Microsoft login → Start drive on login
 
 ---
 
@@ -1030,6 +1032,7 @@ These require human interaction — document them so nothing is forgotten after 
 | Set ANTHROPIC_API_KEY | `~/.bashrc.d/ai-keys.bash` with `export ANTHROPIC_API_KEY="key"` |
 | Claude login (OAuth) | `damianf` → `claude login` |
 | Codex login | `damianf` → `codex login` |
+| OneDrive login and auto-mount | Onedriver → add ~/OneDrive → Microsoft login → drive settings → Start drive on login; tokens/cache are not restored from GitHub |
 | ChatGPT desktop login | Launch `chatgpt` → sign in with the OpenAI account (same one as the `codex` CLI) |
 | GitHub CLI login | `damianf` → `gh auth login` |
 | MCP integrations (Gmail, Calendar, Drive, Slack) | `claude.ai` → Settings → Integrations |
@@ -1062,7 +1065,8 @@ bash ~/dotfiles-sway/scripts/setup-onedriver.sh
 ```
 
 The unattended orchestrator runs this in phase P2 after Distrobox is available.
-Manual bootstrap users run it after `packages.sh` and the first reboot.
+Manual bootstrap users run it after `packages.sh` and the first reboot; this
+step is included in bootstrap/setup next-step output and the main install guide.
 `setup-onedrive.sh` remains a compatibility alias to the new installer.
 Both `onedriver` and `onedriver-launcher` run **on the Fedora host**, installed
 user-local under `~/.local/opt/onedriver` and linked into `~/.local/bin`.

@@ -1345,3 +1345,11 @@ Do not move AdGuard out of this app group. Individual tray icons are ordered by 
 Damian chats in Polish, but his system UI is English. Keep new status messages,
 tooltips, menus and notifications in English, including every OneDrive failure
 state. OneDrive left click opens settings; do not describe it as an on/off toggle.
+
+## OneDrive must be covered in both installation paths
+
+`orchestrate.sh` phase P2 installs Onedriver automatically. The manual bootstrap
+path must list setup-onedriver.sh after packages.sh + reboot in bootstrap.sh,
+setup.sh next-step output and both installation guides. Microsoft sign-in and
+Start drive on login are separate manual post-install steps. Never claim that
+GitHub restores the account session or its cached cloud files.

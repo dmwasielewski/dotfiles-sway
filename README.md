@@ -207,12 +207,29 @@ Its step is deliberately non-blocking: a failed 435 MB download from OpenAI's CD
 is recorded in the install state and reported by `verify.sh` instead of aborting
 the whole install.
 
-13. Run full verification:
+13. Install OneDrive files on demand after the first reboot:
+```bash
+bash ~/dotfiles-sway/scripts/setup-onedriver.sh
+```
+The unattended `orchestrate.sh` flow installs it automatically in phase P2;
+`bootstrap.sh` prints this step for the manual installation path. The installer
+also installs the Waybar cloud indicator and creates ~/OneDrive.
+
+### Manual post-install steps — OneDrive
+
+Open **Onedriver** (Super+D), add **~/OneDrive**, sign in to Microsoft and enable
+**Start drive on login** in the drive settings. Authentication and this account
+choice require user interaction. Tokens/cache stay outside GitHub; reinstalling
+from the repo installs the application, not your Microsoft session or cached files.
+See [OneDrive files on demand](#onedrive-files-on-demand-onedriver) for offline
+behaviour, status colours, updates and troubleshooting.
+
+14. Run full verification:
 ```bash
 bash ~/dotfiles-sway/scripts/verify.sh
 ```
 
-14. Optional: validate the fresh-install flow in a disposable Fedora Sway Atomic VM:
+15. Optional: validate the fresh-install flow in a disposable Fedora Sway Atomic VM:
 ```bash
 bash ~/dotfiles-sway/scripts/create-fedora-sway-vm.sh
 ```
