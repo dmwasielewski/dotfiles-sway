@@ -333,3 +333,6 @@ assign [class="(?i)^chatgpt$"] workspace number 5
 assign [app_id="(?i)^chatgpt$"] workspace number 5
 
 exec_always systemctl --user import-environment LC_TIME
+
+# OneDriveGUI manages sync profiles; no login wizard before a profile exists.
+exec ~/.local/bin/onedrive-gui --autostart

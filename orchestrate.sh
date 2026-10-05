@@ -63,6 +63,8 @@ phase_P2() {
     bash "$HERE/scripts/setup-damian-container.sh"    || return 1
     bash "$HERE/scripts/setup-ubuntu-dev-container.sh" || return 1
     bash "$HERE/scripts/setup-security-container.sh"  || return 1
+    run_step_warn "ONEDRIVE_SETUP" "Installing OneDrive client and GUI" \
+        bash "$HERE/scripts/setup-onedrive.sh"
     # Apply the harvested vault manifest. VAULT_MOUNT must point at the on-disk
     # staging (the real ~/.vault is locked/unmounted after P0).
     if [[ -f "$STAGE/install/manifest.toml" ]]; then

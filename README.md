@@ -1111,3 +1111,55 @@ evil-winrm -i <target> -u <user> -p <password>
 # SMB enumeration
 enum4linux-ng <target>
 ```
+
+## OneDrive on Fedora Sway Atomic
+
+Run after `packages.sh` and the first reboot (Distrobox must exist):
+
+```bash
+bash ~/dotfiles-sway/scripts/setup-onedrive.sh
+```
+
+The unattended orchestrator runs this in phase P2. Manual bootstrap users run
+this command once after reboot. It installs abraunegg's OneDrive Client and
+OneDriveGUI **user-local on the Fedora host**, without host sudo or another
+reboot. A rootless Fedora Distrobox named `onedrive` supplies the official Fedora
+RPM and its D runtime libraries; it is a package extraction/update environment,
+not the runtime for daily synchronization and not another dev container.
+This package helper is separate from `damianf`/`damianu` dev-tool parity.
+The native client and GUI live in `~/.local/opt/onedrive-client` and
+`~/.local/opt/onedrive-gui`; wrappers and the desktop entry are repo symlinks.
+The GUI's official AppImage is extracted to avoid requiring FUSE.
+Client version and host library compatibility are checked before activation.
+
+### First login (manual post-install step)
+
+1. Press **Super+D**, search **OneDriveGUI**, and create a profile in its wizard.
+2. Sign in to Microsoft in your browser; choose **~/OneDrive** as the local sync
+   folder. Select which folders to sync before starting if the cloud is large.
+3. Enable **Auto-sync on GUI startup** in profile settings and press **Play**.
+4. Optional: enable **Start OneDriveGUI minimized** in GUI settings for the tray.
+
+Sway starts the GUI on login only after `~/.config/onedrive-gui/profiles` exists.
+The launcher lock prevents duplicate GUI processes. Sway handles autostart;
+do not enable an additional standalone `onedrive.service` for the same profile.
+The GUI must keep running to manage synchronization; closing/terminating it can
+stop sync. This is local bidirectional sync, not Windows Files On-Demand.
+
+**Private data:** Microsoft tokens, account profiles, sync databases, GUI settings
+and `~/OneDrive` stay outside this repository. They are not symlinked into git.
+A fresh installation recreates the apps automatically, then requires Microsoft
+login and profile/folder selection again. Installation never starts cloud sync.
+
+**Updates:** both apps register manifests for the existing Waybar **User-local
+apps** updater. The client version probe queries the Fedora package container;
+the GUI probe reads the upstream latest release redirect. Re-running
+`setup-onedrive.sh` updates the client RPM and D runtime and installs the latest
+GUI. Stop sync/exit OneDriveGUI before updating, then reopen it. Keep the package
+container on the same Fedora release as the host; recreate/migrate it when
+upgrading Fedora major versions. Setup checks the new client on the host before
+switching releases. `verify.sh` checks the payload, symlinks, update manifests
+and package container; missing Microsoft login is **pending**, not failure.
+
+Upstream: [OneDrive Client](https://github.com/abraunegg/onedrive),
+[OneDriveGUI](https://github.com/bpozdena/OneDriveGUI).

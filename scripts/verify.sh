@@ -292,6 +292,42 @@ else
     fail "Thunderbird  MISSING" "flatpak install -y --user flathub org.mozilla.thunderbird_esr"
 fi
 
+# OneDrive is installed after distrobox becomes available (post-reboot).
+if profile_includes "$PROFILE" containers; then
+    section "OneDrive client and GUI"
+    ONEDRIVE_FIX="bash ~/dotfiles-sway/scripts/setup-onedrive.sh"
+    if host "$HOME/.local/bin/onedrive" --version >/dev/null; then
+        pass "OneDrive native client runs on host"
+    else
+        fail "OneDrive client missing or cannot load host libraries" "$ONEDRIVE_FIX"
+    fi
+    for item in "$HOME/.local/bin/onedrive" "$HOME/.local/bin/onedrive-gui" \
+                "$HOME/.local/share/applications/OneDriveGUI.desktop"; do
+        if symlink_ok "$item"; then pass "OneDrive symlink: $item"
+        else fail "OneDrive symlink missing: $item" "$ONEDRIVE_FIX"; fi
+    done
+    if [[ -x "$HOME/.local/opt/onedrive-gui/current/AppRun" ]]; then
+        pass "OneDriveGUI payload installed"
+    else
+        fail "OneDriveGUI payload missing" "$ONEDRIVE_FIX"
+    fi
+    for manifest in onedrive-client onedrive-gui; do
+        if [[ -s "$HOME/.local/share/dotfiles-updates/$manifest" ]]; then
+            pass "OneDrive update manifest: $manifest"
+        else fail "OneDrive update manifest missing: $manifest" "$ONEDRIVE_FIX"; fi
+    done
+    if host podman container exists onedrive; then
+        pass "OneDrive Fedora package container"
+    else
+        fail "OneDrive package container missing (needed for updates)" "$ONEDRIVE_FIX"
+    fi
+    if [[ -s "$HOME/.config/onedrive-gui/profiles" ]]; then
+        pass "OneDriveGUI profiles created (sync/login not checked)"
+    else
+        pending "OneDrive Microsoft login and profile setup" "Super+D → OneDriveGUI"
+    fi
+fi
+
 # ── 4. Fonts ──────────────────────────────────────────────────────────────
 section "4. Fonts"
 
