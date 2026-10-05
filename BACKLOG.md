@@ -399,6 +399,8 @@ a zero (see `AI_ERRORS.md`). Two related gaps remain:
 
 ## Small open items
 
+- **Tailscale coexistence**: execute the [AdGuard/NordVPN four-case matrix](docs/testing/tailscale-adguard-nordvpn.md), validate the whole NAS/Proxmox host and each live VM/LXC against the dated local inventory, publish sanitized access results, then automate only verified remedies. Planned 2026-10-06; not yet tested.
+
 - **yazi**: ✅ Sway keybind bound — `Mod+Y` opens yazi in a new foot terminal (2026-06-11). Still optional: a shell hook to `cd` into yazi's last dir on exit.
 - **NordVPN**: a stale `NORDVPN_REPO=failed` lingers in the install-state file from a day the repo was unreachable — clear with `bash ~/dotfiles-sway/scripts/setup-nordvpn.sh`.
 - **Thunderbird**: after message filters are recreated and tested manually, add `msgFilterRules.dat` to repo automation as symlinked profile files with one-time backups.

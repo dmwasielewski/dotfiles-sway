@@ -1201,3 +1201,11 @@ login/disconnection is pending user action, not a failed installation.
 Diagnostics: `systemctl --user status tailscale-systray` and
 `journalctl --user -u tailscale-systray -n 50`. The tray order is chosen by Waybar.
 Official reference: https://tailscale.com/docs/features/client/linux-systray
+
+
+### Tailscale coexistence validation
+
+The planned four-case AdGuard/NordVPN access matrix is documented in
+[the interoperability test plan](docs/testing/tailscale-adguard-nordvpn.md).
+The matrix is **not yet executed**; installed/running status does not prove
+that tailnet services work with NordVPN and AdGuard enabled together.
