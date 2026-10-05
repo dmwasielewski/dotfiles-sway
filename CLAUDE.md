@@ -12,7 +12,7 @@ Before pushing, finish the full requested change set first: implementation, veri
 
 Fully automated, reproducible setup of **Fedora Atomic Sway** — from a fresh OS install to a complete working system with all applications, containers, virtual machines, and configuration. Running `bootstrap.sh` should reproduce the exact state of the system without any manual steps beyond network access to GitHub and the separate login steps listed below.
 
-The system belongs to **Damian** (dmwasielewski). Communicate in **Polish** unless asked otherwise.
+The system belongs to **Damian** (dmwasielewski). Communicate in **Polish** unless asked otherwise. The system UI, tooltips, menus, notifications and repository documentation must be **English**; the conversation language does not determine the UI language.
 
 ---
 
@@ -1106,6 +1106,10 @@ Keep the package helper on the host's Fedora major release when migrating the OS
 `~/OneDrive` is **pending** user login/mounting, not an installation failure.
 
 ### OneDrive icon beside the clock
+
+All OneDrive tooltip/status messages are English. Left click opens/focuses the
+Onedriver settings window; it does **not** toggle the mount. Use the drive switch
+in that window to mount/unmount. AdGuard and NordVPN retain their click toggles.
 
 Waybar uses `spacing: 0` across the whole bar: no vertical gaps between modules.
 Keep the existing internal icon padding for readability.

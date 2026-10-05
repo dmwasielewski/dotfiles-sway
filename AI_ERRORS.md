@@ -1339,3 +1339,9 @@ background and no internal gaps, borders or shadows. Transparent OneDrive
 background exposes the darker bar; global module spacing looks like separators.
 Use `spacing: 0` across the whole bar; retain internal padding for readable icons.
 Do not move AdGuard out of this app group. Individual tray icons are ordered by the tray itself.
+
+## Conversation language does not determine system UI language
+
+Damian chats in Polish, but his system UI is English. Keep new status messages,
+tooltips, menus and notifications in English, including every OneDrive failure
+state. OneDrive left click opens settings; do not describe it as an on/off toggle.

@@ -29,23 +29,23 @@ def probe(token):
     try:
         with urllib.request.urlopen(request, timeout=4) as response:
             if json.load(response).get("id"):
-                return "connected", "Połączenie z kontem Microsoft działa"
-            return "warning", "Microsoft zwrócił nieoczekiwaną odpowiedź"
+                return "connected", "Connected to your Microsoft account"
+            return "warning", "Unexpected response from Microsoft"
     except urllib.error.HTTPError as error:
         error.close()
         if error.code in (401, 403):
-            return "warning", "Sprawdź logowanie w Onedriver (token lub uprawnienia)"
-        return "warning", "Błąd usługi Microsoft: HTTP " + str(error.code)
+            return "warning", "Check your Onedriver login (token or permissions)"
+        return "warning", "Microsoft service error: HTTP " + str(error.code)
     except (urllib.error.URLError, TimeoutError, OSError):
-        return "offline", "Brak dostępu do Microsoft (sieć, DNS lub usługa)"
+        return "offline", "Microsoft is unreachable (network, DNS or service)"
     except (ValueError, TypeError):
-        return "warning", "Nie można potwierdzić dostępu do konta"
+        return "warning", "Cannot confirm account access"
 
 
 def status(home):
     mount = home / "OneDrive"
     if not mounted(mount):
-        return "disconnected", "Folder ~/OneDrive nie jest podłączony"
+        return "disconnected", "~/OneDrive is not mounted"
     # Cache keys use the original mount path, which can include /home symlinks.
     # Match the canonical path, without selecting another account's token.
     cache = Path(os.environ.get("XDG_CACHE_HOME", str(home / ".cache"))) / "onedriver"
@@ -65,7 +65,7 @@ def status(home):
         token = auth.get("access_token")
         if token:
             return probe(token)
-    return "warning", "Folder podłączony; nie znaleziono tokenu do sprawdzenia konta"
+    return "warning", "Drive mounted; no token found to check account access"
 
 
 def open_launcher():
@@ -98,13 +98,13 @@ def main():
     try:
         state, message = status(Path.home())
     except TimeoutError:
-        state, message = "offline", "Microsoft nie odpowiada w ciągu 6 sekund"
+        state, message = "offline", "Microsoft did not respond within 6 seconds"
     except Exception:
         # Do not expose exceptions containing account data or authorization headers.
-        state, message = "warning", "Nie można sprawdzić stanu OneDrive"
+        state, message = "warning", "Cannot check OneDrive status"
     finally:
         signal.alarm(0)
-    tooltip = message + "\n~/OneDrive • kontrola co 30 s\nKliknij: ustawienia Onedriver\nTo dostępność konta, nie potwierdzenie wysłania plików."
+    tooltip = message + "\n~/OneDrive • checked every 30 seconds\nClick: open Onedriver settings\nAccount availability, not confirmation of completed uploads."
     print(json.dumps({"text": "☁", "class": state, "tooltip": html.escape(tooltip)}, ensure_ascii=True))
 
 

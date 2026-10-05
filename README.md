@@ -1169,6 +1169,10 @@ Keep the package helper on the host's Fedora major release when migrating the OS
 
 ### OneDrive icon beside the clock
 
+All OneDrive tooltip/status messages are English. Left click opens/focuses the
+Onedriver settings window; it does **not** toggle the mount. Use the drive switch
+in that window to mount/unmount. AdGuard and NordVPN retain their click toggles.
+
 Waybar uses `spacing: 0` across the whole bar: no vertical gaps between modules.
 Keep the existing internal icon padding for readability.
 
