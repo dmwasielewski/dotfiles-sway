@@ -27,12 +27,13 @@
         "battery",
         "custom/updates",
         "clock",
-        "tray",
-        "custom/onedriver",
-        "custom/adguard",
-        "custom/nordvpn",
+        "group/apps",
         "custom/power"
     ],
+    "group/apps": {
+        "orientation": "horizontal",
+        "modules": ["tray", "custom/onedriver", "custom/adguard", "custom/nordvpn"]
+    },
     // Modules configuration
     // "sway/workspaces": {
     //     "disable-scroll": true,

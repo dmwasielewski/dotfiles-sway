@@ -1334,5 +1334,7 @@ all files uploaded or permanent offline availability. Do not refresh account
 tokens in the indicator, print token contents or put bearer tokens into command
 arguments. Validate both error classifications and actual on-screen rendering.
 Keep the module beside the app tray (including ChatGPT), followed by AdGuard and
-NordVPN. Use a transparent background with no borders or shadows; do not move
-AdGuard out of this app group. Individual tray icons are ordered by the tray itself.
+NordVPN. Keep them inside horizontal `group/apps` with the shared #1e2230
+background and no internal gaps, borders or shadows. Transparent OneDrive
+background exposes the darker bar; global module spacing looks like separators.
+Do not move AdGuard out of this app group. Individual tray icons are ordered by the tray itself.

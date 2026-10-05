@@ -444,7 +444,8 @@ Wayland build, which would flip which of the two applies. Verified with
 
 - Position: **bottom**, height 25px
 - Dark muted blue-slate theme (low contrast, easy on the eyes)
-- Modules right → left: `power` · `nordvpn` · tray · clock · `updates` · battery · `adguard` · backlight · temp · RAM · CPU · power profile · network · audio · idle inhibitor · `claude` status
+- App icon group: tray (ChatGPT) → OneDrive → AdGuard → NordVPN; shared slate background and no internal gaps.
+- Modules right → left: `power` · app group (`nordvpn`, `adguard`, `onedriver`, tray) · clock · `updates` · battery · backlight · temp · RAM · CPU · power profile · network · audio · idle inhibitor · `claude` status
 - `custom/adguard`: calls `~/.local/bin/adguard-waybar` every 10s — shows `AG`; click toggles protection on/off
 - `custom/claude`: calls `~/.npm-global/bin/ccstatusline waybar` every 5s — shows Claude Code state (idle/working/waiting/error) with colour coding
 - `custom/nordvpn`: calls `~/.local/bin/nordvpn-waybar` every 15s — shows `VPN`; left click toggles connect/disconnect; right click opens rofi domain whitelist prompt (`nordvpn-whitelist-domain.sh`)
@@ -1106,7 +1107,7 @@ Keep the package helper on the host's Fedora major release when migrating the OS
 
 ### OneDrive icon beside the clock
 
-The Waybar cloud icon, in the app group beside the tray (including ChatGPT), AdGuard and NordVPN, with a transparent background and no separators, checks **~/OneDrive** every 30 seconds. Green means the
+The Waybar cloud icon, in the app group beside the tray (including ChatGPT), AdGuard and NordVPN, in one horizontal `group/apps` with the shared slate background (#1e2230) and no internal spacing or separators, checks **~/OneDrive** every 30 seconds. Green means the
 folder is mounted and an authenticated Microsoft Graph root-metadata request
 succeeded; red means Microsoft cannot be reached; amber means a login, permission,
 service or status-check problem; grey means the folder is not mounted. Hover for
