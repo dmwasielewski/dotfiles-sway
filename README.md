@@ -1134,6 +1134,22 @@ evil-winrm -i <target> -u <user> -p <password>
 enum4linux-ng <target>
 ```
 
+### Container ownership and failed npm/pip checks
+
+Container discovery assigns one runtime owner to each name. A Distrobox created
+from a Fedora Toolbox image can appear in both CLI lists; Distrobox takes
+precedence and that name is excluded from Toolbox updates and language queries.
+The menu and Waybar indicator share this logic through scripts/lib-updates.sh.
+A duplicate Toolbox entry must not trigger a sudo workaround or recreation of an
+otherwise working Distrobox.
+
+If the initial npm/pip check failed, selecting language updates (also through
+Update everything) retries it once after container updates. Persistent failures
+name the container and manager in the menu and indicator. The XDG cache file
+update-langpkg-errors holds these names, without tokens or raw registry stderr.
+An npm JSON error object or nonzero pip result is a failure, not an empty update
+set. Updates are skipped until the query succeeds; no package list is guessed.
+
 ## OneDrive files on demand (onedriver)
 
 OneDrive is provided by **onedriver**, a native network filesystem: cloud files
@@ -1282,5 +1298,9 @@ Official reference: https://tailscale.com/docs/features/client/linux-systray
 
 The planned four-case AdGuard/NordVPN access matrix is documented in
 [the interoperability test plan](docs/testing/tailscale-adguard-nordvpn.md).
-The matrix is **not yet executed**; installed/running status does not prove
-that tailnet services work with NordVPN and AdGuard enabled together.
+[Measured results](docs/testing/tailscale-adguard-nordvpn-results.md) show
+working Internet in all four cases, a MagicDNS timeout with AdGuard alone, and
+peer/local-Proxmox connectivity timeouts while NordVPN is connected. Full
+NAS/VM/LXC application coverage remains pending authenticated inventory access.
+Running/tray state alone does not prove usable homelab access. No coexistence
+remedy has yet been verified or incorporated into fresh-install defaults.

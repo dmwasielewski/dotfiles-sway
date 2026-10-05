@@ -1,6 +1,7 @@
 # Tailscale / AdGuard / NordVPN interoperability test plan
 
-Status: **planned; the four-case matrix has not been executed**.
+Status: **four cases executed for available targets; full guest/service coverage pending**.
+See [measured results and limitations](tailscale-adguard-nordvpn-results.md).
 Prepared: 2026-10-06. Run on the Fedora Sway Atomic host, not inside a container.
 
 ## Objective and baseline
