@@ -406,7 +406,7 @@ button:hover {
 }
 
 /* OneDrive authenticated availability, beside the clock. */
-#custom-onedriver { padding: 0 8px; color: #8a9bb5; background-color: #1e2230; }
+#custom-onedriver { padding: 0 8px; color: #8a9bb5; background-color: transparent; border: none; box-shadow: none; }
 #custom-onedriver.connected { color: #6ab56a; }
 #custom-onedriver.offline { color: #ff3333; }
 #custom-onedriver.warning { color: #c8a060; }

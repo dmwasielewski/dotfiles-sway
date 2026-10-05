@@ -1169,7 +1169,7 @@ Keep the package helper on the host's Fedora major release when migrating the OS
 
 ### OneDrive icon beside the clock
 
-The Waybar cloud icon, immediately between the app tray (including ChatGPT) and NordVPN, checks **~/OneDrive** every 30 seconds. Green means the
+The Waybar cloud icon, in the app group beside the tray (including ChatGPT), AdGuard and NordVPN, with a transparent background and no separators, checks **~/OneDrive** every 30 seconds. Green means the
 folder is mounted and an authenticated Microsoft Graph root-metadata request
 succeeded; red means Microsoft cannot be reached; amber means a login, permission,
 service or status-check problem; grey means the folder is not mounted. Hover for
