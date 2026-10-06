@@ -83,6 +83,7 @@ compute_and_cache() {
     lp="$(printf '%s' "$lp_rows" | grep -c . || true)"
     if [[ "$lp_rc" -ne 0 ]]; then
         lines+=("Language packages: could not check (an npm/pip query failed)")
+        while IFS= read -r error; do [[ -n "$error" ]] && lines+=("  $error"); done < <(langpkg_errors)
         unknown=$(( unknown + 1 ))
     fi
     if [[ "$lp" -gt 0 ]]; then

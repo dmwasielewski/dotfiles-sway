@@ -17,6 +17,13 @@ DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 cache="$tmp/cache"; manifests="$tmp/share/dotfiles-updates"; repo="$tmp/repo"
 mkdir -p "$cache" "$manifests" "$repo/scripts"
+# The badge also checks unrelated sources. Stub them even when this test runs
+# alone; an undefined $stub previously fell through to the real Podman runtime.
+stub="$tmp/bin"; mkdir -p "$stub"
+for command in podman toolbox distrobox flatpak rpm-ostree; do
+    printf '#!/bin/bash\nexit 0\n' > "$stub/$command"
+done
+chmod +x "$stub"/*
 
 # A stand-in for the real repo: the probe must be resolved against $DOTFILES.
 cat > "$repo/scripts/probe.sh" <<'STUB'

@@ -1364,6 +1364,20 @@ setup.sh next-step output and both installation guides. Microsoft sign-in and
 Start drive on login are separate manual post-install steps. Never claim that
 GitHub restores the account session or its cached cloud files.
 
+## Distrobox can inherit the Toolbox image label
+
+On 2026-10-06 the onedrive Distrobox (fedora-toolbox:44 image) appeared in both
+CLI lists. Update everything upgraded it through Distrobox, then tried Toolbox,
+which rejected it as too old. The same duplicate made the aggregate npm/pip
+check fail. This is not a broken container or sudo policy.
+
+Exclude Distrobox-owned names in discover_toolbox for all consumers, without
+hardcoding onedrive or removing image labels. Retry a failed initial language
+query once at action time, identify the container/manager, and reject npm JSON
+errors as all-clear. Regression tests cover mixed ownership, empty Distrobox
+lists, execution routing and successful/persistent retry outcomes. Run update
+tests with an isolated HOME so real user-local manifests cannot affect fixtures.
+
 ## A Running Tailscale client does not prove usable homelab access
 
 2026-10-06: controlled four-case AdGuard/NordVPN tests left Tailscale Running
@@ -1374,3 +1388,18 @@ returned after disconnecting/stopping both; failure probes were repeated.
 Do not infer the exact cause, disable the VPN firewall or automate broad
 exceptions from this evidence. See docs/testing/tailscale-adguard-nordvpn-results.md.
 Full guest/service coverage is still pending authenticated NAS/Proxmox access.
+
+## Update tests must never share Podman runtime state
+
+The old test_userlocal_probe.sh used PATH="$stub:$PATH" without defining stub,
+so the badge called real container engines. An isolated HOME alone is not enough:
+rootless Podman still uses XDG_RUNTIME_DIR, including libpod/tmp/pause.pid. On
+2026-10-06 a test created a different pause namespace and existing containers
+subsequently reported missing passwd users; their on-disk passwd files remained
+intact. Do not interpret this as a reason to recreate containers.
+
+The update runner now isolates HOME and all XDG paths and supplies guard stubs
+for container engines, updates, services and network calls. The user-local test
+also defines its own missing stubs. Never run fixture tests against host Podman.
+If its runtime namespace has already been replaced, save work and restart the
+system to rebuild runtime state. Do not manually replace its PID file.

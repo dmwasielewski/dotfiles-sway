@@ -91,6 +91,7 @@ show_summary() {
     echo "  Language packages     last updated: $(upd_age_label langpkg)"
     if [[ "$LP_OK" -ne 1 ]]; then
         echo "    could not check — an npm/pip query failed"
+        langpkg_errors | sed 's/^/    /'
     elif [[ "$lp_count" -gt 0 ]]; then
         while IFS=$'\t' read -r lc lmgr lname lcur lnew; do
             [[ -z "$lname" ]] && continue
@@ -372,8 +373,13 @@ do_langpkg() {
     echo ""; echo "── Updating language packages ───────────────────────"
     local rc=0 updated=0 c mgr name cur new
     if [[ "$LP_OK" -ne 1 ]]; then
-        echo "  ✗ the npm/pip query failed earlier — not guessing what to update."
-        echo "    Re-open this menu to retry."
+        echo "  Retrying the failed npm/pip check after container updates…"
+        refresh_langpkg
+    fi
+    if [[ "$LP_OK" -ne 1 ]]; then
+        echo "  ✗ Cannot check language packages — not guessing what to update."
+        langpkg_errors | tee -a "$LOG" | sed 's/^/    /'
+        echo "    Full output: $LOG"
         return 1
     fi
     if [[ "$(printf '%s' "$LP_ROWS" | grep -c . || true)" -eq 0 ]]; then

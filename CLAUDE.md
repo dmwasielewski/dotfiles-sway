@@ -474,6 +474,30 @@ Wayland build, which would flip which of the two applies. Verified with
 
 ---
 
+### Update regression tests
+
+Run `bash tests/updates/run.sh`. The runner isolates HOME and all XDG paths and
+provides guard stubs so fixture tests cannot call the host container runtime or
+update services. HOME isolation without XDG_RUNTIME_DIR isolation is insufficient
+for rootless Podman. If runtime namespace state is lost, save work and restart the
+system; do not recreate containers just because passwd lookup temporarily fails.
+
+### Container ownership and failed npm/pip checks
+
+Container discovery assigns one runtime owner to each name. A Distrobox created
+from a Fedora Toolbox image can appear in both CLI lists; Distrobox takes
+precedence and that name is excluded from Toolbox updates and language queries.
+The menu and Waybar indicator share this logic through scripts/lib-updates.sh.
+A duplicate Toolbox entry must not trigger a sudo workaround or recreation of an
+otherwise working Distrobox.
+
+If the initial npm/pip check failed, selecting language updates (also through
+Update everything) retries it once after container updates. Persistent failures
+name the container and manager in the menu and indicator. The XDG cache file
+update-langpkg-errors holds these names, without tokens or raw registry stderr.
+An npm JSON error object or nonzero pip result is a failure, not an empty update
+set. Updates are skipped until the query succeeds; no package list is guessed.
+
 ## Fonts
 
 - **JetBrainsMono Nerd Font** — terminal + Waybar icons

@@ -124,6 +124,18 @@ chmod +x "$stub/npm"
 run_rows >/dev/null 2>&1; rc=$?
 assert_rc "$rc" "1" "langpkg_update_rows signals failure when a query could not run"
 
+# npm can emit valid JSON containing an error: that is not an empty update set.
+cat > "$stub/npm" <<'STUB'
+#!/bin/bash
+[[ "$1 $2" == "-g root" ]] && { echo /shared/npm; exit 0; }
+echo '{"error":{"code":"EAI_AGAIN"}}'
+exit 1
+STUB
+chmod +x "$stub/npm"
+run_rows >/dev/null 2>&1; error_rc=$?
+assert_rc "$error_rc" "1" "npm JSON error is treated as a query failure"
+assert_contains "$(cat "$cache/update-langpkg-errors")" "demobox (npm)" "failed query reports runtime and manager"
+
 # ── a container without npm/pip is not a failure ─────────────────────────
 rm -f "$stub/npm" "$stub/pip3"
 run_rows >/dev/null 2>&1; rc2=$?

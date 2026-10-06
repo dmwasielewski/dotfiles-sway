@@ -294,7 +294,18 @@ discover_distrobox() {
 }
 discover_toolbox() {
     command -v toolbox >/dev/null 2>&1 || return 0
-    toolbox list --containers 2>/dev/null | awk 'NR>1 && NF>=2 {print $2}'
+    # Distrobox built from a Fedora toolbox image inherits its Toolbox label.
+    # Both CLIs list it, but only Distrobox owns its runtime configuration.
+    # Exclude overlaps here so every discovery consumer uses the correct owner.
+    local name
+    local -A distrobox_names=()
+    while IFS= read -r name; do
+        [[ -n "$name" ]] && distrobox_names["$name"]=1
+    done < <(discover_distrobox)
+    while IFS= read -r name; do
+        [[ -n "$name" && -z "${distrobox_names[$name]:-}" ]] && printf '%s\n' "$name"
+    done < <(toolbox list --containers 2>/dev/null | awk 'NR>1 && NF>=2 {print $2}')
+    return 0
 }
 # Effective "last touched" epoch: our update timestamp if present, else the
 # podman container creation time (a freshly created container is not stale).
@@ -377,6 +388,7 @@ _langpkg_npm() {                       # $1=kind $2=name → rows, rc 1 if unusa
         "command -v npm >/dev/null 2>&1 || exit $_LANGPKG_ABSENT; npm -g root 2>/dev/null; npm -g outdated --json 2>/dev/null" 2>/dev/null)"
     rc=$?
     [[ "$rc" -eq "$_LANGPKG_ABSENT" ]] && return 0
+    [[ "$rc" -eq 0 || "$rc" -eq 1 ]] || return 1
     # The assignment must sit on python3, not on printf: an env prefix applies
     # only to the command it precedes, and printf is not the one reading it.
     printf '%s' "$out" | CONTAINER="$2" python3 -c '
@@ -391,7 +403,7 @@ try:
     data = json.loads(rest)
 except Exception:
     sys.exit(1)
-if not isinstance(data, dict):
+if not isinstance(data, dict) or "error" in data:
     sys.exit(1)
 for name, info in data.items():
     cur = (info or {}).get("current") or ""
@@ -410,6 +422,7 @@ _langpkg_pip() {                       # $1=kind $2=name → rows, rc 1 if unusa
         "command -v pip3 >/dev/null 2>&1 || exit $_LANGPKG_ABSENT; python3 -c 'import site; print(site.getusersitepackages())' 2>/dev/null; pip3 list --user --not-required --outdated --format=json 2>/dev/null" 2>/dev/null)"
     rc=$?
     [[ "$rc" -eq "$_LANGPKG_ABSENT" ]] && return 0
+    [[ "$rc" -eq 0 ]] || return 1
     printf '%s' "$out" | CONTAINER="$2" python3 -c '
 import json, os, sys
 lines = sys.stdin.read().splitlines()
@@ -452,11 +465,15 @@ langpkg_update_rows() {
     raw="$(
         while IFS=$'\t' read -r kind name <&3; do
             [[ -z "$name" ]] && continue
-            _langpkg_npm "$kind" "$name" || echo "__LANGPKG_FAILED__"
-            _langpkg_pip "$kind" "$name" || echo "__LANGPKG_FAILED__"
+            _langpkg_npm "$kind" "$name" || printf "__LANGPKG_FAILED__\t%s\tnpm\n" "$name"
+            _langpkg_pip "$kind" "$name" || printf "__LANGPKG_FAILED__\t%s\tpip\n" "$name"
         done 3< <(discover_containers)
     )"
-    printf '%s' "$raw" | grep -q '__LANGPKG_FAILED__' && rc=1
+    mkdir -p "$CACHE_DIR"
+    # Store only container/manager names, never registry credentials or stderr.
+    printf '%s\n' "$raw" | awk -F'\t' '$1 == "__LANGPKG_FAILED__" {print $2 " (" $3 "): query failed"}' > "$CACHE_DIR/update-langpkg-errors"
+    # Use this call's output even when concurrent checks refresh diagnostics.
+    [[ "$raw" == *"__LANGPKG_FAILED__"* ]] && rc=1
     printf '%s\n' "$raw" | grep -v '__LANGPKG_FAILED__' | awk -F'\t' '
         NF == 6 && !seen[$1 "\t" $3 "\t" $4 "\t" $5 "\t" $6]++ {
             print $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6
@@ -464,6 +481,7 @@ langpkg_update_rows() {
     return "$rc"
 }
 langpkg_count() { langpkg_update_rows | grep -c . || true; }
+langpkg_errors() { cat "$CACHE_DIR/update-langpkg-errors" 2>/dev/null || true; }
 
 # ── User-local apps (GitHub-release tools without a package or self updater) ─
 # Most tools are covered elsewhere: packaged ones by rpm-ostree/dnf/apt, Flatpaks
