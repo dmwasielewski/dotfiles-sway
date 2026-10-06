@@ -1403,3 +1403,15 @@ for container engines, updates, services and network calls. The user-local test
 also defines its own missing stubs. Never run fixture tests against host Podman.
 If its runtime namespace has already been replaced, save work and restart the
 system to rebuild runtime state. Do not manually replace its PID file.
+
+## Validate NordVPN exceptions across fresh connections
+
+2026-10-06: mid-connection exception trials were inconsistent. A temporary
+nftables mark-preservation rule did not establish a benefit: peer TCP worked
+before insertion and after removal. Do not automate that experimental rule.
+Specific peer /32 and home LAN exceptions configured BEFORE connecting passed
+two fresh connections, normal-user TCP reversal, ICMP and Internet/egress checks
+with firewall/routing enabled. Keep real addresses in the private restored
+policy. Do not infer IPv6, all-guest or DNS coverage from IPv4 port tests.
+The installer applies explicit private exceptions; verification checks retained
+rules, not application reachability.

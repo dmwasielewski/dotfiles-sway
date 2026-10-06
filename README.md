@@ -158,7 +158,9 @@ Expected baseline:
 - `Auto-connect: disabled`
 - `Kill Switch: disabled`
 
-No extra post-login changes are required for the current setup.
+After restoring an optional private homelab policy, rerun
+`scripts/setup-nordvpn.sh` after login and before connecting. Without a policy,
+the baseline settings above are unchanged.
 
 Daily manual CLI usage:
 ```bash
@@ -1306,8 +1308,8 @@ Official reference: https://tailscale.com/docs/features/client/linux-systray
 
 Follow the [four sequential repairs](docs/testing/tailscale-repair-plan.md):
 1. NordVPN reachability, 2. AdGuard MagicDNS, 3. Proxmox HTTPS trust,
-4. external-network access to the entire NAS. Repair 1 remains in progress;
-its LAN exception passed controlled reversal tests, but peer TCP is unresolved.
+4. external-network access to the entire NAS. Repair 1 now passes the tested
+IPv4 peer/local panel-port checks using an optional private NordVPN policy.
 
 The planned four-case AdGuard/NordVPN access matrix is documented in
 [the interoperability test plan](docs/testing/tailscale-adguard-nordvpn.md).
@@ -1315,5 +1317,11 @@ The planned four-case AdGuard/NordVPN access matrix is documented in
 working Internet in all four cases, a MagicDNS timeout with AdGuard alone, and
 peer/local-Proxmox connectivity timeouts while NordVPN is connected. Full
 NAS/VM/LXC application coverage remains pending authenticated inventory access.
-Running/tray state alone does not prove usable homelab access. No coexistence
-remedy has yet been verified or incorporated into fresh-install defaults.
+Running/tray state alone does not prove usable homelab access. Repair 1 uses
+`scripts/nordvpn-homelab.py apply|check` and the mode-600 private policy
+`~/.config/dotfiles/nordvpn-homelab.json`. Restore it from private backup before
+setup; `setup-nordvpn.sh` applies it and `verify.sh` checks it. Missing policy
+leaves existing exceptions unchanged. Only explicit RFC1918 LAN networks and
+individual Tailscale IPv4 hosts (/32) are supported, with rollback of newly
+added entries on failure. Apply while disconnected, then connect. No broad
+CGNAT exception or custom nftables rule is installed. DNS and TLS remain pending.

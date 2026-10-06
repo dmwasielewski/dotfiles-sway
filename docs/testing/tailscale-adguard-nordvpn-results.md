@@ -4,6 +4,11 @@ Date: 2026-10-06 (Europe/London).
 Status: **four combinations tested for available targets; full NAS/VM/LXC
 application coverage remains incomplete**.
 
+The table below records the ORIGINAL baseline. Later repair 1 restored the
+tested peer IPv4 and local Proxmox-port access with NordVPN; see the
+[sequential repair record](tailscale-repair-plan.md). DNS and certificate trust
+remain pending. The original matrix does not describe the updated policy.
+
 ## Scope and method
 
 Tests ran on the Fedora Sway Atomic host while connected to the home LAN.

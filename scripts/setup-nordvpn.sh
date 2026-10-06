@@ -212,6 +212,18 @@ echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━
 echo -e "${BOLD} NordVPN CLI setup complete${NC}"
 echo -e "${BOLD}${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
+# Optional private exceptions: no network policy is guessed on a fresh machine.
+NORDVPN_POLICY="${DOTFILES_NORDVPN_POLICY:-${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/nordvpn-homelab.json}"
+if [[ -f "$NORDVPN_POLICY" ]]; then
+    if [[ "$nordvpn_ready" == 1 ]]; then
+        run_step "NORDVPN_HOMELAB" "Applying private homelab exceptions" python3 "$DOTFILES/scripts/nordvpn-homelab.py" apply
+    else
+        step_save "NORDVPN_HOMELAB" "pending"
+    fi
+else
+    step_skip "NORDVPN_HOMELAB"
+fi
+
 echo "Check status with: nordvpn status"
 echo "Connect with:       nordvpn connect"
 echo "Disconnect with:    nordvpn disconnect"

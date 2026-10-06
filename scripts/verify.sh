@@ -650,6 +650,16 @@ else
     warn "User not in nordvpn group yet — re-run bash ~/dotfiles-sway/scripts/setup-nordvpn.sh and log out/in"
 fi
 
+NORDVPN_POLICY="${DOTFILES_NORDVPN_POLICY:-${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/nordvpn-homelab.json}"
+if [[ -f "$NORDVPN_POLICY" ]]; then
+    if host python3 "$DOTFILES/scripts/nordvpn-homelab.py" check >/dev/null; then
+        pass "NordVPN private homelab exceptions present (not a reachability test)"
+    else
+        fail "NordVPN private homelab exceptions missing/invalid" \
+             "python3 ~/dotfiles-sway/scripts/nordvpn-homelab.py apply"
+    fi
+fi
+
 # ── Repo hygiene ─────────────────────────────────────────────────────────
 section "Repo working tree"
 

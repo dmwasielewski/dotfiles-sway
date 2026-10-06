@@ -5,8 +5,8 @@ the next variable. Baseline: [measured results](tailscale-adguard-nordvpn-result
 
 ## 1. NordVPN: peer and home LAN reachability
 
-Status: IN PROGRESS — LAN exception verified; ordinary Tailscale peer traffic
-remains blocked. AdGuard stays OFF while isolating this problem.
+Status: IMPLEMENTED AND VALIDATED for the tested IPv4 peer and local Proxmox
+port. Full guest/remote coverage belongs to repair 4. AdGuard stays OFF while isolating this problem.
 Capture settings and existing exceptions. With one NordVPN connection kept up,
 reproduce the failures, then try an IPv4 /32 exception for the tested Tailscale
 peer. Test and remove it to confirm reversal. Separately test an exception for
@@ -52,12 +52,45 @@ recorded outgoing TCP SYNs, without a corresponding peer TCP reply; route
 lookups before/after the NordVPN mark still selected tailscale0. This does not
 prove the marking rule is the cause.
 
-Next experiment prepared locally: insert one temporary peer-specific accept
-rule on tailscale0 ahead of NordVPN's marking rule, compare TCP reachability,
-then delete it and repeat the failed control. It requires administrator
-authentication and is NOT RUN yet. The script cleans up its temporary rule,
-exceptions and VPN connection. No permanent custom firewall rule is approved
-as a remedy until this experiment and normal-user validation pass.
+The temporary mark-preservation test ran after administrator authentication.
+It did not establish any benefit: peer TCP worked before insertion and after
+removal. Its initial peer baseline was unavailable. No custom nftables rule is
+retained or automated.
+
+### Persistent configuration and final verification
+
+A subsequent normal-user run confirmed peer and Proxmox TCP with both standard
+exceptions. Removing the peer exception broke peer TCP while Proxmox remained
+reachable; restoring it restored peer TCP. The exceptions were then configured
+BEFORE connecting. Two fresh NordVPN connections passed peer/Proxmox TCP and
+diagnostic ping. Public HTTPS stayed HTTP 200, egress differed from baseline,
+and firewall/routing stayed enabled. Earlier mid-connection trials were
+inconsistent; their transient cause remains unproven. Use the verified workflow:
+apply/check exceptions while disconnected, then connect.
+
+The installed-policy test passed normal peer ICMP, peer SSH-port TCP, Proxmox
+port TCP, public HTTPS and OneDrive account metadata access. Peer MagicDNS
+still timed out (repair 2). Proxmox certificate validation still failed (repair 3).
+These results do not prove authenticated services, IPv6 or remote access.
+
+`scripts/nordvpn-homelab.py apply|check` reads the private JSON file
+`~/.config/dotfiles/nordvpn-homelab.json` (or `DOTFILES_NORDVPN_POLICY`).
+`setup-nordvpn.sh` applies it when ready; `verify.sh` checks retained exceptions.
+Missing policy leaves all existing exceptions unchanged. Example schema only:
+`{"subnets": ["192.168.50.0/24", "100.80.20.30/32"]}`.
+Only explicit RFC1918 LAN networks and individual Tailscale IPv4 hosts (/32)
+are accepted. No public/default route or whole-CGNAT exception is added.
+Existing exceptions are preserved; newly added rules are rolled back on error.
+Removing an entry from the file does not automatically remove a NordVPN rule.
+
+Keep the real file mode 600 and restore it from private backup BEFORE setup on
+a replacement machine. GitHub stores automation, not private addresses.
+After manual NordVPN account login, rerun setup if policy application was pending.
+
+Validation: all isolated setup tests passed, including five policy tests;
+shell syntax checks passed; ShellCheck passed with existing SC2016/SC2088
+exclusions. Full system verification: 192 passed, 0 failed, 0 pending, 1 warning.
+
 Private endpoint addresses and full logs stay outside Git.
 
 ## 2. AdGuard: Tailscale MagicDNS
