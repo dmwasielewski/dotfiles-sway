@@ -1229,6 +1229,11 @@ Official reference: https://tailscale.com/docs/features/client/linux-systray
 
 ### Tailscale coexistence validation
 
+Follow the [four sequential repairs](docs/testing/tailscale-repair-plan.md):
+1. NordVPN reachability, 2. AdGuard MagicDNS, 3. Proxmox HTTPS trust,
+4. external-network access to the entire NAS. Repair 1 remains in progress;
+its LAN exception passed controlled reversal tests, but peer TCP is unresolved.
+
 The planned four-case AdGuard/NordVPN access matrix is documented in
 [the interoperability test plan](docs/testing/tailscale-adguard-nordvpn.md).
 [Measured results](docs/testing/tailscale-adguard-nordvpn-results.md) show
