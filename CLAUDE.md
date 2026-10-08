@@ -261,6 +261,7 @@ Managed by `setup.sh`. Installed from Flathub as user Flatpaks (`--user`) to avo
 | Spotify | `com.spotify.Client` | Music |
 | OBS Studio | `com.obsproject.Studio` | Screen recording |
 | Kdenlive | `org.kde.kdenlive` | Video editor |
+| GNOME Calculator | `org.gnome.Calculator` | Basic, scientific and programming calculations; launched on demand |
 | mpv | `io.mpv.Mpv` | Video player |
 | JDownloader | `org.jdownloader.JDownloader` | Download manager |
 | Sticky | `com.vixalien.sticky` | Desktop sticky notes |

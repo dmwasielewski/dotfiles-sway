@@ -192,6 +192,7 @@ install_flatpak_app com.vixalien.sticky
 install_flatpak_app com.simplenote.Simplenote
 install_flatpak_app org.libreoffice.LibreOffice
 install_flatpak_app org.kde.kdenlive
+install_flatpak_app org.gnome.Calculator
 report_failed_flatpaks
 
 echo "==> Installing Whispering Open from GitHub release..."

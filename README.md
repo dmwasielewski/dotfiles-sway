@@ -25,6 +25,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Spotify
 - OBS Studio — screen recording
 - Kdenlive — video editor
+- GNOME Calculator — basic, scientific and programming calculations (`org.gnome.Calculator`); launch **Calculator** from the application menu or run `flatpak run org.gnome.Calculator`. Installed automatically by `setup.sh`; updated by the Flatpak updater.
 - mpv — video player
 - JDownloader — download manager
 - Sticky — desktop sticky notes (com.vixalien.sticky)

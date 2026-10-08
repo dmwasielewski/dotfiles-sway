@@ -274,6 +274,7 @@ declare -A FLATPAKS=(
     ["org.jdownloader.JDownloader"]="JDownloader"
     ["com.vixalien.sticky"]="Sticky"
     ["org.kde.kdenlive"]="Kdenlive"
+    ["org.gnome.Calculator"]="GNOME Calculator"
     ["com.simplenote.Simplenote"]="Simplenote"
 )
 
