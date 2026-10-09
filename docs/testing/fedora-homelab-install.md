@@ -75,3 +75,11 @@ fresh destination restored all four actual private configuration files,
 including the authenticated Proxmox CA, with byte-for-byte equality. Setup and
 orchestrator suites passed, shell checks passed, and full workstation
 verification returned 197 passed, 0 failed, 0 pending and 1 warning.
+
+## Jellyfin streaming follow-up
+
+The external-network playback attempt remained loading. Public frontend transfer
+tests showed slow end-to-end delivery through a DERP home path; the precise
+bottleneck and playback/transcoding cause remain unresolved. See the
+[Jellyfin diagnostic report](jellyfin-connectivity-report.md). No unverified
+performance remedy was added to automatic installation.

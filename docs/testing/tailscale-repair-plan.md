@@ -311,3 +311,11 @@ A second test, deleting 15 seconds after upload, passed upload/download and
 local/cloud deletion through Onedriver. Both own test files were cleaned up.
 The timing-related difference remains unexplained. See the [full report](hotspot-connectivity-report.md)
 for methods, actual paths/ports, filtering scope and remaining limitations.
+
+## Jellyfin streaming follow-up
+
+The external-network playback attempt remained loading. Public frontend transfer
+tests showed slow end-to-end delivery through a DERP home path; the precise
+bottleneck and playback/transcoding cause remain unresolved. See the
+[Jellyfin diagnostic report](jellyfin-connectivity-report.md). No unverified
+performance remedy was added to automatic installation.
