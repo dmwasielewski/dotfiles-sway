@@ -1415,3 +1415,10 @@ with firewall/routing enabled. Keep real addresses in the private restored
 policy. Do not infer IPv6, all-guest or DNS coverage from IPv4 port tests.
 The installer applies explicit private exceptions; verification checks retained
 rules, not application reachability.
+
+## Proxmox certificate identity vs trust
+
+A trusted CA cannot fix an IP absent from the server certificate SAN. Use an
+existing covered DNS name and verify it with a CA pin obtained through an
+authenticated host session. Do not replace the cluster CA or use insecure TLS
+flags as a repair. Keep endpoint-specific policy and CA outside public Git.

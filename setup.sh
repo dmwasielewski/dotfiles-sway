@@ -230,6 +230,8 @@ fi
 # Set Firefox (Fedora Sway Atomic's base-image browser) as the default browser
 xdg-settings set default-web-browser org.mozilla.firefox.desktop
 
+bash "$DOTFILES/scripts/setup-proxmox-client.sh"
+
 echo "==> Done."
 echo ""
 echo "==> Next steps:"

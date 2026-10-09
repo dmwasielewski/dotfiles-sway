@@ -18,6 +18,7 @@ phase_P0() {
         "$HERE/systemd/adguard-tailscale-dns.service" \
         "$HERE/scripts/nordvpn-tailscale-transport.py" \
         "$HERE/systemd/nordvpn-tailscale-transport.service" || return 1
+    bash "$HERE/scripts/setup-proxmox-client.sh" || return 1
     write_provisioning_sudoers || return 1
     orch_set REPO_COMMIT "$(git -C "$HERE" rev-parse HEAD)"
     mkdir -p "$STAGE"; chmod 700 "$STAGE"

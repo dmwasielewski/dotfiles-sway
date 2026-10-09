@@ -112,3 +112,10 @@ account, all browser filtering, IPv6 or all NAS VM/LXC services. Full guest
 inventory/application logins/file shares and Proxmox certificate trust remain
 open. The user's VPN and AdGuard connections were preserved. Private endpoint
 addresses, tokens, signed URLs and raw logs are outside the public repository.
+
+## Subsequent Proxmox HTTPS repair
+
+After the measurements above, authenticated CA verification and the correct
+DNS identity resolved the Proxmox TLS error. Normal hostname HTTPS returned
+HTTP 200 with TLS verification result 0 while both programs stayed ON.
+See [Proxmox client trust setup and validation](proxmox-https.md).

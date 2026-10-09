@@ -759,6 +759,14 @@ elif host systemctl list-unit-files adguard-*.service 2>/dev/null | grep -q '^ad
 else
     warn "AdGuard service unit not found — this CLI install may be using the root helper only; verify with adguard-cli status"
 fi
+proxmox_policy="${DOTFILES_PROXMOX_POLICY:-${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/proxmox-client.json}"
+if [[ -f "$proxmox_policy" ]]; then
+    if host python3 "$DOTFILES/scripts/proxmox-client.py" check "$proxmox_policy" >/dev/null 2>&1; then
+        pass "Pinned Proxmox CA and hostname configured (network tested separately)"
+    else
+        fail "Private Proxmox client configuration invalid" "sudo -v && bash ~/dotfiles-sway/scripts/setup-proxmox-client.sh"
+    fi
+fi
 route_policy="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/tailscale-accept-routes"
 if [[ -f "$route_policy" ]] && host which tailscale >/dev/null 2>&1; then
     expected_routes="$(cat "$route_policy")"

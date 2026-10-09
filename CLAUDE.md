@@ -1256,3 +1256,10 @@ NordVPN transport service preserves the reserved Tailscale packet mark and
 applies the NordVPN connection mark (enabled after explicit approval); setup,
 verification, restart limitations and current traffic results are in the repair
 plan. Proxmox TLS and full guest/external service coverage remain pending.
+
+## Opt-in Proxmox HTTPS client trust
+
+See [Proxmox HTTPS setup](docs/testing/proxmox-https.md). The authenticated P0
+phase and manual setup apply the private pinned-CA policy; verification checks
+the local trust anchor and hostname mapping. Restore private files before
+automatic installation; never commit cluster certificates or real addresses.

@@ -162,17 +162,13 @@ remain regardless of configuration verification.
 
 ## 3. Proxmox: HTTPS identity and trust
 
-Status: QUEUED. Presented certificate identity was inspected: its DNS SANs
-include the intended PVE hostname, but its IP SAN contains an old LAN address
-rather than the current address. Validity has not expired. A reachable port
-is not a trusted/authenticated panel. The existing Fedora SSH key was rejected
-by Proxmox; authenticated host access remains needed to obtain the intended
-CA and reconcile the certificate/hostname safely. Do not automatically trust
-a CA retrieved through an unverified HTTPS session.
-Obtain the intended hostname and inspect its certificate chain.
-Use the proper hostname/certificate or install the intended private CA trust.
-Pass criteria: normal HTTPS validation succeeds without insecure flags, and the
-intended authenticated panel works. Requires working existing login access.
+Status: HTTPS TRUST AND IDENTITY REPAIRED on 2026-10-09. The CA was obtained
+through the user's authenticated Proxmox SSH session and its SHA-256 pin matched.
+The intended DNS name passed normal Fedora HTTPS verification (HTTP 200, TLS 0)
+with AdGuard and NordVPN enabled on the external phone hotspot. No insecure
+curl flags, server certificate replacement or firewall changes were needed.
+Panel login and browser UI confirmation remain separate checks.
+See [reproducible private-policy setup](proxmox-https.md).
 
 ## 4. Entire NAS over Tailscale outside home
 

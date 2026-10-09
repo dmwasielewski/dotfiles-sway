@@ -1330,3 +1330,10 @@ leaves existing exceptions unchanged. Only explicit RFC1918 LAN networks and
 individual Tailscale IPv4 hosts (/32) are supported, with rollback of newly
 added entries on failure. Apply while disconnected, then connect. No broad
 CGNAT exception or custom nftables rule is installed. DNS and TLS remain pending.
+
+## Opt-in Proxmox HTTPS client trust
+
+See [Proxmox HTTPS setup](docs/testing/proxmox-https.md). The authenticated P0
+phase and manual setup apply the private pinned-CA policy; verification checks
+the local trust anchor and hostname mapping. Restore private files before
+automatic installation; never commit cluster certificates or real addresses.
