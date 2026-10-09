@@ -275,3 +275,33 @@ and Proxmox TCP, MagicDNS and public HTTPS. Public egress differed from the
 disconnected baseline. OneDrive account metadata reported connected; actual
 file transfers were not tested. Proxmox TLS validation still failed as expected
 for repair 3. Both VPN/firewall routing settings remain enabled.
+
+## External phone-hotspot verification — 2026-10-09
+
+The user moved Fedora to a phone hotspot and enabled AdGuard and NordVPN.
+Checks confirmed the Wi-Fi IPv4 address was outside the home subnet. Both
+compatibility services were active. No service was toggled, no filter/config
+was changed, and the user's connected state was preserved.
+
+- Home traffic selected tailscale0; the peer replied to diagnostic and ordinary
+  ping, its SSH port accepted TCP, and the Proxmox panel port accepted TCP.
+- The peer's MagicDNS name resolved and public HTTPS returned HTTP 200.
+- Public Internet routing selected nordlynx. NordVPN's own IP-insights endpoint
+  reported `protected: true`, United Kingdom / Manchester. The server's tunnel
+  endpoint address differed from the public egress address; that difference
+  alone is not evidence of a VPN failure.
+- An explicit DNS query for the advertising test domain was blocked. AdGuard's
+  current access log recorded the exact query as `blocked`, with a filter ID
+  and matching rule. Its local HTTP proxy separately returned `500 Request
+  Blocked` for the advertising URL, also with a matching blocking rule in the
+  log. These are actual DNS/HTTP filtering checks, not merely process status.
+- The usual DNS path initially returned 0.0.0.0 for NordVPN's diagnostic API.
+  The single diagnostic HTTPS request used curl's DNS-over-HTTPS option to
+  reach that endpoint with normal TLS verification; no persistent DNS setting
+  changed. The source of that API-domain answer was not established.
+
+Result: tested Tailscale/home access, NordVPN Internet egress and AdGuard
+DNS/HTTP filtering work together outside home. Proxmox normal TLS validation
+still failed; this does not validate a trusted/authenticated panel. Full live
+VM/LXC inventory, application logins and file transfers remain pending.
+Private addresses and raw logs remain outside the public repository.

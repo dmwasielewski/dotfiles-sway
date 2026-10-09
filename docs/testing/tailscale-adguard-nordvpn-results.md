@@ -127,3 +127,13 @@ all four cases, then update automation only if that remedy is verified and
 matches the intended access policy.
 
 [Original test plan](tailscale-adguard-nordvpn.md)
+
+## Follow-up: repaired configuration outside home, 2026-10-09
+
+With the user connected through a phone hotspot and both AdGuard/NordVPN ON,
+the peer ping/SSH-port TCP, Proxmox-port TCP, MagicDNS and public HTTPS passed.
+NordVPN's own IP-insights check reported protected, and Internet routing used
+nordlynx. AdGuard logged actual DNS and HTTP blocking of advertising test
+requests. No connection/filter state was changed. These results supersede the
+original failures for the tested endpoints; complete guest coverage and
+Proxmox TLS trust remain pending. See [details and limitations](tailscale-repair-plan.md#external-phone-hotspot-verification--2026-10-09).
