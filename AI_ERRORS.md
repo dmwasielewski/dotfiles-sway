@@ -1422,3 +1422,10 @@ A trusted CA cannot fix an IP absent from the server certificate SAN. Use an
 existing covered DNS name and verify it with a CA pin obtained through an
 authenticated host session. Do not replace the cluster CA or use insecure TLS
 flags as a repair. Keep endpoint-specific policy and CA outside public Git.
+
+## Homelab private configuration must precede setup
+
+The USB vault manifest applies in P2 after networking setup. Adding the
+Proxmox/Tailscale/NordVPN policies only there misses their first setup pass.
+Restore validated `config/dotfiles` staging in P0 before Proxmox trust and P2
+routing. Keep actual policy/CA outside public Git; reject destination conflicts.

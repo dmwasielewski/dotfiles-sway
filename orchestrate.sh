@@ -10,6 +10,9 @@ setup_logging "orchestrate.sh"
 STAGE="$HOME/.local/state/dotfiles-secrets"
 
 phase_P0() {
+    # Restore opt-in networking before Proxmox trust (P0) and routing (P2).
+    python3 "$HERE/scripts/restore-homelab-config.py" "$STAGE/config/dotfiles" \
+        "${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles" || return 1
     # Without the scoped sudoers drop-in every later phase would block on a
     # password prompt with no TTY, so a failure here must stop the run.
     # Seed the protected helper during P0's authenticated sudo session.

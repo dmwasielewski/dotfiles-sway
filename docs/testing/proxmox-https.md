@@ -12,7 +12,9 @@ Trusting this CA allows certificates it signs; keep its private key on Proxmox.
 
 ## Restore on a replacement Fedora machine
 
-Restore these files from private backup before `bootstrap.sh`/`orchestrate.sh`:
+Restore these files from private backup before `bootstrap.sh`, or place them
+in the encrypted vault's `config/dotfiles` directory for automatic P0 restore
+by `install-from-usb.sh`/`orchestrate.sh`:
 `~/.config/dotfiles/proxmox-client.json` and the adjacent public CA PEM.
 Keep both files mode 600. Example policy (replace all values):
 

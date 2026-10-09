@@ -1263,3 +1263,9 @@ See [Proxmox HTTPS setup](docs/testing/proxmox-https.md). The authenticated P0
 phase and manual setup apply the private pinned-CA policy; verification checks
 the local trust anchor and hostname mapping. Restore private files before
 automatic installation; never commit cluster certificates or real addresses.
+
+## Fresh-install homelab configuration
+
+See [Fedora homelab installation](docs/testing/fedora-homelab-install.md) for
+all implemented connectivity changes, private backup files, encrypted-USB P0
+restore order, manual bootstrap steps, login requirements and measured limits.
