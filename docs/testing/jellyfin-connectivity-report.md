@@ -53,3 +53,36 @@ and [playback troubleshooting](https://jellyfin.org/docs/general/administration/
 
 No new remedy is added to the installer on the basis of these measurements.
 The existing Tailscale/NordVPN/AdGuard compatibility configuration is retained.
+
+## User-disconnected NordVPN comparison — 23:14–23:15 BST
+
+The user disconnected NordVPN; diagnostics confirmed `Disconnected`. AdGuard
+remained running with automatic filtering enabled. No service was toggled by
+the diagnostic process. The same public 520,778-byte file and request options
+were used, with three successful HTTP 200 samples:
+
+| Sample | Seconds | End-to-end Mb/s |
+|---|---|---|
+| 1 | 2.821 | 1.477 |
+| 2 | 2.659 | 1.567 |
+| 3 | 2.646 | 1.575 |
+
+Jellyfin ICMP received 8/8 replies, mean 80.181 ms (59.291–124.667 ms).
+Compared with the earlier run, frontend delivery was approximately four times
+faster and host latency substantially lower. This sequential comparison is
+evidence of improvement after disconnecting NordVPN, not proof of the precise
+packet/filter bottleneck; hotspot load and time changed between runs.
+
+Tailscale still used London DERP: three diagnostic pings returned 61, 108 and
+69 ms, and no direct connection was established. `netcheck` still reported
+UDP false and no IPv4 mapping. Therefore NordVPN is not established as the
+sole cause of relay use. Public Internet routing now selected the hotspot
+interface; Jellyfin still selected `tailscale0` table 52. The exact underlay
+route of earlier existing relay sockets was not proven by a mark-only lookup.
+
+Tailscale also reported a coordination-server network-map delay (2m6s) and
+marked the local device offline, while the tested data path still worked.
+This control-plane health warning requires a separate follow-up if persistent.
+The comparison did not authenticate to Jellyfin or establish film playback,
+actual stream bitrate, sustained capacity or transcoding state. NordVPN remains
+in the user's disconnected state. No performance remedy was automated.
