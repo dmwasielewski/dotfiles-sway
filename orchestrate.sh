@@ -12,6 +12,12 @@ STAGE="$HOME/.local/state/dotfiles-secrets"
 phase_P0() {
     # Without the scoped sudoers drop-in every later phase would block on a
     # password prompt with no TTY, so a failure here must stop the run.
+    # Seed the protected helper during P0's authenticated sudo session.
+    sudo -n install -Dm0644 -t /etc/dotfiles \
+        "$HERE/scripts/adguard-tailscale-dns.py" \
+        "$HERE/systemd/adguard-tailscale-dns.service" \
+        "$HERE/scripts/nordvpn-tailscale-transport.py" \
+        "$HERE/systemd/nordvpn-tailscale-transport.service" || return 1
     write_provisioning_sudoers || return 1
     orch_set REPO_COMMIT "$(git -C "$HERE" rev-parse HEAD)"
     mkdir -p "$STAGE"; chmod 700 "$STAGE"
@@ -61,6 +67,8 @@ phase_P2() {
     if ! bash "$HERE/scripts/setup-nordvpn.sh"; then
         echo "warning: NordVPN post-reboot setup did not complete — see verify.sh" >&2
     fi
+    bash "$HERE/scripts/setup-adguard-tailscale-dns.sh" || return 1
+    bash "$HERE/scripts/setup-nordvpn-tailscale-transport.sh" || return 1
     bash "$HERE/scripts/setup-damian-container.sh"    || return 1
     bash "$HERE/scripts/setup-ubuntu-dev-container.sh" || return 1
     bash "$HERE/scripts/setup-security-container.sh"  || return 1

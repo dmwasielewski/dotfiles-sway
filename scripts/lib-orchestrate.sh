@@ -90,7 +90,7 @@ provisioning_sudoers_content() {
     local user="$1"
     cat <<EOF
 # Temporary, written by the dotfiles orchestrator; removed in phase P3 (finalize).
-$user ALL=(ALL) NOPASSWD: /usr/bin/tailscale set --operator=$user, /usr/bin/rpm-ostree, /usr/bin/systemctl, /usr/bin/loginctl, /usr/sbin/usermod, /usr/bin/mkdir, /usr/bin/tee
+$user ALL=(ALL) NOPASSWD: /usr/bin/python3 /etc/dotfiles/nordvpn-tailscale-transport.py install, /usr/bin/python3 /etc/dotfiles/adguard-tailscale-dns.py install, /usr/bin/tailscale set --operator=$user, /usr/bin/rpm-ostree, /usr/bin/systemctl, /usr/bin/loginctl, /usr/sbin/usermod, /usr/bin/mkdir, /usr/bin/tee
 EOF
 }
 

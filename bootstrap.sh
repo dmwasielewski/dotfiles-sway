@@ -188,4 +188,7 @@ echo -e "     Full verification — checks every component"
 echo ""
 echo -e " ${BOLD}Reboot now:${NC}  ${CYAN}systemctl reboot${NC}"
 echo ""
+echo "    After reboot: bash ~/dotfiles-sway/scripts/setup-tailscale.sh"
+echo "    With NordVPN: bash ~/dotfiles-sway/scripts/setup-nordvpn-tailscale-transport.sh"
+echo "    With AdGuard: bash ~/dotfiles-sway/scripts/setup-adguard-tailscale-dns.sh"
 print_state_summary

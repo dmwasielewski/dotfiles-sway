@@ -5,8 +5,10 @@ the next variable. Baseline: [measured results](tailscale-adguard-nordvpn-result
 
 ## 1. NordVPN: peer and home LAN reachability
 
-Status: IMPLEMENTED AND VALIDATED for the tested IPv4 peer and local Proxmox
-port. Full guest/remote coverage belongs to repair 4. AdGuard stays OFF while isolating this problem.
+Status: IMPLEMENTED AND VALIDATED for the tested IPv4 peer and Proxmox port
+with the persistent transport service enabled on 2026-10-09. Earlier regression
+and external-network experiments are preserved below as historical evidence.
+Full guest/remote coverage belongs to repair 4. AdGuard stays OFF while isolating this problem.
 Capture settings and existing exceptions. With one NordVPN connection kept up,
 reproduce the failures, then try an IPv4 /32 exception for the tested Tailscale
 peer. Test and remove it to confirm reversal. Separately test an exception for
@@ -95,15 +97,79 @@ Private endpoint addresses and full logs stay outside Git.
 
 ## 2. AdGuard: Tailscale MagicDNS
 
-Status: QUEUED. Inspect system resolver ownership and compare direct Tailscale
-DNS queries with application/system queries. Test domain-specific DNS forwarding
-or a narrow exclusion compatible with the installed AdGuard version.
-Pass criteria: the real peer name resolves with AdGuard alone and both programs,
-peer access works, and a known filtering test still passes. Preserve repair 1.
+Status: IMPLEMENTED AND VALIDATED for the tested DNS/filtering targets. See the
+2026-10-09 final matrix below; authenticated/full guest coverage is still pending.
+
+AdGuard's AGCLI NAT chain redirects UDP/TCP port 53 before its LAN exclusions.
+Direct fresh queries to Tailscale's local Quad100 resolver timed out. Changing
+bootstrap/fallback DNS and bypassing tailscaled did not help and were reverted.
+Two destination-specific port-53 RETURN rules restored direct DNS; removing
+those rules reproduced the failure. Cached application lookups are not rollback
+proof. NordVPN also requires the individual Quad100 /32 in the private policy.
+
+The root-owned `adguard-tailscale-dns.service` maintains only two tagged rules
+at the start of AGCLI, rebuilding them when AdGuard recreates the chain and
+removing them when Tailscale's interface disappears or the service stops.
+It leaves other DNS destinations, filter settings and account configuration
+unchanged. Rule reconciliation can take one second after startup/rebuild.
+
+`scripts/setup-adguard-tailscale-dns.sh` installs protected copies under
+`/etc/dotfiles` and enables the service once both CLIs exist. The orchestrator
+copies these during its authenticated phase, then uses only the exact protected
+installer command during provisioning. Never grant passwordless execution of
+a script from a user-writable repository. Post-reboot/manual installation:
+
+```bash
+sudo -v
+bash ~/dotfiles-sway/scripts/setup-tailscale.sh
+bash ~/dotfiles-sway/scripts/setup-adguard-tailscale-dns.sh
+```
+
+Restore the private NordVPN policy from backup, including the Quad100 host
+exception, before applying it while disconnected. Missing policy is not an
+automatic broad VPN exclusion. `verify.sh` checks root ownership, deployed
+file equality and enabled/active service; those checks do not prove traffic.
+
+### Follow-up matrix, 2026-10-06
+
+Fresh UDP and TCP Quad100 queries, uncached system queries, application DNS,
+and public HTTPS passed in A (both OFF), B (AdGuard only), C (NordVPN only),
+D (both ON), and restored A. A temporary random-domain DNS rewrite returned
+0.0.0.0 only in B/D, proving AdGuard still intercepted/filtering other DNS.
+The original filter file was restored byte-for-byte. AdGuard and NordVPN ended
+OFF. OneDrive account metadata was also reachable in the repeated C probe;
+file transfers were not tested.
+
+An explicit stop, two-second wait, start cycle passed fresh DNS and filtering
+again, exercising chain recreation. Native `adguard-cli restart` returned zero
+but reported an unknown startup error and left the proxy OFF. Its cause is not
+yet established; do not treat a zero exit code as successful restart. Use the
+verified stop/wait/start sequence and check status while this remains open.
+
+Peer TCP passed A/B/restored A but timed out C/D; a separate fresh C connection
+also failed normal/diagnostic peer ping. The configured allowlist still passes
+its policy check. Proxmox-port TCP initially failed even in A/B/restored A. Live route inspection
+then revealed Fedora was on an external Wi-Fi network with accept-routes OFF.
+The NAS router itself could reach Proxmox. Enabling the already approved subnet
+route restored Proxmox-port TCP in A/B/restored A; C/D still failed both peer
+and Proxmox TCP. This external-network matrix must not be confused with the
+earlier successful local-home tests. These failures prevent
+claiming completed NAS coexistence or proceeding with a trusted panel test.
+
+Validation: six isolated DNS-helper tests passed, setup/orchestrator suites
+passed, shell checks passed, and systemd unit validation passed. Full system verification: 194 passed, 0 failed, 0 pending, 1 warning; live traffic limitations above
+remain regardless of configuration verification.
 
 ## 3. Proxmox: HTTPS identity and trust
 
-Status: QUEUED. Obtain the intended hostname and inspect its certificate chain.
+Status: QUEUED. Presented certificate identity was inspected: its DNS SANs
+include the intended PVE hostname, but its IP SAN contains an old LAN address
+rather than the current address. Validity has not expired. A reachable port
+is not a trusted/authenticated panel. The existing Fedora SSH key was rejected
+by Proxmox; authenticated host access remains needed to obtain the intended
+CA and reconcile the certificate/hostname safely. Do not automatically trust
+a CA retrieved through an unverified HTTPS session.
+Obtain the intended hostname and inspect its certificate chain.
 Use the proper hostname/certificate or install the intended private CA trust.
 Pass criteria: normal HTTPS validation succeeds without insecure flags, and the
 intended authenticated panel works. Requires working existing login access.
@@ -121,3 +187,91 @@ For each repair: record before/after/rollback evidence, update installation and
 verification where applicable, publish complete related changes, and preserve
 private addresses/credentials outside the public repository. A failed experiment
 is rolled back and recorded; it is never described as a completed repair.
+
+### Reproducible subnet-route preference
+
+`setup-tailscale.sh` reads the optional private file
+`~/.config/dotfiles/tailscale-accept-routes`: exactly `true` or `false`.
+Missing file preserves current settings; invalid content aborts. The current
+installation uses `true`. Restore this mode-600 file alongside the NordVPN
+policy from private backup before installing a replacement machine.
+`verify.sh` compares it with the live RouteAll preference. Approval and access
+policy remain in the Tailscale admin console; accepting routes does not select
+an exit node or prove every guest service is accessible.
+
+## Architecture alternatives
+
+For browser-only Nord traffic, the official NordVPN extension is a browser
+proxy. Keep the system NordVPN tunnel disconnected and exclude the intended
+NAS/Proxmox addresses in the extension. Tailscale routes home services; other
+applications use their normal Internet path. This does not provide NordVPN
+protection for SSH, OneDrive or other non-browser applications.
+References: [NordVPN extension](https://nordvpn.com/features/proxy-extension/),
+[website exclusions](https://support.nordvpn.com/hc/en-us/articles/20321703651985-How-to-use-the-Exclude-from-VPN-Split-Tunneling-feature-on-the-NordVPN-extension).
+
+For system-wide Nord traffic, Linux's documented allowlist selects subnets/ports,
+not individual applications. Our external-network tests show the static address
+exceptions alone are insufficient. A temporary output rule accepting Tailscale's
+underlay packet mark alone did not help. Adding NordVPN's connection mark while
+preserving Tailscale's packet mark restored peer and Proxmox TCP, with public
+HTTPS still working and firewall/routing enabled. After removing the rule,
+already established transport continued to work, so that result is not proof
+of successful rollback for fresh transport. The experimental rule was removed;
+The experimental rules were removed before the persistent service was activated
+on 2026-10-09 with explicit user approval. A further controlled run
+restarted tailscaled in each phase: baseline failed both targets; the rule
+restored both; removing the rule and restarting tailscaled reproduced both
+failures. Public HTTPS passed throughout. Simply reconnecting NordVPN was
+insufficient to clear the already established Tailscale transport's connection
+mark; do not confuse that with a successful rollback experiment.
+
+The prepared `nordvpn-tailscale-transport.service` maintains one tagged rule in
+NordVPN's output chain. It matches only the reserved Tailscale underlay mark,
+preserves the packet mark, and sets the connection mark read from NordVPN's
+own allow rule. It refuses an unknown vendor mark layout. It does not disable
+the firewall, change VPN connection/account settings or add public address
+exceptions. Like the DNS service, its runtime files live under root-owned
+`/etc/dotfiles`; provisioning permits only the exact protected installer.
+The service reconciles chain rebuilds once per second and removes only its own
+rule when Tailscale disappears or it stops. Existing conntrack state can outlive
+rule removal; stopping the service is not immediate revocation of established
+transport. Automatic approval review initially rejected activation of the persistent
+firewall change; the user explicitly approved it on 2026-10-09 and the protected
+installer enabled the service. Four isolated tests
+and systemd unit validation passed. End-to-end service validation passed as recorded below. NordVPN has not documented
+this custom marking workaround as a supported integration.
+Reference: [NordVPN Linux allowlist](https://support.nordvpn.com/hc/en-us/articles/19618692366865-What-is-Split-Tunneling-and-how-to-use-it-with-NordVPN).
+
+## Final enabled-service matrix — 2026-10-09
+
+Both protected compatibility services are enabled/active. Fedora was on its
+home Wi-Fi during this run; the earlier external-network temporary-rule proof
+is separate evidence. Do not claim this run revalidated an external network.
+
+| Variant | Fresh Tailscale DNS UDP/TCP/system | Peer SSH-port TCP | Proxmox port TCP | Public HTTPS | AdGuard control filter |
+|---|---|---|---|---|---|
+| A: both OFF | PASS | PASS | PASS | PASS | Inactive |
+| B: AdGuard only | PASS | PASS | PASS | PASS | PASS |
+| B: stop/wait/start | PASS | PASS | PASS | PASS | PASS |
+| C: NordVPN only | PASS | PASS | PASS | PASS | Inactive |
+| D: both ON | PASS | PASS | PASS | PASS | PASS |
+| Restored A | PASS | PASS | PASS | PASS | Inactive |
+
+The temporary filter file was restored byte-for-byte. AdGuard ended OFF and
+NordVPN disconnected; Tailscale and the two compatibility services remain ON.
+Native AdGuard restart limitation remains documented above. Tests cover IPv4,
+DNS, filtering and transport/ports, not authenticated panel/file transfers or
+every VM/LXC. Proxmox HTTPS trust and full NAS inventory/access remain repairs
+3 and 4. Private endpoints, policies and raw logs remain outside Git.
+
+Full system verification: 196 passed, 0 failed, 0 pending, 1 warning. Setup and
+orchestrator suites, helper tests, shell checks and systemd unit validation
+passed. Automatic installation deploys protected helpers in authenticated P0,
+enables services in P2, restores optional private route/allowlist preferences,
+and checks deployed file equality, root ownership and service state.
+
+A second fresh NordVPN connection passed diagnostic/ordinary peer ping, peer
+and Proxmox TCP, MagicDNS and public HTTPS. Public egress differed from the
+disconnected baseline. OneDrive account metadata reported connected; actual
+file transfers were not tested. Proxmox TLS validation still failed as expected
+for repair 3. Both VPN/firewall routing settings remain enabled.

@@ -239,4 +239,7 @@ echo "    3. After reboot run: bash ~/dotfiles-sway/scripts/setup-ubuntu-dev-con
 echo "    4. After reboot run: bash ~/dotfiles-sway/scripts/setup-security-container.sh"
 echo "    5. After reboot run: bash ~/dotfiles-sway/scripts/setup-onedriver.sh"
 echo "       Sign in to Microsoft in Onedriver; select ~/OneDrive and Start drive on login."
+echo "    After reboot: bash ~/dotfiles-sway/scripts/setup-tailscale.sh"
+echo "    With NordVPN: bash ~/dotfiles-sway/scripts/setup-nordvpn-tailscale-transport.sh"
+echo "    With AdGuard: bash ~/dotfiles-sway/scripts/setup-adguard-tailscale-dns.sh"
 print_state_summary

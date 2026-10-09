@@ -1,0 +1,25 @@
+[Unit]
+Description=Preserve local Tailscale DNS when AdGuard filtering is active
+After=tailscaled.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /etc/dotfiles/adguard-tailscale-dns.py watch
+Restart=on-failure
+RestartSec=2
+User=root
+NoNewPrivileges=yes
+CapabilityBoundingSet=CAP_NET_ADMIN
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+RestrictAddressFamilies=AF_NETLINK AF_UNIX
+RestrictNamespaces=yes
+LockPersonality=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+
+[Install]
+WantedBy=multi-user.target

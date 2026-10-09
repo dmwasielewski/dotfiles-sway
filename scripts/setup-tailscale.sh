@@ -58,6 +58,18 @@ case "${1:-}" in
         else
             step_done TAILSCALE_OPERATOR
         fi
+        # Optional private opt-in: approval of advertised subnets is managed in
+        # the Tailscale admin console. Missing file preserves current preference.
+        route_policy="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/tailscale-accept-routes"
+        if [[ -f "$route_policy" ]]; then
+            accept_routes="$(cat "$route_policy")"
+            case "$accept_routes" in
+                true|false) ;;
+                *) echo "Private Tailscale route policy must contain true or false" >&2; exit 2 ;;
+            esac
+            run_step TAILSCALE_ROUTES "Applying private subnet-route preference" \
+                tailscale set --accept-routes="$accept_routes"
+        fi
         run_step TAILSCALE_SYSTRAY "Installing Tailscale session tray service" configure_session
         state="$(tailscale status --json | python3 -c 'import json,sys; print(json.load(sys.stdin).get("BackendState", "Unknown"))')"
         if [[ "$state" == Running ]]; then

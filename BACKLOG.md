@@ -399,7 +399,7 @@ a zero (see `AI_ERRORS.md`). Two related gaps remain:
 
 ## Small open items
 
-- **Sequential Tailscale repairs**: follow [repairs 1–4](docs/testing/tailscale-repair-plan.md). Finish and validate NordVPN peer/LAN access before AdGuard DNS, Proxmox HTTPS, and full external NAS coverage. Repair 1 implemented/tested for the IPv4 peer and local panel port; repairs 2–4 pending.
+- **Sequential Tailscale repairs**: follow [repairs 1–4](docs/testing/tailscale-repair-plan.md). Finish and validate NordVPN peer/LAN access before AdGuard DNS, Proxmox HTTPS, and full external NAS coverage. Repairs 1–2 enabled and tested in all four variants on 2026-10-09; native AdGuard restart limitation remains. Repairs 3–4 (TLS and full guest/external service coverage) pending.
 - **Tailscale coexistence**: execute the [AdGuard/NordVPN four-case matrix](docs/testing/tailscale-adguard-nordvpn.md), validate the whole NAS/Proxmox host and each live VM/LXC against the dated local inventory, publish sanitized access results, then automate only verified remedies. First four-case run completed 2026-10-06 for Internet/DNS/peer/Proxmox-port
   targets: [results](docs/testing/tailscale-adguard-nordvpn-results.md). Full
   fleet testing is pending authenticated inventory access; MagicDNS with

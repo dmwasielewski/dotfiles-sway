@@ -759,6 +759,41 @@ elif host systemctl list-unit-files adguard-*.service 2>/dev/null | grep -q '^ad
 else
     warn "AdGuard service unit not found — this CLI install may be using the root helper only; verify with adguard-cli status"
 fi
+route_policy="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/tailscale-accept-routes"
+if [[ -f "$route_policy" ]] && host which tailscale >/dev/null 2>&1; then
+    expected_routes="$(cat "$route_policy")"
+    current_routes="$(host tailscale debug prefs 2>/dev/null | python3 -c 'import json,sys; print(str(json.load(sys.stdin).get("RouteAll")).lower())' 2>/dev/null)"
+    if [[ "$expected_routes" =~ ^(true|false)$ && "$current_routes" == "$expected_routes" ]]; then
+        pass "Private Tailscale subnet-route preference applied (reachability tested separately)"
+    else
+        fail "Private Tailscale subnet-route preference missing/invalid" "bash ~/dotfiles-sway/scripts/setup-tailscale.sh"
+    fi
+fi
+if host which tailscale >/dev/null 2>&1 && host which adguard-cli >/dev/null 2>&1; then
+    if host systemctl is-enabled --quiet adguard-tailscale-dns.service &&
+       host systemctl is-active --quiet adguard-tailscale-dns.service &&
+       cmp -s "$DOTFILES/scripts/adguard-tailscale-dns.py" /etc/dotfiles/adguard-tailscale-dns.py &&
+       cmp -s "$DOTFILES/systemd/adguard-tailscale-dns.service" /etc/systemd/system/adguard-tailscale-dns.service &&
+       [[ "$(stat -c '%u:%a' /etc/dotfiles/adguard-tailscale-dns.py 2>/dev/null)" == '0:644' ]]; then
+        pass "Root-owned AdGuard/Tailscale DNS compatibility service current and active"
+    else
+        fail "AdGuard/Tailscale DNS compatibility service missing/stale" \
+             "sudo -v && bash ~/dotfiles-sway/scripts/setup-adguard-tailscale-dns.sh"
+    fi
+fi
+
+if host which tailscale >/dev/null 2>&1 && host which nordvpn >/dev/null 2>&1; then
+    if host systemctl is-enabled --quiet nordvpn-tailscale-transport.service &&
+       host systemctl is-active --quiet nordvpn-tailscale-transport.service &&
+       cmp -s "$DOTFILES/scripts/nordvpn-tailscale-transport.py" /etc/dotfiles/nordvpn-tailscale-transport.py &&
+       cmp -s "$DOTFILES/systemd/nordvpn-tailscale-transport.service" /etc/systemd/system/nordvpn-tailscale-transport.service &&
+       [[ "$(stat -c '%u:%a' /etc/dotfiles/nordvpn-tailscale-transport.py 2>/dev/null)" == '0:644' ]]; then
+        pass "Root-owned NordVPN/Tailscale transport compatibility service current and active"
+    else
+        fail "NordVPN/Tailscale transport compatibility service missing/stale" \
+             "sudo -v && bash ~/dotfiles-sway/scripts/setup-nordvpn-tailscale-transport.sh"
+    fi
+fi
 fi  # end containers (Toolbox / Ubuntu distrobox / NordVPN / AdGuard)
 
 # ── 5c. Neovim ───────────────────────────────────────────────────────────

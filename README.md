@@ -49,6 +49,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Dev language toolchains in both dev containers: Go, Rust (`rustup` + `rust-analyzer`, into the shared `~/.cargo`), Python tooling (`pipx` + `uv`)
 - DevOps stack in both dev containers: `podman`/`docker` CLI (per-OS) plus a home-local, OS-agnostic set — `kubectl`, `helm`, `kind`, `k9s`, `opentofu` (`tofu`), `ansible`, `yq` — installed by `scripts/install-devops-tools.sh` with runtime-discovered versions
 - Tailscale host daemon with official Waybar tray and session autostart
+- Narrow AdGuard DNS and NordVPN transport compatibility services; [current VPN/access limitations](docs/testing/tailscale-repair-plan.md)
 - NordVPN CLI with Waybar status/toggle helper (click to connect/disconnect)
 - AdGuard for Linux CLI with Waybar toggle helper (click to enable/disable)
 - LibreOffice — open source office suite (Writer, Calc, Impress)
@@ -102,6 +103,9 @@ systemctl reboot
 ```bash
 sudo -v
 bash ~/dotfiles-sway/scripts/setup-tailscale.sh      # daemon + tray after reboot
+sudo -v                                          # authenticate manual helper deployment
+bash ~/dotfiles-sway/scripts/setup-adguard-tailscale-dns.sh
+bash ~/dotfiles-sway/scripts/setup-nordvpn-tailscale-transport.sh
 bash ~/dotfiles-sway/scripts/check-hardware.sh
 ```
 

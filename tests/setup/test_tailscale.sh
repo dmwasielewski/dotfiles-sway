@@ -5,6 +5,7 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 mkdir -p "$TMP/bin" "$TMP/home"
 export HOME="$TMP/home" DOTFILES="$ROOT" TEST_LOG="$TMP/commands" TEST_OPERATOR="" TEST_READY=0 TEST_GRAPHICAL=0
+export XDG_CONFIG_HOME="$TMP/home/.config"
 export DOTFILES_LOG_FILE="$TMP/install.log"
 cat > "$TMP/bin/systemctl" <<'EOF'
 #!/usr/bin/env bash
@@ -53,3 +54,16 @@ if bash "$ROOT/scripts/setup-tailscale.sh" > "$TMP/out"; then
 fi
 grep -q 'TAILSCALE_SERVICE=failed' "$HOME/.dotfiles-install-state"
 echo 'PASS: daemon setup failure stops P2 and records failed state'
+
+export TEST_READY=1 TEST_DENY=0
+mkdir -p "$XDG_CONFIG_HOME/dotfiles"
+printf 'true\n' > "$XDG_CONFIG_HOME/dotfiles/tailscale-accept-routes"
+: > "$TEST_LOG"
+bash "$ROOT/scripts/setup-tailscale.sh" > "$TMP/out"
+grep -q '^tailscale set --accept-routes=true$' "$TEST_LOG"
+echo 'PASS: private subnet-route opt-in restored'
+printf 'yes\n' > "$XDG_CONFIG_HOME/dotfiles/tailscale-accept-routes"
+: > "$TEST_LOG"
+if bash "$ROOT/scripts/setup-tailscale.sh" > "$TMP/out" 2>&1; then exit 1; fi
+if grep -q 'set --accept-routes=' "$TEST_LOG"; then exit 1; fi
+echo 'PASS: invalid private subnet-route policy rejected without changing routes'

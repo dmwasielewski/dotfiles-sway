@@ -90,4 +90,5 @@ echo "  adguard-cli status"
 echo "  adguard-cli start"
 echo "  adguard-cli stop"
 echo ""
+bash "$DOTFILES/scripts/setup-adguard-tailscale-dns.sh"
 print_state_summary

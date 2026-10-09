@@ -8,6 +8,9 @@ assert_contains "$out" "/usr/bin/rpm-ostree" "allows rpm-ostree"
 assert_contains "$out" "/usr/bin/systemctl"  "allows systemctl"
 assert_contains "$out" "/usr/sbin/usermod"   "allows usermod"
 assert_contains "$out" "/usr/bin/loginctl"   "allows loginctl (enable-linger)"
+assert_contains "$out" "/usr/bin/python3 /etc/dotfiles/adguard-tailscale-dns.py install" "allows only protected DNS installer"
+[[ "$out" != *"/home/damian/dotfiles-sway/scripts/adguard-tailscale-dns.py"* ]] && echo "  ok: no user-writable DNS installer grant" || { echo "  FAIL: user-writable installer"; ASSERT_FAIL=$((ASSERT_FAIL+1)); }
+assert_contains "$out" "/usr/bin/python3 /etc/dotfiles/nordvpn-tailscale-transport.py install" "allows protected transport installer"
 # must NOT be a blanket ALL command grant
 [[ "$out" != *"NOPASSWD: ALL"* ]] && echo "  ok: not a blanket grant" || { echo "  FAIL: blanket"; ASSERT_FAIL=$((ASSERT_FAIL+1)); }
 

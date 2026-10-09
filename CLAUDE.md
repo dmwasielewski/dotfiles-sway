@@ -83,6 +83,8 @@ dotfiles-sway/
     ├── setup-neovim-config.sh         ← Neovim Chris Titus Tech config + plugin sync (binary from the package manager)
     ├── setup-zed.sh                   ← Zed GUI editor: official upstream binary, user-local in ~/.local/opt (self-updates)
     ├── setup-nordvpn.sh               ← NordVPN CLI install + nordvpnd enable/start + group setup — writes state
+    ├── setup-nordvpn-tailscale-transport.sh # protected Tailscale transport exception
+    ├── setup-adguard-tailscale-dns.sh   # protected local DNS compatibility service
     ├── setup-tailscale.sh              # Tailscale repository, post-reboot daemon/operator/tray setup
     ├── setup-chatgpt.sh               ← ChatGPT desktop app (incl. Codex): official RPM unpacked user-local into ~/.local/opt
     ├── setup-adguard.sh               ← AdGuard for Linux CLI install — writes state
@@ -1232,8 +1234,8 @@ Official reference: https://tailscale.com/docs/features/client/linux-systray
 
 Follow the [four sequential repairs](docs/testing/tailscale-repair-plan.md):
 1. NordVPN reachability, 2. AdGuard MagicDNS, 3. Proxmox HTTPS trust,
-4. external-network access to the entire NAS. Repair 1 now passes the tested
-IPv4 peer/local panel-port checks using an optional private NordVPN policy.
+4. external-network access to the entire NAS. Repairs 1–2 passed the 2026-10-09 enabled-service matrix for IPv4 peer/Proxmox
+ports, DNS and filtering. Full guest/remote coverage remains pending. See the repair plan.
 
 The planned four-case AdGuard/NordVPN access matrix is documented in
 [the interoperability test plan](docs/testing/tailscale-adguard-nordvpn.md).
@@ -1248,4 +1250,9 @@ setup; `setup-nordvpn.sh` applies it and `verify.sh` checks it. Missing policy
 leaves existing exceptions unchanged. Only explicit RFC1918 LAN networks and
 individual Tailscale IPv4 hosts (/32) are supported, with rollback of newly
 added entries on failure. Apply while disconnected, then connect. No broad
-CGNAT exception or custom nftables rule is installed. DNS and TLS remain pending.
+CGNAT exception is installed by the NordVPN policy helper. Repair 2 adds a
+root-owned DNS compatibility service for only Quad100 UDP/TCP port 53; a prepared
+NordVPN transport service preserves the reserved Tailscale packet mark and
+applies the NordVPN connection mark (enabled after explicit approval); setup,
+verification, restart limitations and current traffic results are in the repair
+plan. Proxmox TLS and full guest/external service coverage remain pending.
