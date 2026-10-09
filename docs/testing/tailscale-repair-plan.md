@@ -305,3 +305,13 @@ DNS/HTTP filtering work together outside home. Proxmox normal TLS validation
 still failed; this does not validate a trusted/authenticated panel. Full live
 VM/LXC inventory, application logins and file transfers remain pending.
 Private addresses and raw logs remain outside the public repository.
+
+## OneDrive transfer and traffic report — 2026-10-09
+
+A subsequent phone-hotspot test with both programs still ON confirmed a real
+76-byte upload through Onedriver and byte-for-byte download from Microsoft.
+Immediate deletion was not confirmed in the cloud; verified cleanup used Graph.
+A second test, deleting 15 seconds after upload, passed upload/download and
+local/cloud deletion through Onedriver. Both own test files were cleaned up.
+The timing-related difference remains unexplained. See the [full report](hotspot-connectivity-report.md)
+for methods, actual paths/ports, filtering scope and remaining limitations.
