@@ -13,3 +13,7 @@ disown
 # rules in sway/config — see the note there about XWayland class vs app_id.
 chatgpt &
 disown
+
+# Host KVM manager, pinned to ws6. Opening the GUI does not start guests.
+virt-manager --connect qemu:///system &
+disown

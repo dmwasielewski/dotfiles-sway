@@ -1429,3 +1429,13 @@ The USB vault manifest applies in P2 after networking setup. Adding the
 Proxmox/Tailscale/NordVPN policies only there misses their first setup pass.
 Restore validated `config/dotfiles` staging in P0 before Proxmox trust and P2
 routing. Keep actual policy/CA outside public Git; reject destination conflicts.
+
+## Sway workspace routing must match the actual VM GUI identity
+
+2026-10-10: the host virt-manager window reports Wayland `app_id="virt-manager"`.
+Route that ID to workspace 6 and retain an XWayland `class` fallback. Keep
+`sway/config` login startup and `scripts/autostart.sh` manual startup in sync,
+using `--connect qemu:///system`. A Sway reload applies routing for new windows;
+move existing windows explicitly or reopen the manager to validate assignment.
+Opening the manager is separate from starting guest VMs. Fresh installs reuse
+the existing `setup.sh` config symlink and `packages.sh` host package.

@@ -413,8 +413,13 @@ Config is in `sway/config.d/90-swayidle.conf` (overrides Fedora's system default
 | 3 | Thunderbird | `app_id="(?i)^org\.mozilla\.thunderbird.*"` |
 | 4 | Obsidian | `title=".*Obsidian.*"` |
 | 5 | ChatGPT desktop | `class`/`app_id` `"(?i)^chatgpt$"` (both) |
+| 6 | Virtual Machine Manager | `class`/`app_id` `"(?i)^virt-manager$"` (both) |
 
-`Mod+Shift+S` re-runs the autostart script.
+`Mod+Shift+S` re-runs the autostart script (Firefox, Obsidian, ChatGPT,
+virt-manager). virt-manager starts at Sway login with `--connect qemu:///system`;
+only the GUI is launched, not guest VMs. `setup.sh` symlinks the config and
+`packages.sh` installs the existing host package. Keep both the login `exec`
+and the manual autostart script in sync. Use Super+6 to switch to its workspace.
 
 **ChatGPT needs two `assign` rules, not one.** It runs under XWayland, where sway
 sees an X11 `class` and **no** `app_id` — so an `app_id` rule like Firefox's
