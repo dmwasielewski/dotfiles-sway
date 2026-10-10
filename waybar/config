@@ -32,7 +32,7 @@
     ],
     "group/apps": {
         "orientation": "horizontal",
-        "modules": ["tray", "custom/onedriver", "custom/adguard", "custom/nordvpn"]
+        "modules": ["tray", "custom/onedriver", "custom/googledrive", "custom/adguard", "custom/nordvpn"]
     },
     // Modules configuration
     // "sway/workspaces": {
@@ -71,6 +71,15 @@
         "interval": 30,
         "tooltip": true,
         "on-click": "$HOME/.local/bin/onedrive-waybar open"
+    },
+    "custom/googledrive": {
+        "format": "{text}",
+        "exec": "$HOME/.local/bin/google-drive-waybar",
+        "return-type": "json",
+        "interval": 30,
+        "tooltip": true,
+        "on-click": "$HOME/.local/bin/google-drive-waybar open",
+        "on-click-right": "$HOME/.local/bin/google-drive-waybar menu"
     },
     "custom/nordvpn": {
         "exec": "$HOME/.local/bin/nordvpn-waybar",

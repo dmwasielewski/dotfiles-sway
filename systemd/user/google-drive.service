@@ -1,0 +1,19 @@
+[Unit]
+Description=Google Drive files on demand
+Documentation=https://rclone.org/commands/rclone_mount/
+PartOf=graphical-session.target
+After=graphical-session.target
+ConditionPathExists=%h/.config/google-drive/rclone.conf
+
+[Service]
+Type=notify
+ExecStartPre=%h/.local/bin/google-drive-waybar check-mount
+ExecStart=%h/.local/opt/rclone/current/rclone mount gdrive: %h/GoogleDrive --config=%h/.config/google-drive/rclone.conf --cache-dir=%h/.cache/google-drive --vfs-cache-mode=full --vfs-cache-max-size=5G --vfs-cache-min-free-space=2G --vfs-cache-max-age=24h --vfs-write-back=5s --dir-cache-time=5m --poll-interval=1m --buffer-size=8M --umask=077 --log-level=ERROR
+Restart=on-failure
+RestartSec=15
+TimeoutStartSec=45
+TimeoutStopSec=60
+UMask=0077
+
+[Install]
+WantedBy=graphical-session.target

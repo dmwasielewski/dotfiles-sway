@@ -352,6 +352,31 @@ if profile_includes "$PROFILE" containers; then
     fi
 fi
 
+section "Google Drive files on demand"
+GOOGLE_DRIVE_FIX="bash ~/dotfiles-sway/scripts/setup-google-drive.sh"
+if host "$HOME/.local/opt/rclone/current/rclone" version >/dev/null; then
+    pass "Google Drive Rclone backend"
+else fail "Google Drive Rclone backend missing" "$GOOGLE_DRIVE_FIX"; fi
+for item in "$HOME/.local/bin/google-drive-waybar" \
+            "$HOME/.config/systemd/user/google-drive.service" \
+            "$HOME/.local/share/applications/google-drive.desktop"; do
+    if symlink_ok "$item"; then pass "Google Drive symlink: $item"
+    else fail "Google Drive symlink missing: $item" "$GOOGLE_DRIVE_FIX"; fi
+done
+if [[ -s "$HOME/.local/share/dotfiles-updates/rclone-google-drive" ]]; then
+    pass "Google Drive backend update manifest"
+else fail "Google Drive backend update manifest missing" "$GOOGLE_DRIVE_FIX"; fi
+if [[ -d "$HOME/GoogleDrive" ]]; then
+    pass "Google Drive mount directory exists"
+else fail "~/GoogleDrive mount directory missing" "$GOOGLE_DRIVE_FIX"; fi
+if [[ ! -s "$HOME/.config/google-drive/rclone.conf" ]]; then
+    pending "Google Drive account login" "Super+D → Google Drive (create remote gdrive)"
+elif host mountpoint -q "$HOME/GoogleDrive"; then
+    pass "~/GoogleDrive mounted (content transfers not tested)"
+else
+    pending "Google Drive account/mount" "Click Google Drive, or inspect journalctl --user -u google-drive.service"
+fi
+
 section "Default folder opener"
 if [[ "$(host xdg-mime query default inode/directory)" == thunar.desktop ]]; then
     pass "Thunar opens folders from desktop apps"

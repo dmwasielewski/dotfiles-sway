@@ -411,3 +411,8 @@ button:hover {
 #custom-onedriver.connected { color: #6ab56a; }
 #custom-onedriver.offline { color: #ff3333; }
 #custom-onedriver.warning { color: #c8a060; }
+
+#custom-googledrive { font-family: "Font Awesome 7 Brands", "Font Awesome 6 Brands"; padding: 0 10px; color: #8a9bb5; background-color: #1e2230; border: none; box-shadow: none; }
+#custom-googledrive.connected { color: #6ab56a; }
+#custom-googledrive.offline { color: #ff3333; }
+#custom-googledrive.warning { color: #c8a060; }

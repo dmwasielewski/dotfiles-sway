@@ -95,6 +95,8 @@ run_step_warn "YAZI_INSTALLED" "Setting up yazi" bash "$DOTFILES/scripts/setup-y
 # release (no root/reboot). Launched on demand — no autostart/keybinding; Neovim
 # stays the terminal editor. The asset is ~140 MB, so this can take a while.
 run_step_warn "ZED_INSTALLED" "Setting up Zed" bash "$DOTFILES/scripts/setup-zed.sh"
+run_step_warn "GOOGLE_DRIVE_SETUP" "Installing Google Drive files on demand" \
+    bash "$DOTFILES/scripts/setup-google-drive.sh"
 
 # Zed advertises inode/directory to open project folders. Explicitly select the
 # GUI file manager for apps using xdg-open/GIO (including onedriver).

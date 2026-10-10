@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Google Drive
+Comment=Browse Google Drive files on demand
+Exec=google-drive-waybar open
+Icon=folder-remote
+Terminal=false
+Categories=Network;FileTools;
+Keywords=Google;Drive;Cloud;Files;

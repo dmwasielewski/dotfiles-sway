@@ -1274,3 +1274,34 @@ automatic installation; never commit cluster certificates or real addresses.
 See [Fedora homelab installation](docs/testing/fedora-homelab-install.md) for
 all implemented connectivity changes, private backup files, encrypted-USB P0
 restore order, manual bootstrap steps, login requirements and measured limits.
+
+
+## Google Drive files on demand
+
+`setup.sh` installs the native Google Drive backend with `scripts/setup-google-drive.sh`.
+The official Rclone stable ZIP is checked against its exact SHA256 entry from
+upstream TLS metadata; no OpenPGP verification is claimed. The backend binary is
+private to this host desktop integration at `~/.local/opt/rclone/current/rclone`,
+not a dev CLI added to only one container. Its update manifest uses the normal
+user-local updater and preserves account config, cache, pending writes and the
+active mount. Verify binary, helper/service/desktop symlinks and update manifest.
+
+Google OAuth login is manual, with remote `gdrive` (type `drive`, scope `drive`)
+in `~/.config/google-drive/rclone.conf`, private 0600 in a 0700 directory. Never
+publish credentials or print `rclone config show`. Upstream warns that its shared
+client is retiring during 2026; prefer the user's own Desktop OAuth client and
+follow the publishing instructions to avoid seven-day Testing-token expiry.
+Do not claim an installed integration is an authenticated cloud connection.
+
+The user service mounts `~/GoogleDrive` using FUSE and VFS full cache: 5 GB cleanup
+target, 2 GB free-space target, 24-hour age and five-second write-back. These are
+not hard limits and open files/pending uploads cannot be removed safely. Never
+clear the cache, force unmount or replace the account while writes may be pending.
+Never enable `--allow-non-empty` or `--allow-other`. Cache is not an offline backup.
+
+`custom/googledrive` follows OneDrive in Waybar group/apps, same slate background,
+no separators or global spacing changes, English tooltips and Google Drive brand
+glyph. Account/mount availability is not upload completion. Left-click opens
+Thunar or setup; right-click opens the menu. There is no instant stop toggle.
+Tests: `python3 tests/test-google-drive.py`; full checks: `scripts/verify.sh`.
+See README's Google Drive section for connection and recovery instructions.

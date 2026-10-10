@@ -1285,6 +1285,85 @@ in Thunar. Without an explicit default, Zed's desktop entry (which advertises
 terminal file manager via its existing shortcut. `verify.sh` checks this handler.
 
 
+## Google Drive — files on demand
+
+Google Drive is mounted natively at `~/GoogleDrive` using the official Rclone
+binary. `setup.sh` runs `scripts/setup-google-drive.sh` automatically, including
+on the unattended orchestrator path. For an existing system, run:
+
+```bash
+bash ~/dotfiles-sway/scripts/setup-google-drive.sh
+```
+
+The installer discovers the upstream stable release, downloads it from
+`downloads.rclone.org`, verifies its exact SHA256 entry and extracts only the
+binary under `~/.local/opt/rclone`. Checksums are obtained over upstream TLS;
+OpenPGP signatures are not verified. No container, host package layer or reboot
+is required when the existing host FUSE prerequisites are available. The backend
+registers with the normal user-local updater; reinstalling preserves credentials,
+cached files and pending writes, and does not interrupt an active mount. Restart
+the mount after an update only when writes have completed.
+
+### Connect your account (manual)
+
+Click the Google Drive icon or select **Google Drive** in the application menu.
+The first click opens an English terminal setup window. Create a remote named
+**gdrive**, storage **drive**, scope **drive**, and authorize your account in the
+browser. This scope is required to browse existing files and upload changes;
+`drive.file` would expose only files created by the application. Decline Shared
+Drive unless that is the account's intended storage.
+
+Use your own Google OAuth **Desktop app** client ID and client secret, following
+[Rclone's official instructions](https://rclone.org/drive/#making-your-own-client-id).
+The shared client is being retired during 2026. For an external OAuth app,
+leaving its publishing status as Testing can make refresh tokens expire after
+seven days; follow the upstream publishing instructions. Workspace accounts may
+also need their administrator's approval. Authorization must be completed by the
+account owner; installation does not prove account access.
+
+Credentials live in `~/.config/google-drive/rclone.conf` (0600, directory 0700),
+separate from any other Rclone accounts. Keep this config unencrypted for the
+unattended user service; never commit it or paste its token/client secret into
+chat or logs. After successful configuration, the helper enables and starts
+`google-drive.service` with `graphical-session.target`, then opens Thunar. On a
+fresh installation from GitHub, account login remains a separate manual step.
+
+### Files, cache and indicator
+
+The mount fetches file contents on demand, with `--vfs-cache-mode=full` so desktop
+applications can read and edit them. It does not copy the entire drive locally.
+Directory metadata is cached for five minutes and remote changes are polled every
+minute. Thumbnails/previews can trigger downloads. This cache is not a permanent
+offline backup; it does not guarantee access to every folder after a restart.
+Google-native Docs/Sheets/Slides are exported views, not ordinary files that can
+be edited in place; use Google Drive in the browser for those documents.
+
+The cache is `~/.cache/google-drive`, with a 5 GB cleanup target, 2 GB minimum free
+space target and 24-hour age target. These are **not hard storage limits**: open
+files and pending uploads cannot be evicted. Never erase the cache, force unmount
+or shut down while important writes are waiting. File changes are uploaded after
+close with a five-second write-back delay; a green icon does not confirm that
+uploads finished. Confirm important changes on the Google Drive website.
+
+Waybar places the Google Drive logo directly after OneDrive, on the same slate
+background and with the existing zero module spacing. Every 30 seconds the helper
+checks the mount and account quota through Rclone, without downloading cloud
+files. Rclone may refresh its private OAuth token. Green means account access was
+confirmed, red means a network timeout/failure, amber means authorization/service
+or response problems, and grey means no account/mount. English tooltips explain
+the state. Left-click opens files (or account setup); right-click offers files,
+account setup, the website and the service log. There is deliberately no one-click
+stop button that could interrupt pending uploads.
+
+Diagnostics: `systemctl --user status google-drive.service` and
+`journalctl --user -u google-drive.service`. Never run `rclone config show` in
+shared logs. The mount directory must be empty before mounting; the helper refuses
+to hide existing local files or use an already-mounted filesystem. Do not run two
+mount processes using the same cache. Tests: `python3 tests/test-google-drive.py`.
+
+Official references: [Google Drive backend](https://rclone.org/drive/),
+[Rclone mount and cache](https://rclone.org/commands/rclone_mount/).
+
 ## Tailscale — host daemon and Waybar tray
 
 `packages.sh` runs `scripts/setup-tailscale.sh --repo-only` before layering
