@@ -1274,12 +1274,3 @@ automatic installation; never commit cluster certificates or real addresses.
 See [Fedora homelab installation](docs/testing/fedora-homelab-install.md) for
 all implemented connectivity changes, private backup files, encrypted-USB P0
 restore order, manual bootstrap steps, login requirements and measured limits.
-
-
-## Retired Google Drive integration
-
-The user stopped using Google Drive on 2026-10-11. Do not reinstall the retired
-Rclone/Waybar integration or substitute a trial/paid client without a new request.
-Keep OneDrive intact. Local uninstall and Google Cloud client deletion are
-separate operations; never claim remote cleanup without observing its result.
-See README's retirement note and AI_ERRORS.md for the Advanced Protection failure.

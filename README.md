@@ -1356,22 +1356,3 @@ automatic installation; never commit cluster certificates or real addresses.
 See [Fedora homelab installation](docs/testing/fedora-homelab-install.md) for
 all implemented connectivity changes, private backup files, encrypted-USB P0
 restore order, manual bootstrap steps, login requirements and measured limits.
-
-
-## Google Drive integration retired
-
-On 2026-10-11 the user chose to stop using Google Drive on this system. The
-Rclone mount, custom Waybar module, desktop launcher, installer and verification
-checks were removed. Fresh installations do not install a Google Drive client.
-The private local OAuth configuration, dedicated backend, service, updater
-manifest and empty mount directory were removed; cloud files were not deleted.
-
-Sign-in failed with `Error 400: policy_enforced`: Google Advanced Protection
-blocked the personal OAuth application. Publishing an OAuth app is not the same
-as Google approving its access. No replacement client was installed.
-
-Google Cloud cleanup is a separate manual step: delete only the OAuth clients
-created for this retired integration in the existing project. Do not delete the
-pre-existing project or change Advanced Protection. Review other consumers before
-disabling an API or changing project-wide branding/scopes. Local uninstall does
-not revoke or delete a Google Cloud OAuth client.

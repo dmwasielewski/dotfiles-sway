@@ -1439,30 +1439,3 @@ using `--connect qemu:///system`. A Sway reload applies routing for new windows;
 move existing windows explicitly or reopen the manager to validate assignment.
 Opening the manager is separate from starting guest VMs. Fresh installs reuse
 the existing `setup.sh` config symlink and `packages.sh` host package.
-
-
-## Check account protection before implementing a cloud integration
-
-2026-10-11: Google Drive authorization failed with `Error 400: policy_enforced`
-because Google Advanced Protection had not approved the personal OAuth app.
-The Rclone backend and custom Waybar integration were installed but never
-authenticated or mounted against Google Drive. The user requested their removal
-and then explicitly declined a replacement client. Local integration/config
-cleanup was completed; Google Cloud cleanup still requires the user's console.
-
-Do not promise that publishing, adding test users, or choosing another Linux
-client removes Advanced Protection restrictions. Verify account compatibility
-before installing or initiating a developer verification workflow. Do not call
-an installed integration a working cloud connection.
-
-Google's branding documentation describes controls that may not be rendered in
-the user's current UI. Never repeatedly instruct the user to click an unobserved
-button. URL-only browser context does not expose the form. Distinguish optional
-form fields from later review requirements, and user reports from vendor
-confirmation. Never use a homepage as a privacy policy unless it actually
-contains the required disclosure.
-
-Uninstall only owned local artifacts. Check for mounts and pending cache data;
-preserve cloud files and OneDrive. Delete only newly created OAuth clients, not
-the pre-existing Google Cloud project. No Google Cloud deletion was observed
-during local cleanup, so it must remain documented as pending.
