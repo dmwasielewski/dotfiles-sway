@@ -97,7 +97,7 @@ moment `setup-kvm.sh` enabled libvirtd the guest raised `virbr0` with a
 conflicting route to its own subnet and lost networking completely: pings and ssh
 dead while the console sat happily at a login prompt.
 
-`VM_NETWORK` now defaults to `dotfiles-nat` (192.168.125.0/24, no collision), the
+`VM_NETWORK` now defaults to `01-Host-Internet` (192.168.170.0/24, no collision), the
 script starts the network if it is defined but inactive, refuses if it does not
 exist, and warns explicitly when the chosen network is on 192.168.122.x. All
 three paths verified against the live libvirt networks.

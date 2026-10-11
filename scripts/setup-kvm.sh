@@ -15,12 +15,12 @@ echo -e "${BOLD}${CYAN}║   KVM / QEMU — setup                     ║${NC}"
 echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════╝${NC}"
 echo ""
 
-KVM_NETWORK_NAME="${KVM_NETWORK_NAME:-dotfiles-nat}"
-KVM_BRIDGE_NAME="${KVM_BRIDGE_NAME:-virbr10}"
+KVM_NETWORK_NAME="${KVM_NETWORK_NAME:-01-Host-Internet}"
+KVM_BRIDGE_NAME="${KVM_BRIDGE_NAME:-virbr170}"
 
 pick_kvm_subnet() {
     local candidate
-    local candidates=("192.168.125" "192.168.126" "192.168.127" "192.168.128")
+    local candidates=("192.168.170" "192.168.174" "192.168.175" "192.168.176")
 
     for candidate in "${candidates[@]}"; do
         if ! ip -4 route show "${candidate}.0/24" 2>/dev/null | grep -q .; then
@@ -51,20 +51,20 @@ configure_repo_network() {
         echo -e "${CYAN}==> Defining dedicated libvirt NAT network '$KVM_NETWORK_NAME' on ${subnet}.0/24...${NC}"
         cat > "$network_xml" <<'XML'
 <network>
-  <name>dotfiles-nat</name>
+  <name>01-Host-Internet</name>
   <forward mode='nat'/>
-  <bridge name='virbr10' stp='on' delay='0'/>
-  <ip address='192.168.125.1' netmask='255.255.255.0'>
+  <bridge name='virbr170' stp='on' delay='0'/>
+  <ip address='192.168.170.1' netmask='255.255.255.0'>
     <dhcp>
-      <range start='192.168.125.2' end='192.168.125.254'/>
+      <range start='192.168.170.2' end='192.168.170.254'/>
     </dhcp>
   </ip>
 </network>
 XML
         sed -i \
-            -e "s/dotfiles-nat/$KVM_NETWORK_NAME/g" \
-            -e "s/virbr10/$KVM_BRIDGE_NAME/g" \
-            -e "s/192.168.125/${subnet}/g" \
+            -e "s/01-Host-Internet/$KVM_NETWORK_NAME/g" \
+            -e "s/virbr170/$KVM_BRIDGE_NAME/g" \
+            -e "s/192.168.170/${subnet}/g" \
             "$network_xml"
         sudo virsh --connect qemu:///system net-define "$network_xml"
     fi

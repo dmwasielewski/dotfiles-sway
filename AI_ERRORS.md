@@ -1439,3 +1439,15 @@ using `--connect qemu:///system`. A Sway reload applies routing for new windows;
 move existing windows explicitly or reopen the manager to validate assignment.
 Opening the manager is separate from starting guest VMs. Fresh installs reuse
 the existing `setup.sh` config symlink and `packages.sh` host package.
+
+## Libvirt network renaming must preserve references and policy
+
+2026-10-11: save all network/domain XML, require guests shut off, rename network
+definitions while preserving UUID, bridge, subnet, DHCP and DNS, then update every
+VM network source. Remove unused networks only after checking all domain NICs.
+The NoHost firewall keys on bridge names, not display names; keep bridges intact.
+A name prefix is menu ordering, not a security level. Modes with host-only access
+and modes with public-Internet-only access have incomparable restrictions.
+Update setup-kvm.sh, verification and the validation VM's network default together
+so automation does not recreate the old redundant network. In nested validation
+guests, select a free subnet rather than duplicating the parent network route.

@@ -1005,21 +1005,21 @@ else
     fail "/dev/kvm NOT available" "Check BIOS — enable AMD-V / Intel VT-x"
 fi
 
-if host virsh --connect qemu:///system net-list --all 2>/dev/null | grep -q "dotfiles-nat"; then
+if host virsh --connect qemu:///system net-list --all 2>/dev/null | grep -q "01-Host-Internet"; then
     NETSTATE=$(host virsh --connect qemu:///system net-list 2>/dev/null | \
-        awk '/dotfiles-nat/ {print $2}' || echo "unknown")
+        awk '/01-Host-Internet/ {print $2}' || echo "unknown")
     if [[ "$NETSTATE" == "active" ]]; then
-        pass "NAT network 'dotfiles-nat' active"
+        pass "NAT network '01-Host-Internet' active"
     else
-        warn "NAT network 'dotfiles-nat' exists but not active — run: virsh --connect qemu:///system net-start dotfiles-nat"
+        warn "NAT network '01-Host-Internet' exists but not active — run: virsh --connect qemu:///system net-start 01-Host-Internet"
     fi
 elif ! host virsh --connect qemu:///system net-list --all >/dev/null 2>&1; then
     # libvirtd unreachable, so the network's absence was never established.
     # "I could not ask" is not "it is not there" — the same distinction the
     # container probes needed.
-    warn "NAT network 'dotfiles-nat' — could not check (libvirtd not reachable)"
+    warn "NAT network '01-Host-Internet' — could not check (libvirtd not reachable)"
 else
-    fail "NAT network 'dotfiles-nat'  MISSING" "bash ~/dotfiles-sway/scripts/setup-kvm.sh"
+    fail "NAT network '01-Host-Internet'  MISSING" "bash ~/dotfiles-sway/scripts/setup-kvm.sh"
 fi
 
 if host groups 2>/dev/null | grep -q libvirt; then

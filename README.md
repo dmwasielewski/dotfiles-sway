@@ -118,7 +118,7 @@ bash ~/dotfiles-sway/scripts/check-hardware.sh
 bash ~/dotfiles-sway/scripts/setup-kvm.sh
 ```
 > Then log out and back in for group changes to take effect.
-> The script creates its own libvirt NAT network named `dotfiles-nat` on the first free subnet from `192.168.125.0/24` upward, so it does not have to rewrite libvirt's `default` network.
+> The script creates its own libvirt NAT network named `01-Host-Internet` on the first available /24 from 170, 174, 175 and 176, so it does not have to rewrite libvirt's `default` network.
 
 7. Set up the dev toolbox (node, npm, gh, Claude Code, Codex CLI, DeepSeek TUI, ShellGPT):
 ```bash
@@ -1075,13 +1075,16 @@ bash ~/dotfiles-sway/scripts/setup-kvm.sh
 ```
 Then log out and back in for group membership to take effect.
 
+For the four laptop network modes, DHCP/DNS ranges and switching instructions,
+see [Selectable VM network modes](docs/vm-network-modes.md).
+
 ### Launch virt-manager
 ```bash
 virt-manager
 ```
 
 ### Default network
-NAT network (`dotfiles-nat`) is enabled and set to autostart. VMs get IPs from the first free subnet starting at `192.168.125.0/24`.
+NAT network (`01-Host-Internet`) is enabled and set to autostart. VMs get IPs from the first available /24 from 170, 174, 175 and 176.
 `setup-kvm.sh` does not modify libvirt's upstream `default` network. This keeps local or nested-libvirt setups safer when `default` is already in use elsewhere.
 
 ### Windows 11 — TPM & Secure Boot

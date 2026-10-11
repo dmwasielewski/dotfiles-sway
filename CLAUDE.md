@@ -161,7 +161,7 @@ VM validation details:
 - The Fedora ostree content URL is resolved from `https://ostree.fedoraproject.org/mirrorlist`.
 - The disposable VM kickstart uses `ostreesetup --nogpg` because the Fedora 44 netinst Anaconda environment can miss the current ostree signing key even when the installer ISO checksum is valid.
 - Anaconda may shut off the VM after installation; the script starts it again from disk and then waits for SSH.
-- `setup-kvm.sh` defines a dedicated libvirt NAT network named `dotfiles-nat` on the first free subnet from `192.168.125.0/24` upward; it does not modify libvirt's upstream `default` network.
+- `setup-kvm.sh` defines a dedicated libvirt NAT network named `01-Host-Internet` on the first available /24 from 170, 174, 175 and 176; it does not modify libvirt's upstream `default` network.
 
 ### Step 2 — Reboot (mandatory after rpm-ostree)
 
@@ -349,6 +349,8 @@ Managed by `scripts/setup-security-container.sh`. Use `distrobox enter security`
 | Forensics | `binwalk`, `foremost`, `steghide`, `exiftool`, `aircrack-ng` |
 | Wordlists | SecLists at `/opt/SecLists` |
 | Utilities | `tmux`, `vim`, `jq`, `htop`, `btop`, `curl`, `wget`, `python3`, `git` |
+
+Current selectable laptop networks and restore details: [VM network modes](docs/vm-network-modes.md).
 
 ### Layer 6: KVM Virtual Machines
 

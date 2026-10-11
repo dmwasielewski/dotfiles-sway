@@ -55,8 +55,9 @@ VM_USER="${VM_USER:-damian}"
 # the moment setup-kvm.sh enables libvirtd the guest raises virbr0 with a
 # conflicting route to its own subnet and loses networking entirely (observed
 # 2026-08-31: ping and ssh dead while the console sat at a login prompt).
-# dotfiles-nat lives at 192.168.125.0/24 and does not collide.
-VM_NETWORK="${VM_NETWORK:-dotfiles-nat}"
+# 01-Host-Internet normally uses 192.168.170.0/24. Guest setup-kvm.sh
+# selects a free subnet if that route is already present in a nested guest.
+VM_NETWORK="${VM_NETWORK:-01-Host-Internet}"
 VM_ISO="${VM_ISO:-$HOME/Downloads/Fedora-Everything-netinst-x86_64-44-1.7.iso}"
 VM_CHECKSUM="${VM_CHECKSUM:-$HOME/Downloads/Fedora-Everything-44-1.7-x86_64-CHECKSUM}"
 VM_ISO_URL="${VM_ISO_URL:-https://download.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/iso/Fedora-Everything-netinst-x86_64-44-1.7.iso}"
@@ -106,7 +107,7 @@ wait_for_ip() {
 SSH_WAIT_SECONDS="${SSH_WAIT_SECONDS:-5400}"
 
 # The network XML splits the subnet into address + netmask, and the bridge
-# address is a host address (192.168.125.1/24), not the network. The kernel
+# address is a host address (192.168.170.1/24), not the network. The kernel
 # route for the bridge is the one place it is already written as a network
 # CIDR, so read it there instead of doing prefix arithmetic in awk.
 vm_network_subnet() {
@@ -133,7 +134,7 @@ ensure_vm_network() {
     if [[ "$subnet" == 192.168.122.* ]]; then
         echo -e "${YELLOW}⚠ '$VM_NETWORK' is on ${subnet%.*}.0/24 — the same subnet the guest's own${NC}"
         echo -e "${YELLOW}  libvirt 'default' network uses; the guest will lose networking once${NC}"
-        echo -e "${YELLOW}  it enables libvirtd. Use dotfiles-nat instead.${NC}"
+        echo -e "${YELLOW}  it enables libvirtd. Use 01-Host-Internet instead.${NC}"
     fi
     echo -e "${GREEN}✓ network '$VM_NETWORK' ready (${subnet:-unknown})${NC}"
 }
