@@ -39,4 +39,4 @@ case "$STATE" in
     running|paused|'in shutdown') ;;
     *) echo "Unsupported VM state: $STATE"; exit 1 ;;
 esac
-exec virt-viewer --connect "$URI" --wait --reconnect --hotkeys=release-cursor=ctrl+alt --domain-name "$VM"
+exec virt-viewer --attach --connect "$URI" --wait --reconnect --hotkeys=release-cursor=ctrl+alt --domain-name "$VM"

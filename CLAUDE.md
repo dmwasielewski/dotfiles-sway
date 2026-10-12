@@ -431,6 +431,8 @@ running persistent guests, ON_BOOT=ignore leaves resume to explicit virsh start
 (including the personal Windows launcher). Keep shared installer state/logs and
 verify.sh policy checks. Do not restart an active service: stopping it saves VMs.
 Managed-save RAM files are required resume state, not disposable backups.
+The personal viewer must use --attach for SPICE listen=none. Validate actual
+QEMU SPICE display channels, not merely that the viewer process exists.
 
 **ChatGPT needs two `assign` rules, not one.** It runs under XWayland, where sway
 sees an X11 `class` and **no** `app_id` — so an `app_id` rule like Firefox's

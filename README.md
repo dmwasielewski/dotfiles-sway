@@ -354,6 +354,8 @@ Closing the viewer leaves Windows running; shut down inside Windows to stop it.
 This is login autostart, not libvirt domain autostart before login. The existing
 setup symlink/script permissions and host packages reproduce the launcher.
 Logs: `~/.local/state/dotfiles-vm/win11edu-damian.log`.
+The viewer uses `--attach` because the VM has SPICE `listen=none`: libvirt
+provides the display connection instead of an exposed listening port.
 
 `setup-kvm.sh` also configures `libvirt-guests.service` to save the RAM/device
 state of running persistent VMs before host shutdown. Guests remain stopped

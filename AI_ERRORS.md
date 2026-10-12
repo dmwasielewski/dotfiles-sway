@@ -1476,3 +1476,15 @@ files under /var/lib/libvirt/qemu/save are required state, not cleanup targets.
 Manual managedsave/start and guest-agent checks passed; a full host power cycle
 was not tested. Keep setup-kvm.sh integration, shared state/logs, verification
 and English documentation in the same change.
+
+## A viewer process is not a connected Windows display
+
+2026-10-12: after host reboot, the personal console reported that the display
+could only be attached through libvirt with --attach. The VM uses SPICE with
+listen=none; domdisplay therefore has no socket/URI to return. The original
+launcher omitted --attach. Earlier checks saw a process/window on workspace 6
+and incorrectly treated it as a functioning console. Add --attach while keeping
+listen=none. The live fix produced active QEMU SPICE channels (including display)
+and the correctly titled personal Windows window without rebooting the guest.
+Verify the connection itself using query-spice or actual display rendering;
+process/window existence and guest-agent responses do not prove viewer access.

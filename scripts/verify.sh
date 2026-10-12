@@ -183,6 +183,12 @@ else
     fail "Personal Windows VM launcher missing or not executable" "bash ~/dotfiles-sway/setup.sh"
 fi
 
+if grep -Fq 'exec virt-viewer --attach --connect' "$DOTFILES/scripts/launch-win11edu-damian.sh"; then
+    pass "Windows console attaches through libvirt (SPICE listen=none)"
+else
+    fail "Windows console missing libvirt attach mode" "Update ~/dotfiles-sway/scripts/launch-win11edu-damian.sh"
+fi
+
 # ── 1b. Whispering Open ───────────────────────────────────────────────────
 section "1b. Whispering Open"
 
