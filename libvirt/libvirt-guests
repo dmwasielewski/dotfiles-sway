@@ -1,0 +1,7 @@
+# Save running persistent guests before host shutdown; resume them on demand.
+URIS="qemu:///system"
+ON_BOOT="ignore"
+ON_SHUTDOWN="suspend"
+PERSISTENT_ONLY="true"
+BYPASS_CACHE=0
+SYNC_TIME=1

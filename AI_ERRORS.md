@@ -1463,3 +1463,16 @@ virt-viewer app_id/class, keep the script executable in Git, and update both
 Sway login startup and manual autostart. Explicitly set release-cursor=ctrl+alt
 to preserve the user's familiar input-release shortcut. Closing the console
 leaves the guest running; login autostart is different from libvirt autostart.
+
+## VM login startup does not protect guests at host shutdown
+
+2026-10-12: the personal Windows launcher was active, but libvirt-guests.service
+was disabled/inactive and no shutdown policy existed. Install an explicit
+qemu:///system policy with ON_SHUTDOWN=suspend, ON_BOOT=ignore and persistent
+guests only; enable/start the service so host shutdown saves RAM/device state
+while login resumes only the personal Windows VM. Do not restart an active
+service as a config reload: ExecStop saves the running guests. Managed-save
+files under /var/lib/libvirt/qemu/save are required state, not cleanup targets.
+Manual managedsave/start and guest-agent checks passed; a full host power cycle
+was not tested. Keep setup-kvm.sh integration, shared state/logs, verification
+and English documentation in the same change.

@@ -425,6 +425,12 @@ on fresh install is a skip, not a failure. Keep the existing script executable
 and both autostart paths in sync. Ctrl+Alt releases captured input. Closing the
 viewer does not shut down Windows. virt-manager is launched manually. This does
 not enable libvirt domain autostart. Logs are in ~/.local/state/dotfiles-vm/.
+`setup-kvm.sh` invokes `setup-vm-state.sh`: install libvirt/libvirt-guests into
+/etc/sysconfig and enable/start libvirt-guests.service. ON_SHUTDOWN=suspend saves
+running persistent guests, ON_BOOT=ignore leaves resume to explicit virsh start
+(including the personal Windows launcher). Keep shared installer state/logs and
+verify.sh policy checks. Do not restart an active service: stopping it saves VMs.
+Managed-save RAM files are required resume state, not disposable backups.
 
 **ChatGPT needs two `assign` rules, not one.** It runs under XWayland, where sway
 sees an X11 `class` and **no** `app_id` — so an `app_id` rule like Firefox's

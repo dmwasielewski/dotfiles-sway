@@ -1005,6 +1005,14 @@ else
     fail "libvirtd not enabled on boot" "sudo systemctl enable libvirtd"
 fi
 
+if host systemctl is-enabled --quiet libvirt-guests.service &&
+   host systemctl is-active --quiet libvirt-guests.service &&
+   cmp -s "$DOTFILES/libvirt/libvirt-guests" /etc/sysconfig/libvirt-guests; then
+    pass "VM state save enabled at host shutdown (resume on demand)"
+else
+    fail "VM shutdown state-save policy missing or inactive" "bash ~/dotfiles-sway/scripts/setup-vm-state.sh"
+fi
+
 if host ls /dev/kvm &>/dev/null 2>&1; then
     pass "/dev/kvm available (KVM works)"
 else

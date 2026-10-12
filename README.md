@@ -355,6 +355,14 @@ This is login autostart, not libvirt domain autostart before login. The existing
 setup symlink/script permissions and host packages reproduce the launcher.
 Logs: `~/.local/state/dotfiles-vm/win11edu-damian.log`.
 
+`setup-kvm.sh` also configures `libvirt-guests.service` to save the RAM/device
+state of running persistent VMs before host shutdown. Guests remain stopped
+after host boot until started explicitly; the personal Windows login launcher
+restores its saved state. Manual enablement on an existing installation:
+`bash ~/dotfiles-sway/scripts/setup-vm-state.sh`. See
+[VM state save and restore](docs/vm-network-modes.md#host-shutdown-and-managed-guest-save).
+Allow disk space for saved RAM and let normal host shutdown finish.
+
 ### Key bindings
 
 #### Basics

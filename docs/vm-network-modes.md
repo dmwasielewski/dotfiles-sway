@@ -45,3 +45,30 @@ Shut down the VM, open hardware details, select its NIC, choose **Network source
 and apply. Start the guest with automatic IPv4/DNS enabled. To connect Kali and
 Windows for an exercise, select the same network on both. Pause does not shut down
 the guest. `virsh --connect qemu:///system net-list --all` lists current modes.
+
+## Host shutdown and managed guest save
+
+`setup-kvm.sh` runs `setup-vm-state.sh` to install `libvirt/libvirt-guests` under
+`/etc/sysconfig` and enable/start `libvirt-guests.service`. On host shutdown,
+libvirt saves running persistent guests' RAM and device state with managedsave,
+then stops their QEMU processes. Saved guests are not automatically resumed by
+the boot service (`ON_BOOT=ignore`). The Sway personal Windows launcher invokes
+`virsh start`, which restores its managed state. Other guests resume on demand.
+`SYNC_TIME=1` asks guest agents to synchronize guest time when service-based
+restoration is used; the personal launcher uses normal libvirt start.
+
+This is different from Pause: a managed save persists RAM on disk under
+`/var/lib/libvirt/qemu/save`. Allow space roughly proportional to active guest
+RAM. Leave save files intact. Closing a viewer does not stop a guest. Normal
+host shutdown must finish; cutting power or holding the power button cannot be
+protected by this service. This is not a backup or a snapshot rollback point.
+Do not restart/stop libvirt-guests as a harmless configuration reload: its stop
+action saves running guests. The installer uses enable --now without restart.
+Installer steps record shared state/log output; verification checks the policy
+and service. No host reboot is required to enable the shutdown hook.
+
+Validated on 2026-10-12: service enabled/active, policy matches the repository,
+and manual managedsave stopped win11edu-damian with a retained save image.
+Normal virsh start restored that state, and the Windows guest agent responded.
+The VM was left running. Full verification: 201 passed, 0 failed, 1 warning.
+An actual host shutdown/reboot was not performed during this validation.

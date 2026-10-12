@@ -119,6 +119,9 @@ echo -e "\n${CYAN}==> Configuring dedicated libvirt NAT network...${NC}"
 configure_repo_network
 step_done "KVM_NETWORK_DOTFILES_NAT"
 
+# Save all running persistent guests before host poweroff; resume on demand.
+bash "$DOTFILES/scripts/setup-vm-state.sh"
+
 # ── Verify KVM ───────────────────────────────────────────────────────────
 echo -e "\n${CYAN}==> Verifying KVM...${NC}"
 if ls /dev/kvm &>/dev/null; then
