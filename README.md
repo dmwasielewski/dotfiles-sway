@@ -7,7 +7,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 ### Window manager & UI
 - Sway window manager config (borders, keybindings, idle/lock, screenshots, touchpad)
 - Waybar status bar (bottom, muted dark theme, colour thresholds for CPU/RAM/temp/battery, Claude Code status, NordVPN toggle, AdGuard toggle, power menu)
-- Autostart layout: terminal on ws1, Firefox on ws2, Thunderbird on ws3, Obsidian on ws4, ChatGPT on ws5, virt-manager on ws6
+- Autostart layout: terminal on ws1, Firefox on ws2, Thunderbird on ws3, Obsidian on ws4, ChatGPT on ws5, personal Windows on ws6
 - Foot terminal config
 - Shared Bash prompt/aliases: host prompt in green, `damianf` prompt in cyan, `damianu` Distrobox prompt in cyan with package icon, `security` Distrobox prompt in red, `damianf`/`damianu` entry shortcuts, plus coloured `ls`/`ll`/`la` aliases
 - Mako notification daemon (11s auto-dismiss)
@@ -330,7 +330,7 @@ Solid black (`#000000`) — no image, no distractions.
 | 3 | Thunderbird |
 | 4 | Obsidian |
 | 5 | ChatGPT desktop (ChatGPT + Work + Codex) |
-| 6 | Virtual Machine Manager (virt-manager) |
+| 6 | Personal Windows (win11edu-damian via virt-viewer) |
 
 Apps are launched by `exec` lines in `sway/config` and pinned to workspaces by
 `assign` rules. ChatGPT has **two** assign rules: it runs under XWayland, where
@@ -343,13 +343,17 @@ Flathub deprecated the plain `org.mozilla.Thunderbird` ID in favour of
 `org.mozilla.thunderbird_esr`, which silently broke the old hardcoded `exec`. The
 `assign` rule matches any variant via a case-insensitive regex.
 
-virt-manager opens automatically at Sway login with `--connect qemu:///system`.
-Its manager and console windows are routed to workspace 6 by Wayland `app_id`
-and XWayland `class` rules. Press **Super+6** or click workspace **6** in Waybar.
-This launches the manager only; guest startup remains controlled by libvirt.
-`setup.sh` links this configuration and `packages.sh` already installs
-virt-manager, so fresh installations reproduce the layout after the package
-reboot and Sway login. `Mod+Shift+S` also reopens the manager.
+At Sway login, `scripts/launch-win11edu-damian.sh` starts `win11edu-damian`
+if it is shut off and opens its console in virt-viewer on workspace 6. An already
+running VM is reused. A runtime lock prevents duplicate viewer windows from
+repeated `Mod+Shift+S` launches. The launcher waits up to 30 seconds for libvirt;
+a fresh install with no personal VM skips startup until the VM is restored.
+virt-manager remains available from the application menu, but is not autostarted.
+Press **Super+6** for Windows and **Ctrl+Alt** to release captured input.
+Closing the viewer leaves Windows running; shut down inside Windows to stop it.
+This is login autostart, not libvirt domain autostart before login. The existing
+setup symlink/script permissions and host packages reproduce the launcher.
+Logs: `~/.local/state/dotfiles-vm/win11edu-damian.log`.
 
 ### Key bindings
 
@@ -407,7 +411,7 @@ reboot and Sway login. `Mod+Shift+S` also reopens the manager.
 #### Autostart trigger
 | Shortcut | Action |
 |---|---|
-| `Mod+Shift+S` | Re-run autostart script (Firefox + Obsidian + ChatGPT + virt-manager) |
+| `Mod+Shift+S` | Re-run autostart script (Firefox + Obsidian + ChatGPT + personal Windows) |
 
 #### File manager (yazi — in-app, not Sway)
 | Shortcut | Action |
@@ -575,7 +579,7 @@ dotfiles-sway/
 ├── scripts/
 │   ├── lib-install.sh                 # Shared helpers: state tracking, run_step()
 │   ├── verify.sh                      # Post-install verification — checks all components
-│   ├── autostart.sh                   # Sway autostart: Firefox, Obsidian, ChatGPT, virt-manager
+│   ├── autostart.sh                   # Sway autostart: Firefox, Obsidian, ChatGPT, personal Windows
 │   ├── check-hardware.sh              # Hardware check (GPU, VA-API, audio, ...) — writes state
 │   ├── setup-kvm.sh                   # KVM/QEMU setup (libvirtd, groups, network) — writes state
 │   ├── setup-neovim-config.sh         # Neovim 0.12.1 + Chris Titus Tech config symlink

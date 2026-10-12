@@ -313,7 +313,7 @@ exec ~/dotfiles-sway/scripts/launch-thunderbird.sh
 exec firefox
 exec flatpak run md.obsidian.Obsidian
 exec chatgpt
-exec virt-manager --connect qemu:///system
+exec ~/dotfiles-sway/scripts/launch-win11edu-damian.sh
 bindsym $mod+Shift+s exec ~/dotfiles-sway/scripts/autostart.sh
 
 # ── Floating rules for utility terminals ──
@@ -333,9 +333,11 @@ assign [app_id="org.mozilla.firefox"] workspace number 2
 # shipping a native Wayland build, which would flip which one applies.
 assign [class="(?i)^chatgpt$"] workspace number 5
 assign [app_id="(?i)^chatgpt$"] workspace number 5
-# Virtual Machine Manager and its consoles: native Wayland and XWayland.
+# VM management and viewer windows: native Wayland and XWayland.
 assign [app_id="(?i)^virt-manager$"] workspace number 6
 assign [class="(?i)^virt-manager$"] workspace number 6
+assign [app_id="(?i)^virt-viewer$"] workspace number 6
+assign [class="(?i)^virt-viewer$"] workspace number 6
 
 exec_always systemctl --user import-environment LC_TIME
 

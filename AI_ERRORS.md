@@ -1451,3 +1451,15 @@ and modes with public-Internet-only access have incomparable restrictions.
 Update setup-kvm.sh, verification and the validation VM's network default together
 so automation does not recreate the old redundant network. In nested validation
 guests, select a free subnet rather than duplicating the parent network route.
+
+## Personal VM login autostart needs both guest start and viewer launch
+
+2026-10-12: opening virt-manager starts only the manager UI. To show the personal
+Windows desktop at Sway login, check the named domain, start it only when shut off,
+and launch virt-viewer. Hold a user-runtime flock through viewer lifetime to
+prevent duplicate consoles on repeated autostart shortcuts. Skip missing VM on a
+fresh system, and use a bounded wait for libvirt readiness. Route the actual
+virt-viewer app_id/class, keep the script executable in Git, and update both
+Sway login startup and manual autostart. Explicitly set release-cursor=ctrl+alt
+to preserve the user's familiar input-release shortcut. Closing the console
+leaves the guest running; login autostart is different from libvirt autostart.

@@ -14,6 +14,6 @@ disown
 chatgpt &
 disown
 
-# Host KVM manager, pinned to ws6. Opening the GUI does not start guests.
-virt-manager --connect qemu:///system &
+# Personal Windows desktop, pinned to ws6; the launcher avoids duplicates.
+"$HOME/dotfiles-sway/scripts/launch-win11edu-damian.sh" &
 disown

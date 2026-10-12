@@ -155,26 +155,32 @@ check_symlink "rg system wrapper"          "$HOME/.local/bin/rg"
 check_symlink "environment.d/locale.conf"  "$HOME/.config/environment.d/locale.conf"
 
 # Verify the installed Sway layout as well as the package/symlink checks.
-section "1a. Virtual Machine Manager workspace"
+section "1a. Personal Windows workspace"
 SWAY_CONFIG="$HOME/.config/sway/config"
 VM_LAYOUT_OK=true
 for rule in \
-    'exec virt-manager --connect qemu:///system' \
-    'assign [app_id="(?i)^virt-manager$"] workspace number 6' \
-    'assign [class="(?i)^virt-manager$"] workspace number 6'; do
+    'exec ~/dotfiles-sway/scripts/launch-win11edu-damian.sh' \
+    'assign [app_id="(?i)^virt-viewer$"] workspace number 6' \
+    'assign [class="(?i)^virt-viewer$"] workspace number 6'; do
     if ! grep -Fxq "$rule" "$SWAY_CONFIG"; then
         VM_LAYOUT_OK=false
     fi
 done
 if $VM_LAYOUT_OK; then
-    pass "virt-manager login startup and workspace 6 routing"
+    pass "Windows VM login startup and workspace 6 routing"
 else
-    fail "virt-manager workspace 6 configuration missing" "Update ~/dotfiles-sway and run bash ~/dotfiles-sway/setup.sh"
+    fail "Windows VM workspace 6 configuration missing" "Update ~/dotfiles-sway and run bash ~/dotfiles-sway/setup.sh"
 fi
-if grep -Fxq 'virt-manager --connect qemu:///system &' "$DOTFILES/scripts/autostart.sh"; then
-    pass "virt-manager manual autostart shortcut"
+if grep -Fxq '"$HOME/dotfiles-sway/scripts/launch-win11edu-damian.sh" &' "$DOTFILES/scripts/autostart.sh"; then
+    pass "Windows VM manual autostart shortcut"
 else
-    fail "virt-manager missing from autostart.sh" "Update ~/dotfiles-sway"
+    fail "Windows VM missing from autostart.sh" "Update ~/dotfiles-sway"
+fi
+
+if [[ -x "$DOTFILES/scripts/launch-win11edu-damian.sh" ]]; then
+    pass "Personal Windows VM launcher executable"
+else
+    fail "Personal Windows VM launcher missing or not executable" "bash ~/dotfiles-sway/setup.sh"
 fi
 
 # ── 1b. Whispering Open ───────────────────────────────────────────────────
