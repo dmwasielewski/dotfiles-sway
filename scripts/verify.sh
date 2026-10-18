@@ -304,6 +304,7 @@ declare -A FLATPAKS=(
     ["org.libreoffice.LibreOffice"]="LibreOffice"
     ["com.bitwarden.desktop"]="Bitwarden"
     ["com.spotify.Client"]="Spotify"
+    ["org.telegram.desktop"]="Telegram Desktop"
     ["com.obsproject.Studio"]="OBS Studio"
     ["io.mpv.Mpv"]="mpv"
     ["org.jdownloader.JDownloader"]="JDownloader"

@@ -23,6 +23,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Obsidian — notes
 - Bitwarden — password manager
 - Spotify
+- Telegram Desktop — messaging (`org.telegram.desktop`, user Flatpak); installed by `setup.sh`, launched from the application menu. First login is manual; see [Telegram setup and verification](docs/telegram.md).
 - OBS Studio — screen recording
 - Kdenlive — video editor
 - GNOME Calculator — basic, scientific and programming calculations (`org.gnome.Calculator`); launch **Calculator** from the application menu or run `flatpak run org.gnome.Calculator`. Installed automatically by `setup.sh`; updated by the Flatpak updater.

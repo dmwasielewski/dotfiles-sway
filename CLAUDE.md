@@ -261,6 +261,7 @@ Managed by `setup.sh`. Installed from Flathub as user Flatpaks (`--user`) to avo
 | Obsidian | `md.obsidian.Obsidian` | Notes (ws3) |
 | Bitwarden | `com.bitwarden.desktop` | Password manager |
 | Spotify | `com.spotify.Client` | Music |
+| Telegram Desktop | `org.telegram.desktop` | Messaging; launched on demand |
 | OBS Studio | `com.obsproject.Studio` | Screen recording |
 | Kdenlive | `org.kde.kdenlive` | Video editor |
 | GNOME Calculator | `org.gnome.Calculator` | Basic, scientific and programming calculations; launched on demand |
@@ -1088,6 +1089,7 @@ These require human interaction — document them so nothing is forgotten after 
 | Tailscale login | Tray menu → Log in, or `tailscale up` after post-reboot setup |
 | NordVPN login | `nordvpn login` or, if browser callback fails, `nordvpn login --token <token>` |
 | AdGuard first-time setup | `adguard-cli activate` → `adguard-cli configure` → `adguard-cli start` |
+| Telegram Desktop login | Launch `flatpak run org.telegram.desktop`; sign in in-app; never commit session data |
 | Thunderbird account setup | In-app after Flatpak install |
 | Thunderbird extensions | In-app → Add-ons Manager → search by name (see thunderbird-section) |
 | Thunderbird profile config | Run `bash ~/dotfiles-sway/scripts/setup-thunderbird.sh` after first Thunderbird launch |

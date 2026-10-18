@@ -190,6 +190,7 @@ install_flatpak_app com.obsproject.Studio
 install_flatpak_app org.jdownloader.JDownloader
 install_flatpak_app com.vixalien.sticky
 install_flatpak_app com.simplenote.Simplenote
+install_flatpak_app org.telegram.desktop
 install_flatpak_app org.libreoffice.LibreOffice
 install_flatpak_app org.kde.kdenlive
 install_flatpak_app org.gnome.Calculator
