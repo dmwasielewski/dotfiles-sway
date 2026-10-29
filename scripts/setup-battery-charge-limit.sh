@@ -51,13 +51,19 @@ if ! id -nG | tr ' ' '\n' | grep -qx "$GROUP"; then
     exit 1
 fi
 
-if ! cmp -s "$RULE_SRC" "$RULE_DST"; then
-    echo "==> Installing $RULE_DST (sudo)"
-    sudo install -m 0644 "$RULE_SRC" "$RULE_DST"
-    sudo udevadm control --reload
+# Already installed and in effect: nothing needs root, so never ask for a
+# password (re-running this from a non-interactive shell must not fail).
+if cmp -s "$RULE_SRC" "$RULE_DST" && [[ -w "$ATTR" ]]; then
+    echo "==> udev rule already installed and active — no sudo needed"
+else
+    if ! cmp -s "$RULE_SRC" "$RULE_DST"; then
+        echo "==> Installing $RULE_DST (sudo)"
+        sudo install -m 0644 "$RULE_SRC" "$RULE_DST"
+        sudo udevadm control --reload
+    fi
+    sudo udevadm trigger --subsystem-match=power_supply --action=change
+    sudo udevadm settle
 fi
-sudo udevadm trigger --subsystem-match=power_supply --action=change
-sudo udevadm settle
 
 if [[ ! -w "$ATTR" ]]; then
     echo "ERROR: $ATTR is still not writable after the udev rule ran:" >&2
