@@ -500,7 +500,8 @@ Dark muted blue-slate palette — low contrast, easy on the eyes.
 
 **Battery charge limit (like MyASUS Battery Care).** Click the battery icon to
 switch between **80 %** (battery care, default — for a laptop that lives on the
-charger) and **100 %** (full charge, e.g. before a day at university). On the charger the icon is
+charger) and **100 %** (full charge, e.g. before a day at university). The bar shows
+`level/limit`, e.g. `93%/80%` or `94%/100%`, with a bolt while charging. On the charger the icon is
 green while charging, warning-amber whenever it is not charging but above 80 %
 (e.g. full after 100 % mode), and the normal bar colour at 80 % or below; hover shows the mode, time left
 and battery health. The choice is saved and re-applied after a reboot (first

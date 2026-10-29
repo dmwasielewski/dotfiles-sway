@@ -72,6 +72,17 @@ assert_contains "$out" '"above-care"' "amber while draining to the limit"
 assert_absent "$out" '"charging"' "not green: it is not charging"
 assert_contains "$out" 'running on battery down to the 80% limit' "tooltip explains the drain"
 
+echo "== status: text shows level/limit, bolt while charging =="
+fixture b6 94 Charging 1 100
+choose 100
+out="$(run status)"
+assert_contains "$out" '"text":"94%/100% '$'''"' "94%/100% with the bolt glyph"
+fixture b7 93 "Not charging" 1 80
+choose 80
+assert_contains "$(run status)" '"text":"93%/80% ' "93%/80% in care mode"
+fixture b8 60 Discharging 0 none
+assert_contains "$(run status)" '"text":"60% ' "no /limit without the attribute"
+
 echo "== status: off AC above 80 % is not amber =="
 fixture b4 95 Discharging 0 80
 out="$(run status)"

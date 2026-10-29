@@ -103,10 +103,12 @@ cmd_status() {
         limit="$(current_limit)"
     fi
 
-    # Same glyphs and states as the built-in Waybar battery module it replaces.
+    # Same states as the built-in Waybar battery module it replaces. Charging uses
+    # the bolt (U+F0E7): Waybar's sample config used U+F2D2, which is Font
+    # Awesome's "window-restore" and read as an application icon.
     local icons=($'' $'' $'' $'' $'')
     if [[ "$status" == "Charging" ]]; then
-        icon=$''; classes+=(charging)
+        icon=$'\uf0e7'; classes+=(charging)
     elif on_ac; then
         icon=$''; classes+=(plugged)
     else
@@ -170,7 +172,7 @@ cmd_status() {
     local tooltip; tooltip="$(printf '%s\n' "${lines[@]}")"; tooltip="${tooltip%$'\n'}"
     local cls; cls="$(printf '"%s",' "${classes[@]}")"
     printf '{"text":"%s","tooltip":"%s","class":[%s],"percentage":%d}\n' \
-        "$(json_escape "${cap}% ${icon}")" "$(json_escape "$tooltip")" "${cls%,}" "$cap"
+        "$(json_escape "${cap}%${limit:+/${limit}%} ${icon}")" "$(json_escape "$tooltip")" "${cls%,}" "$cap"
 }
 
 # ── toggle / apply ───────────────────────────────────────────────────────────
