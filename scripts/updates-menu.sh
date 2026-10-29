@@ -27,8 +27,11 @@ run_logged() { "$@" 2>&1 | tee -a "$LOG"; }
 # happily report an error from an earlier, unrelated run as the reason for a
 # failure that printed none of its own (killed, aborted transfer).
 last_error_line() {                    # $1 = the BEGIN marker line for this run
-    awk -v m="$1" 'index($0,m){seen=1; next} seen' "$LOG" 2>/dev/null |
-        grep -iE '^[[:space:]]*error:' | tail -1 | sed 's/^[[:space:]]*//'
+    awk -v m="$1" '
+        index($0,m) {seen=1; last=""; next}
+        seen && tolower($0) ~ /^[[:space:]]*error:/ {last=$0}
+        END {sub(/^[[:space:]]*/, "", last); if (last != "") print last}
+    ' "$LOG" 2>/dev/null
 }
 
 # OS check uses the shared "last known good" cache from lib-updates.sh:
@@ -344,17 +347,18 @@ do_containers() {
 do_userlocal() {
     # Update GitHub-release tools that have no package/self updater (e.g. yazi)
     # by re-running each one's own setup script, recorded in its manifest.
-    local rc=0 name cur new updater
+    local rc=0 name cur new updater manifest
     if [[ -z "$UL_ROWS" ]]; then
         echo ""; echo "── User-local apps ──────────────────────────────────"
         echo "  ✔ All user-local apps up to date."
         return 2
     fi
-    while IFS=$'\t' read -r name cur new; do
+    while IFS=$'\t' read -r name cur new <&3; do
         [[ -z "$name" ]] && continue
         echo ""; echo "── Updating $name ($cur → $new) ─────────────────────"
         log_line "BEGIN user-local update $name"
-        updater="$(userlocal_updater_path "$USERLOCAL_MANIFEST_DIR/$name" || true)"
+        manifest="$(userlocal_manifest_for_name "$name")" || manifest=""
+        updater="$(userlocal_updater_path "$manifest")" || updater=""
         if [[ -n "$updater" && -f "$updater" ]]; then
             if run_logged bash "$updater"; then
                 log_line "OK user-local $name"
@@ -362,9 +366,10 @@ do_userlocal() {
                 echo "  ✗ $name failed (continuing)."; log_line "FAIL user-local $name"; rc=1
             fi
         else
-            echo "  ✗ no updater recorded for $name (manifest missing 'updater')."; rc=1
+            echo "  ✗ $name: missing/ambiguous manifest or invalid updater. Log: $LOG"
+            log_line "FAIL user-local $name — missing/ambiguous manifest or invalid updater"; rc=1
         fi
-    done <<< "$UL_ROWS"
+    done 3<<< "$UL_ROWS"
     refresh_userlocal
     return "$rc"
 }
@@ -452,6 +457,31 @@ do_os() {
                 log_line "FAIL rpm-ostree upgrade after cache recovery — see log"
                 os_fail_record "$reason" "$(os_check_target "$(os_cached_raw)")"
                 echo "  ✗ OS update failed after one cache-recovery retry (system unchanged). Log: $LOG"
+                return 1
+            fi
+        elif os_failure_is_dependency_conflict "$reason"; then
+            echo "  ⚠ Package dependency conflict — refreshing repository metadata and retrying once…"
+            log_line "RECOVERY dependency conflict — refresh-md --force, then one retry"
+            begin="BEGIN rpm-ostree metadata recovery"
+            log_line "$begin"
+            # Keep the same lock across refresh AND upgrade: the badge must not
+            # start another daemon transaction in the gap between them.
+            if run_logged flock -w 300 "$OS_LOCK_FILE" bash -c \
+                'rpm-ostree refresh-md --force && rpm-ostree upgrade'; then
+                log_line "RECOVERED rpm-ostree upgrade after metadata refresh"
+            else
+                reason="$(last_error_line "$begin")"
+                [[ -n "$reason" ]] || reason="metadata refresh or upgrade retry failed; see log"
+                log_line "FAIL rpm-ostree upgrade after dependency recovery — see log"
+                if os_failure_is_dependency_conflict "$reason"; then
+                    reason="dependency conflict after metadata refresh: $reason"
+                    echo "  ✗ Repository/package versions are still incompatible."
+                    echo "    A layered package may require versions missing from the repositories."
+                    echo "    Wait for repository synchronization or review the conflicting layers in the log."
+                    echo "    No packages were removed and no signature checks were disabled."
+                fi
+                os_fail_record "$reason" "$(os_check_target "$(os_cached_raw)")"
+                echo "  ✗ OS update failed after one metadata-recovery attempt. Log: $LOG"
                 return 1
             fi
         else

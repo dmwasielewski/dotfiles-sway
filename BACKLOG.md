@@ -346,11 +346,17 @@ Integrity is a three-link chain, each fetched over TLS from the vendor: Release
 states the checksum of Packages, Packages states the checksum of the .deb, and
 the .deb is verified against it before anything is unpacked.
 
-**Follow-ups, once it is confirmed on screen:** a sway `assign` rule for the
-workspace, and `verify.sh` coverage. The `assign` rule needs the Wayland
-`app_id` read from a running window, not guessed — the package declares
-`StartupWMClass=com.anthropic.Claude`, which is strong evidence but not the
-measurement.
+**Follow-ups — ✅ done 2026-10-29.** Confirmed running on screen; the Wayland
+`app_id` read from `swaymsg -t get_tree` is `com.anthropic.Claude` (matching the
+declared `StartupWMClass`). Workspaces reordered at Damian's request: ChatGPT ws4,
+Claude ws5, Obsidian dropped from autostart/workspaces (on demand). `setup.sh`
+now runs the installer (it was not wired into any fresh-install path before), and
+`verify.sh` has sections 1a2/5b2/5b3. The app's "No system keyring is available"
+warning was Electron choosing `basic_text` on Sway despite a running, unlocked
+gnome-keyring; fixed with `--password-store=gnome-libsecret` in the generated
+`~/.local/bin/claude-desktop` wrapper, and for the Flatpaks (Obsidian, VS Code)
+in `scripts/setup-electron-keyring.sh` — see CLAUDE.md *Electron apps and the
+keyring on Sway*.
 
 ### 🟠 14. The update module still has two blind spots after the 2026-08-18 fix — ✅ DONE (2026-09-10)
 `flatpak_count` and the OS branch now say "could not check" instead of inventing

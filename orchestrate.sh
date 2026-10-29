@@ -22,6 +22,7 @@ phase_P0() {
         "$HERE/scripts/nordvpn-tailscale-transport.py" \
         "$HERE/systemd/nordvpn-tailscale-transport.service" || return 1
     bash "$HERE/scripts/setup-proxmox-client.sh" || return 1
+    bash "$HERE/scripts/setup-login-appearance.sh" || return 1
     write_provisioning_sudoers || return 1
     orch_set REPO_COMMIT "$(git -C "$HERE" rev-parse HEAD)"
     mkdir -p "$STAGE"; chmod 700 "$STAGE"
@@ -52,6 +53,8 @@ phase_P2() {
     # tolerant. The rest build the environment the install is for — a failure
     # there must stop the run rather than be papered over by the final verify.
     bash "$HERE/scripts/check-hardware.sh"            || true
+    # Complete the GTK shim once the P1 compiler packages are booted.
+    bash "$HERE/scripts/setup-stirling-runtime.sh"    || return 1
     bash "$HERE/scripts/setup-tailscale.sh"           || return 1
     bash "$HERE/scripts/setup-kvm.sh"                 || return 1
 
@@ -73,6 +76,7 @@ phase_P2() {
     fi
     bash "$HERE/scripts/setup-adguard-tailscale-dns.sh" || return 1
     bash "$HERE/scripts/setup-nordvpn-tailscale-transport.sh" || return 1
+    bash "$HERE/scripts/setup-home-network.sh" || return 1
     bash "$HERE/scripts/setup-damian-container.sh"    || return 1
     bash "$HERE/scripts/setup-ubuntu-dev-container.sh" || return 1
     bash "$HERE/scripts/setup-security-container.sh"  || return 1

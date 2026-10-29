@@ -29,7 +29,8 @@ echo "==> Layering system packages (reboot required after)..."
 # gitleaks    - secret scanner, enforced by the repo pre-push hook
 # ripgrep/fd-find/fzf/wl-clipboard/python3-virtualenv/ShellCheck/libwebp-tools/nodejs/npm/make
 #             - CLI dependencies used by Chris Titus Tech's Neovim config
-# webkit2gtk4.1 - WebKitGTK runtime. Whispering Open (Tauri) renders its whole UI
+# webkit2gtk4.1 - WebKitGTK runtime for Stirling PDF and Whispering Open (Tauri).
+#             Whispering Open renders its whole UI
 #             through it; without it the RPM-installed binary is a blank window.
 #             Present in the Sway base image, but layered explicitly so the app
 #             also works on minimal Fedora spins that lack it.
@@ -39,7 +40,8 @@ echo "==> Layering system packages (reboot required after)..."
 #             yazi previews images directly via foot's sixel support.
 # age         - file encryption for the secrets vault's repo backup (vault.age).
 #             cryptsetup (LUKS2 for the vault) is already in the base image.
-PACKAGES="mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer virt-install bridge-utils wtype alsa-utils neovim gitleaks ripgrep fd-find fzf wl-clipboard python3-virtualenv ShellCheck libwebp-tools nodejs npm make webkit2gtk4.1 ffmpegthumbnailer age tailscale"
+# gcc/glibc-devel build Stirling's tiny app-scoped GTK clipboard compatibility shim.
+PACKAGES="gcc glibc-devel mako libva-utils clipman distrobox unzip qemu-kvm libvirt libvirt-daemon-config-network virt-manager virt-viewer virt-install bridge-utils wtype alsa-utils neovim gitleaks ripgrep fd-find fzf wl-clipboard python3-virtualenv ShellCheck libwebp-tools nodejs npm make webkit2gtk4.1 ffmpegthumbnailer age tailscale"
 
 # Configure the vendor repo before the single package-layering transaction.
 run_step TAILSCALE_REPO_SETUP "Preparing Tailscale repository" \

@@ -121,8 +121,11 @@ input "type:touchpad" {
     bindsym Print exec grim ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png
     bindsym $mod+Print exec grim -g "$(slurp)" ~/Pictures/screenshot-$(date +%Y%m%d-%H%M%S).png
 
-    # Lock screen
-    bindsym $mod+Shift+Escape exec loginctl lock-session
+    # Lock screen — Ctrl+Alt+L is the lock key on KDE Plasma, Xfce, Cinnamon and
+    # MATE (GNOME uses Super+L, which here is Sway's standard "focus right"), so it
+    # is the binding that carries over to other Linux desktops without stealing a
+    # default Sway key. Sway itself ships no lock binding.
+    bindsym Control+Mod1+l exec loginctl lock-session
 
     # Voice typing — push-to-talk: hold Mod+T to record, release to transcribe and type
     bindsym --no-repeat $mod+t exec ~/dotfiles-sway/scripts/voice-type-start.sh
@@ -305,14 +308,18 @@ set $ws3 3
 set $ws4 4
 set $ws5 5
 set $ws6 6
+set $ws7 7
 
 # ── Workspace bootstrap ──
 
 exec foot
 exec ~/dotfiles-sway/scripts/launch-thunderbird.sh
 exec firefox
-exec flatpak run md.obsidian.Obsidian
+# Obsidian is no longer started at login and has no workspace — it is launched on
+# demand ($mod+d) and opens on whichever workspace is focused.
 exec chatgpt
+# Wrapper written by setup-claude-desktop.sh; it adds the keyring flag (see there).
+exec ~/.local/bin/claude-desktop
 exec ~/dotfiles-sway/scripts/launch-win11edu-damian.sh
 bindsym $mod+Shift+s exec ~/dotfiles-sway/scripts/autostart.sh
 
@@ -325,19 +332,27 @@ assign [app_id="foot"] workspace number 1
 # Match any Thunderbird variant (regular or _esr) — case-insensitive, so a
 # variant swap never breaks workspace routing again.
 assign [app_id="(?i)^org\.mozilla\.thunderbird.*"] workspace number 3
-assign [title=".*Obsidian.*"] workspace number 4
 assign [app_id="org.mozilla.firefox"] workspace number 2
 # ChatGPT desktop app. It currently runs under XWayland, where sway sees an X11
 # `class` and NO `app_id` — an app_id rule (like Firefox's above) silently never
 # matches. Both rules are present on purpose so the routing survives OpenAI
 # shipping a native Wayland build, which would flip which one applies.
-assign [class="(?i)^chatgpt$"] workspace number 5
-assign [app_id="(?i)^chatgpt$"] workspace number 5
-# VM management and viewer windows: native Wayland and XWayland.
-assign [app_id="(?i)^virt-manager$"] workspace number 6
-assign [class="(?i)^virt-manager$"] workspace number 6
-assign [app_id="(?i)^virt-viewer$"] workspace number 6
-assign [class="(?i)^virt-viewer$"] workspace number 6
+assign [class="(?i)^chatgpt$"] workspace number 4
+assign [app_id="(?i)^chatgpt$"] workspace number 4
+# Claude Desktop is a native Wayland client; its app_id comes from package.json
+# desktopName (measured with swaymsg -t get_tree: app_id="com.anthropic.Claude").
+assign [app_id="^com\.anthropic\.Claude$"] workspace number 5
+# Route the personal console before the general VM manager rules.
+assign [app_id="(?i)^virt-manager$" title="^win11edu-damian on "] workspace number 6
+assign [class="(?i)^virt-manager$" title="^win11edu-damian on "] workspace number 6
+# The title can be populated after mapping; re-evaluate then as well.
+for_window [app_id="(?i)^virt-manager$" title="^win11edu-damian on "] move container to workspace number 6
+for_window [class="(?i)^virt-manager$" title="^win11edu-damian on "] move container to workspace number 6
+# VM managers open on demand on workspace 7; these rules do not start apps.
+assign [app_id="(?i)^virt-manager$"] workspace number 7
+assign [class="(?i)^virt-manager$"] workspace number 7
+assign [app_id="(?i)^(org\.virtualbox\.VirtualBox|VirtualBox.*)$"] workspace number 7
+assign [class="(?i)^VirtualBox.*$"] workspace number 7
 
 exec_always systemctl --user import-environment LC_TIME
 

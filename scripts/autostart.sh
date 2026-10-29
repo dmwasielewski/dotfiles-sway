@@ -6,12 +6,15 @@ firefox &
 disown
 sleep 4
 
-flatpak run md.obsidian.Obsidian &
-disown
+# Obsidian is no longer part of autostart — launched on demand, no workspace.
 
-# ChatGPT desktop app (ChatGPT + Work + Codex). Pinned to ws5 by the assign
+# ChatGPT desktop app (ChatGPT + Work + Codex). Pinned to ws4 by the assign
 # rules in sway/config — see the note there about XWayland class vs app_id.
 chatgpt &
+disown
+
+# Claude Desktop, pinned to ws5. The wrapper adds --password-store=gnome-libsecret.
+"$HOME/.local/bin/claude-desktop" &
 disown
 
 # Personal Windows desktop, pinned to ws6; the launcher avoids duplicates.

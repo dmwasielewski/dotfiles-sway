@@ -140,9 +140,16 @@
         // }
     },
     "clock": {
-        // "timezone": "America/New_York",
-        "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
-        "format-alt": "{:%Y-%m-%d}"
+        "format": "{:%H:%M}",
+        "format-alt": "{:%a %d/%m/%Y}",
+        "locale": "en_GB.UTF-8",
+        "tooltip-format": "<big>{:%A, %d %B %Y}</big>\n<tt>{calendar}</tt>",
+        "calendar": {
+            "mode": "month",
+            "format": {
+                "today": "<span foreground='#ffcc66'><b><u>{}</u></b></span>"
+            }
+        }
     },
     "cpu": {
         "interval": 5,

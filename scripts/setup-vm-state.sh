@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Configure managed guest save on host shutdown, without starting saved guests.
+# Configure managed guest save on host shutdown, and restore saved guests at the next host boot.
 set -euo pipefail
 DOTFILES="${DOTFILES:-$HOME/dotfiles-sway}"
 source "$DOTFILES/scripts/lib-install.sh"

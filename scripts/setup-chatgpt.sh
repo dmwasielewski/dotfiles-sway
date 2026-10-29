@@ -189,7 +189,7 @@ command -v update-desktop-database >/dev/null 2>&1 &&
 # Never delete a tree something is still executing from: this is a lazily-mapped
 # Electron install (.pak files, app.asar, a zygote and a crash handler respawned
 # from disk), not a single static binary like yazi's — pulling it out from under
-# a running session breaks that session mid-use. The app autostarts on ws5, so
+# a running session breaks that session mid-use. The app autostarts on ws4, so
 # an upgrade while it is open is the normal case, not the edge one.
 # Whether anything is executing out of a directory. Asked through /proc rather
 # than by matching command lines: on 2026-09-02 the pgrep pattern was built from

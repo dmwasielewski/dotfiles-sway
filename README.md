@@ -7,7 +7,7 @@ Personal dotfiles for Fedora Atomic Sway setup.
 ### Window manager & UI
 - Sway window manager config (borders, keybindings, idle/lock, screenshots, touchpad)
 - Waybar status bar (bottom, muted dark theme, colour thresholds for CPU/RAM/temp/battery, Claude Code status, NordVPN toggle, AdGuard toggle, power menu)
-- Autostart layout: terminal on ws1, Firefox on ws2, Thunderbird on ws3, Obsidian on ws4, ChatGPT on ws5, personal Windows on ws6
+- Autostart layout: terminal on ws1, Firefox on ws2, Thunderbird on ws3, ChatGPT on ws4, Claude Desktop on ws5, personal Windows on ws6 (Obsidian is launched on demand, no workspace)
 - Foot terminal config
 - Shared Bash prompt/aliases: host prompt in green, `damianf` prompt in cyan, `damianu` Distrobox prompt in cyan with package icon, `security` Distrobox prompt in red, `damianf`/`damianu` entry shortcuts, plus coloured `ls`/`ll`/`la` aliases
 - Mako notification daemon (11s auto-dismiss)
@@ -16,11 +16,11 @@ Personal dotfiles for Fedora Atomic Sway setup.
 - Black solid wallpaper
 
 ### Browser
-- Firefox — main browser (ships in the Fedora Sway Atomic base image; the system default), opens on ws2. Claude and WhatsApp are used as ordinary Firefox tabs/bookmarks. ChatGPT has its own desktop app (see below).
+- Firefox — main browser (ships in the Fedora Sway Atomic base image; the system default), opens on ws2. WhatsApp is used as an ordinary Firefox tab/bookmark. ChatGPT and Claude have their own desktop apps (see below).
 
 ### Applications (Flatpak)
 - VSCode — code editor
-- Obsidian — notes
+- Obsidian — notes (launched on demand with `Mod+D`; no autostart, no workspace)
 - Bitwarden — password manager
 - Spotify
 - Telegram Desktop — messaging (`org.telegram.desktop`, user Flatpak); installed by `setup.sh`, launched from the application menu. First login is manual; see [Telegram setup and verification](docs/telegram.md).
@@ -119,7 +119,7 @@ bash ~/dotfiles-sway/scripts/check-hardware.sh
 bash ~/dotfiles-sway/scripts/setup-kvm.sh
 ```
 > Then log out and back in for group changes to take effect.
-> The script creates its own libvirt NAT network named `01-Host-Internet` on the first available /24 from 170, 174, 175 and 176, so it does not have to rewrite libvirt's `default` network.
+> The script creates its own libvirt NAT network named `01-Host-Internet` on the first available /24 from 101, 105, 106 and 107, so it does not have to rewrite libvirt's `default` network.
 
 7. Set up the dev toolbox (node, npm, gh, Claude Code, Codex CLI, DeepSeek TUI, ShellGPT):
 ```bash
@@ -222,6 +222,15 @@ Its step is deliberately non-blocking: a failed 435 MB download from OpenAI's CD
 is recorded in the install state and reported by `verify.sh` instead of aborting
 the whole install.
 
+Claude Desktop is installed the same non-blocking, user-local way by `setup.sh`
+(the official `.deb` unpacked into `~/.local/opt`), together with
+`setup-electron-keyring.sh` for the Flatpak Electron apps. Sign in to Claude on
+first launch. To install, upgrade or repair them on their own:
+```bash
+bash ~/dotfiles-sway/scripts/setup-claude-desktop.sh
+bash ~/dotfiles-sway/scripts/setup-electron-keyring.sh
+```
+
 13. Install OneDrive files on demand after the first reboot:
 ```bash
 bash ~/dotfiles-sway/scripts/setup-onedriver.sh
@@ -312,7 +321,7 @@ Solid black (`#000000`) — no image, no distractions.
 | Timeout | Action |
 |---|---|
 | 600s (10 min) | Display off (`output * power off`) |
-| 900s (15 min) | Screen locks (`swaylock`, black screen) |
+| 900s (15 min) | Screen locks (`swaylock`, managed login wallpaper) |
 | 1200s (20 min) | System suspends (`systemctl suspend`) |
 | Before sleep | Screen locks automatically |
 
@@ -323,15 +332,16 @@ Solid black (`#000000`) — no image, no distractions.
 - Disable while typing: enabled
 - Middle emulation: enabled
 
-### Workspace layout (autostart)
+### Workspace layout
 | Workspace | Content |
 |---|---|
 | 1 | Foot terminal |
 | 2 | Firefox browser |
 | 3 | Thunderbird |
-| 4 | Obsidian |
-| 5 | ChatGPT desktop (ChatGPT + Work + Codex) |
-| 6 | Personal Windows (win11edu-damian via virt-viewer) |
+| 4 | ChatGPT desktop (ChatGPT + Work + Codex) |
+| 5 | Claude Desktop |
+| 6 | Personal Windows (win11edu-damian via virt-manager console; login startup) |
+| 7 | virt-manager and VirtualBox (manual launch only) |
 
 Apps are launched by `exec` lines in `sway/config` and pinned to workspaces by
 `assign` rules. ChatGPT has **two** assign rules: it runs under XWayland, where
@@ -345,26 +355,36 @@ Flathub deprecated the plain `org.mozilla.Thunderbird` ID in favour of
 `assign` rule matches any variant via a case-insensitive regex.
 
 At Sway login, `scripts/launch-win11edu-damian.sh` starts `win11edu-damian`
-if it is shut off and opens its console in virt-viewer on workspace 6. An already
-running VM is reused. A runtime lock prevents duplicate viewer windows from
-repeated `Mod+Shift+S` launches. The launcher waits up to 30 seconds for libvirt;
-a fresh install with no personal VM skips startup until the VM is restored.
-virt-manager remains available from the application menu, but is not autostarted.
-Press **Super+6** for Windows and **Ctrl+Alt** to release captured input.
-Closing the viewer leaves Windows running; shut down inside Windows to stop it.
-This is login autostart, not libvirt domain autostart before login. The existing
-setup symlink/script permissions and host packages reproduce the launcher.
+if it is shut off, then opens only its virt-manager console on workspace 6.
+An already running VM is reused. Reopening this VM from the manager reuses the
+same console; no separate virt-viewer competes for its SPICE connection.
+The manager list and other VM windows open manually on workspace 7, as does
+VirtualBox. Title-specific Wayland/XWayland rules keep the personal console on
+6 even when its title is populated after the window opens. Neither manager list
+nor VirtualBox is started at login. The existing setup.sh Sway symlink and launcher
+permissions reproduce this behavior. Press Super+6 for personal Windows and
+Super+7 for managers. Closing a console leaves Windows running.
 Logs: `~/.local/state/dotfiles-vm/win11edu-damian.log`.
-The viewer uses `--attach` because the VM has SPICE `listen=none`: libvirt
-provides the display connection instead of an exposed listening port.
 
 `setup-kvm.sh` also configures `libvirt-guests.service` to save the RAM/device
-state of running persistent VMs before host shutdown. Guests remain stopped
-after host boot until started explicitly; the personal Windows login launcher
-restores its saved state. Manual enablement on an existing installation:
+state of running persistent VMs before host shutdown. Guests that were running are automatically resumed
+after host boot; the personal Windows login launcher reuses the running VM. Manual enablement on an existing installation:
 `bash ~/dotfiles-sway/scripts/setup-vm-state.sh`. See
 [VM state save and restore](docs/vm-network-modes.md#host-shutdown-and-managed-guest-save).
 Allow disk space for saved RAM and let normal host shutdown finish.
+This is included in every fresh automated installation: orchestrator phase P2
+runs `setup-kvm.sh`, which runs `setup-vm-state.sh`. No per-VM setup is needed
+for persistent guests on `qemu:///system`. Both normal reboot and poweroff are
+covered, including the updater and terminal commands. `verify.sh` checks that
+the installed policy matches the repository and the service is enabled/active.
+A save failure does not automatically cancel shutdown; forced reboot or loss of
+power is not protected. A full host reboot test is still pending.
+
+
+For the Windows black-screen/frozen-clock incident after state restoration, see
+[Windows saved-state troubleshooting](docs/windows-vm-black-screen.md). The personal
+VM now has Hyper-V synthetic-timer direct mode enabled; one save/restore cycle
+passed, while a complete Fedora reboot remains to be checked.
 
 ### Key bindings
 
@@ -379,7 +399,7 @@ Allow disk space for saved RAM and let normal host shutdown finish.
 | `Mod+Shift+C` | Reload Sway config |
 | `Mod+Shift+E` | Exit Sway session |
 | `Mod+C` | Clipboard history picker (clipman + rofi) |
-| `Mod+Shift+Escape` | Lock screen immediately (loginctl) |
+| `Ctrl+Alt+L` | Lock screen immediately (loginctl) — the lock key of KDE, Xfce, Cinnamon, MATE |
 | `Mod+T` (hold) | Voice typing — record speech, release to transcribe and type |
 | `Print` | Full screenshot → `~/Pictures/` |
 | `Mod+Print` | Region screenshot (slurp) → `~/Pictures/` |
@@ -422,7 +442,7 @@ Allow disk space for saved RAM and let normal host shutdown finish.
 #### Autostart trigger
 | Shortcut | Action |
 |---|---|
-| `Mod+Shift+S` | Re-run autostart script (Firefox + Obsidian + ChatGPT + personal Windows) |
+| `Mod+Shift+S` | Re-run autostart script (Firefox + ChatGPT + Claude Desktop + personal Windows) |
 
 #### File manager (yazi — in-app, not Sway)
 | Shortcut | Action |
@@ -432,6 +452,11 @@ Allow disk space for saved RAM and let normal host shutdown finish.
 ---
 
 ## Waybar configuration
+
+Clock tooltip shows the full current weekday and date above a monthly calendar.
+Today is highlighted in amber, bold and underlined. The clock uses UK English
+with Monday-first weeks; left click toggles time and the weekday/date display.
+
 
 ### Position & size
 - Position: **bottom**
@@ -502,6 +527,61 @@ Because the push handles instant feedback, there is no fast 5 s repository polli
 **Interaction:** left-click runs `updates-do` (apply updates). "Update everything" attempts Fedora first, then continues with Flatpak, containers, language packages and user-local apps even if the OS step fails; the reboot prompt waits until all independent work is finished. If rpm-ostree reports a verification failure while its repo cache contains a zero-byte RPM, the menu runs `rpm-ostree cleanup -m` and retries exactly once. It never disables `gpgcheck` or retries a genuinely non-empty, invalidly signed package. The menu recomputes the cache via `updates-waybar --compute` after **every** option and on exit (via an `EXIT` trap — covers Cancel/Ctrl-C), and again before the reboot prompt so the icon turns red while you decide. A recompute reads ground truth, so an update that silently failed keeps the badge lit instead of falsely clearing it.
 
 All three scripts (`updates-waybar`, `updates-do`, `updates-menu`) are symlinked into `~/.local/bin` by `setup.sh`; `lib-updates.sh` is resolved next to them and needs no separate symlink.
+
+
+### User-local manifest identity (2026-10-16)
+
+Update rows contain display labels, not manifest filenames: `name=Stirling PDF`
+is stored in `dotfiles-updates/stirling-pdf`, and `name=Onedriver` in `onedriver`.
+The menu resolves the label through the manifests, refuses missing or duplicate
+matches, and accepts only existing updater scripts resolving inside the dotfiles
+repository. Do not construct a manifest path from a display name or rename only
+one installed manifest as a workaround. Read update rows on FD 3 so an updater
+reading stdin cannot consume subsequent apps. Every missing/invalid updater and
+execution failure is logged as `FAIL user-local ...`; independent apps continue
+and the final results report failure. Regression coverage lives in
+`tests/updates/test_userlocal_identity.sh` (included by `tests/updates/run.sh`).
+
+
+### Fedora dependency conflicts and repository metadata (2026-10-20)
+
+A newer Atomic base can need exact RPM versions absent from cached or temporarily
+lagging repositories. Layered build/module packages can then block the whole OS
+upgrade (`Could not depsolve transaction`, sometimes mentioning protected
+`systemd`). The update menu now forces `rpm-ostree refresh-md --force` and retries
+the upgrade **once**, under the same lock used by the badge. This runs only after
+a dependency-resolution failure, not on every badge refresh. If fresh repository
+metadata still cannot satisfy dependencies, it reports a dependency conflict,
+keeps the failure visible, and continues independent application updates.
+
+Do not loop retries, remove protected packages, disable signature checks, or
+automatically remove layers. Repository lag may require waiting; a conflicting
+optional host layer may require an explicitly approved removal. Keep compilers
+and build tooling in containers where possible. The updater cannot guarantee
+that third-party packages will always match a newly published Atomic image.
+The menu never reboots automatically. See `tests/updates/test_os_dependency_recovery.sh`.
+
+### Keeping an optional VM application during a dependency conflict
+
+Removing the application is not the only possible response. First force-refresh
+repository metadata and retry once; this preserves all installed layers and was
+actually tried on 2026-10-20, but the same dependency conflict remained. Keeping
+VirtualBox and waiting for matching Fedora/RPM Fusion packages was the
+non-removal alternative; it would postpone the blocked OS upgrade, not complete
+it immediately. No synchronization date or immediate repair retaining VirtualBox
+was established. Carefully sourcing matching signed dependencies or rebuilding
+packages would require a separate investigation and was not tested or promised.
+
+Damian explicitly chose removal of the temporary `VirtualBox` and
+`akmod-VirtualBox` host layers so the OS update could proceed immediately. This
+succeeded in staging 44.20261020.0; it does not prove that removal was the only
+possible technical solution. KVM was retained and VM files were not deleted.
+Removing VirtualBox from the staged deployment takes effect after reboot.
+Reinstallation can be considered later when a compatible dependency set is
+available; do not silently reinstall it or add it to the default bootstrap.
+Never bypass package signatures or remove protected system components to retain
+an optional application. See the upstream explanation of
+[base/layer package matching and updates-archive](https://coreos.github.io/rpm-ostree/architecture-core/).
 
 ### Update regression tests
 
@@ -590,13 +670,15 @@ dotfiles-sway/
 ├── scripts/
 │   ├── lib-install.sh                 # Shared helpers: state tracking, run_step()
 │   ├── verify.sh                      # Post-install verification — checks all components
-│   ├── autostart.sh                   # Sway autostart: Firefox, Obsidian, ChatGPT, personal Windows
+│   ├── autostart.sh                   # Sway autostart: Firefox, ChatGPT, Claude Desktop, personal Windows
 │   ├── check-hardware.sh              # Hardware check (GPU, VA-API, audio, ...) — writes state
 │   ├── setup-kvm.sh                   # KVM/QEMU setup (libvirtd, groups, network) — writes state
 │   ├── setup-neovim-config.sh         # Neovim 0.12.1 + Chris Titus Tech config symlink
 │   ├── setup-nordvpn.sh               # NordVPN CLI install + nordvpnd enable/start + group setup — writes state
 │   ├── setup-tailscale.sh              # Tailscale repository, post-reboot daemon/operator/tray setup
 │   ├── setup-chatgpt.sh                # ChatGPT desktop app (incl. Codex): official RPM unpacked user-local into ~/.local/opt
+│   ├── setup-claude-desktop.sh         # Claude Desktop: official .deb unpacked user-local + keyring wrapper
+│   ├── setup-electron-keyring.sh       # Points Flatpak Electron apps (Obsidian, VS Code) at the GNOME keyring
 │   ├── setup-adguard.sh               # AdGuard for Linux CLI install — writes state
 │   ├── setup-whispering-open.sh       # Whispering Open GitHub release download — non-blocking
 │   ├── setup-damian-container.sh      # Toolbox damianf: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
@@ -677,6 +759,9 @@ WHISPERING_OPEN_ASSET_REGEX='linux|x86_64|appimage' bash ~/dotfiles-sway/scripts
 ---
 
 ## Voice typing
+
+For simple cross-platform notes, shortcuts and command assistance, see
+[Simple notes, English dictation and terminal help](docs/notes-and-dictation.md).
 
 Push-to-talk voice typing with local Whisper AI transcription and Gemini AI English correction.
 
@@ -920,6 +1005,38 @@ is no separate Codex application for Linux**; OpenAI merged the standalone Codex
 into the ChatGPT client in July 2026. The `codex` CLI above is unaffected and both
 use the same OpenAI account.
 
+### Run Claude Desktop
+```bash
+# On the host — no container (`claude` is the Claude Code CLI, a different program)
+claude-desktop
+```
+
+Installed by `scripts/setup-claude-desktop.sh` (run from `setup.sh`) into
+`~/.local/opt/claude-desktop-<version>`: Anthropic ships only a `.deb`, which is
+unpacked user-local — no rpm-ostree layer, no container. It autostarts on
+workspace 5 (`app_id="com.anthropic.Claude"`); updates come through the Waybar
+update menu, *User-local apps*. First start: sign in in the app.
+
+### Electron apps and the keyring (Sway)
+
+`gnome-keyring` ships in the base image and is unlocked at login, but Electron
+does not recognise Sway as a desktop with a keyring and silently falls back to
+`basic_text` (plaintext) secret storage. Claude Desktop then shows *"No system
+keyring is available"* and forgets the sign-in on every restart. The fix is the
+per-app switch `--password-store=gnome-libsecret` — never a global
+`XDG_CURRENT_DESKTOP` change, which would also re-route xdg-desktop-portal:
+
+- **Claude Desktop** — `~/.local/bin/claude-desktop` is a wrapper adding the flag;
+  the `.desktop` entry and Sway autostart both use it.
+- **Obsidian, VS Code** (Flatpak) — `scripts/setup-electron-keyring.sh` writes the
+  flag to Obsidian's `user-flags.conf` and `"password-store": "gnome-libsecret"` to
+  `~/.vscode/argv.json`.
+- **ChatGPT, Bitwarden** — measured as already using the keyring; left alone.
+
+After the change an app may ask you to sign in once more. `verify.sh` checks all of
+it. To test the keyring itself: `secret-tool store --label=t t x <<< ok &&
+secret-tool lookup t x; secret-tool clear t x` should print `ok` without a prompt.
+
 ### Run the DeepSeek/CodeWhale TUI
 ```bash
 # Inside damianf container
@@ -1099,7 +1216,7 @@ virt-manager
 ```
 
 ### Default network
-NAT network (`01-Host-Internet`) is enabled and set to autostart. VMs get IPs from the first available /24 from 170, 174, 175 and 176.
+NAT network (`01-Host-Internet`) is enabled and set to autostart. VMs get IPs from the first available /24 from 101, 105, 106 and 107.
 `setup-kvm.sh` does not modify libvirt's upstream `default` network. This keeps local or nested-libvirt setups safer when `default` is already in use elsewhere.
 
 ### Windows 11 — TPM & Secure Boot
@@ -1374,3 +1491,92 @@ automatic installation; never commit cluster certificates or real addresses.
 See [Fedora homelab installation](docs/testing/fedora-homelab-install.md) for
 all implemented connectivity changes, private backup files, encrypted-USB P0
 restore order, manual bootstrap steps, login requirements and measured limits.
+
+## Stirling PDF desktop
+
+Stirling PDF provides local PDF editing, merging, splitting and conversion. The
+official Linux desktop RPM is unpacked into `~/.local/opt/stirling-pdf-<version>`
+without root, RPM scriptlets or an OS layer. Its bundled Java runtime and backend
+remain alongside the desktop executable. GTK3 and WebKitGTK 4.1 run on the host;
+`packages.sh` already ensures WebKitGTK is available after the normal OS reboot.
+
+`setup.sh` installs the app automatically, including orchestrator phase P1. To
+install, update or retry individually:
+
+```bash
+bash ~/dotfiles-sway/scripts/setup-stirling-pdf.sh
+```
+
+Open **Stirling PDF** from the application menu (`Super+D`). On first launch,
+choose **Continue without signing in** for **Local Only** mode. Account login is
+optional; allow the bundled backend a moment to start before using PDF tools.
+No autostart or new keyboard shortcut is added.
+
+The installer discovers the latest stable x86_64 GitHub release, checks its
+upstream SHA256 digest before extraction, writes timestamped logs and the
+`STIRLING_PDF_INSTALLED` state, and registers the existing **User-local apps**
+update menu. Run `scripts/verify.sh` to check the binary, shared libraries, bundled
+backend, menu entry, icon and update manifest. These checks do not replace a
+visual launch and a PDF operation test.
+
+For an offline install, provide both `STIRLING_RELEASE_JSON` (the official GitHub
+release JSON including the asset digest) and `STIRLING_RPM` (the downloaded RPM).
+Unsupported CPU architectures and releases without a SHA256 digest fail clearly.
+
+Upstream: [desktop installation](https://docs.stirlingpdf.com/Installation/Unix%20Installation/)
+and [official releases](https://github.com/Stirling-Tools/Stirling-PDF/releases).
+
+Desktop feature limits: the bundled Java backend supports core PDF operations.
+OCR and several Office/HTML conversions require additional external dependencies
+(e.g. Tesseract, OCRmyPDF, LibreOffice). They are not installed by this desktop
+setup; a running window does not imply every tool is available.
+
+Validated on Fedora Sway Atomic on 2026-10-14: desktop v3.1.0 rendered in Sway
+(`app_id=stirling-pdf`), bundled backend started, and the local merge endpoint
+combined two one-page test PDFs into a two-page PDF. Re-running the installer
+kept the existing version. The integrity test rejects a corrupt RPM and records
+a failed install state. Fresh-machine bootstrap has not been run for this change.
+
+### Stirling PDF on Sway: clipboard, private HTTPS and server CORS
+
+See [Stirling PDF troubleshooting](docs/stirling-pdf-troubleshooting.md) for the
+verified GTK clipboard workaround, private CA installation, and the distinct
+server CORS rejection that the desktop reports as “server unreachable”. The
+installer builds an application-scoped compatibility library and the launcher
+loads it only for Stirling PDF. `packages.sh` provides gcc/glibc-devel;
+orchestrator P2 completes the build after the package-layering reboot.
+
+### Login and lock appearance
+
+Both SDDM and swaylock use the bundled `assets/login.jpg` (Fedora Workstation
+`glasscurtains_dark`, converted to JPEG). The desktop wallpaper remains separate.
+`setup.sh` installs this configuration; orchestrator P0 installs system files
+while authenticated sudo is available, before unattended provisioning.
+
+To apply or repair on the Fedora host, run:
+
+```bash
+bash ~/dotfiles-sway/scripts/setup-login-appearance.sh
+bash ~/dotfiles-sway/scripts/setup-login-appearance.sh --check
+```
+
+The installer copies the SDDM theme to `/etc/sddm/themes/03-sway-fedora`, sets
+`/etc/sddm.conf.d/10-login-wallpaper.conf`, installs the image in
+`/usr/local/share/backgrounds/login.jpg` and links `~/.config/swaylock/config`.
+These overrides survive normal Atomic upgrades. Re-run the installer to refresh
+the copied theme after upstream theme changes. No SDDM restart is performed.
+Check both the next screen lock and the next login visually; verification checks
+files, not rendering. A first existing regular swaylock config is backed up as
+`config.before-dotfiles`. Remove the swaylock config link and SDDM drop-in to
+restore defaults (restore the lock backup if present).
+
+### Home network app automation
+
+AdGuard, NordVPN and Tailscale can be paused automatically at home, with manual
+overrides retained until departure and previous enabled states restored outside.
+Opt-in `~/.config/dotfiles/home-network.json` identifies Wi-Fi by SSID/security,
+so a newly generated profile UUID does not break the rule on another laptop.
+The encrypted USB needs a copy at `config/dotfiles/home-network.json`; P0 restores
+it, setup.sh installs the user unit and P2 activates it after VPN setup.
+See [Home network policy](docs/home-network.md) for enrollment, wired-profile
+limits, USB backup, diagnostics, rollback and live-test limitations.

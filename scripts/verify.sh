@@ -127,6 +127,24 @@ check_symlink() {
     fi
 }
 
+if bash "$DOTFILES/scripts/setup-login-appearance.sh" --check; then
+    pass "SDDM and swaylock use the managed login wallpaper"
+else
+    fail "Login/lock appearance incomplete" "bash ~/dotfiles-sway/scripts/setup-login-appearance.sh"
+fi
+
+if [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/home-network.json" ]]; then
+    if python3 "$DOTFILES/scripts/home-network.py" check >/dev/null &&
+       systemctl --user is-enabled --quiet home-network.service &&
+       systemctl --user is-active --quiet home-network.service; then
+        pass "Opt-in home network automation enabled and running"
+    else
+        fail "Home network automation needs attention" "bash ~/dotfiles-sway/scripts/setup-home-network.sh; journalctl --user -u home-network.service"
+    fi
+else
+    pass "Home network automation not opted in"
+fi
+
 check_symlink "sway/config"                    "$HOME/.config/sway/config"
 check_symlink "sway/config.d/90-swayidle.conf" "$HOME/.config/sway/config.d/90-swayidle.conf"
 check_symlink "waybar/config"        "$HOME/.config/waybar/config"
@@ -160,8 +178,10 @@ SWAY_CONFIG="$HOME/.config/sway/config"
 VM_LAYOUT_OK=true
 for rule in \
     'exec ~/dotfiles-sway/scripts/launch-win11edu-damian.sh' \
-    'assign [app_id="(?i)^virt-viewer$"] workspace number 6' \
-    'assign [class="(?i)^virt-viewer$"] workspace number 6'; do
+    'assign [app_id="(?i)^virt-manager$" title="^win11edu-damian on "] workspace number 6' \
+    'assign [class="(?i)^virt-manager$" title="^win11edu-damian on "] workspace number 6' \
+    'for_window [app_id="(?i)^virt-manager$" title="^win11edu-damian on "] move container to workspace number 6' \
+    'for_window [class="(?i)^virt-manager$" title="^win11edu-damian on "] move container to workspace number 6'; do
     if ! grep -Fxq "$rule" "$SWAY_CONFIG"; then
         VM_LAYOUT_OK=false
     fi
@@ -183,10 +203,63 @@ else
     fail "Personal Windows VM launcher missing or not executable" "bash ~/dotfiles-sway/setup.sh"
 fi
 
-if grep -Fq 'exec virt-viewer --attach --connect' "$DOTFILES/scripts/launch-win11edu-damian.sh"; then
-    pass "Windows console attaches through libvirt (SPICE listen=none)"
+if grep -Fq 'exec virt-manager --connect "$URI" --show-domain-console "$VM"' "$DOTFILES/scripts/launch-win11edu-damian.sh"; then
+    pass "Personal Windows uses the shared virt-manager console"
 else
-    fail "Windows console missing libvirt attach mode" "Update ~/dotfiles-sway/scripts/launch-win11edu-damian.sh"
+    fail "Personal Windows console launcher missing" "Update ~/dotfiles-sway/scripts/launch-win11edu-damian.sh"
+fi
+
+# VM manager routing is separate from the personal Windows console.
+VM_MANAGERS_OK=true
+for rule in \
+    'assign [app_id="(?i)^virt-manager$"] workspace number 7' \
+    'assign [class="(?i)^virt-manager$"] workspace number 7' \
+    'assign [app_id="(?i)^(org\.virtualbox\.VirtualBox|VirtualBox.*)$"] workspace number 7' \
+    'assign [class="(?i)^VirtualBox.*$"] workspace number 7'; do
+    if ! grep -Fxq "$rule" "$SWAY_CONFIG"; then
+        VM_MANAGERS_OK=false
+    fi
+done
+if $VM_MANAGERS_OK; then
+    pass "VM managers routed to workspace 7"
+else
+    fail "VM manager workspace 7 routing missing" "Update ~/dotfiles-sway and run bash ~/dotfiles-sway/setup.sh"
+fi
+if grep -Eq '^[[:space:]]*(exec(_always)?[[:space:]]+)?(virt-manager|[Vv]irtual[Bb]ox)([[:space:]]|$)' \
+    "$SWAY_CONFIG" "$DOTFILES/scripts/autostart.sh"; then
+    fail "VM manager starts automatically" "Keep VM managers manual; only launch the personal Windows console at login"
+else
+    pass "VM managers launch manually only"
+fi
+
+# AI desktop apps: ChatGPT on ws4 (XWayland class + app_id), Claude on ws5.
+section "1a2. AI desktop workspaces"
+AI_LAYOUT_OK=true
+for rule in \
+    'exec chatgpt' \
+    'exec ~/.local/bin/claude-desktop' \
+    'assign [class="(?i)^chatgpt$"] workspace number 4' \
+    'assign [app_id="(?i)^chatgpt$"] workspace number 4' \
+    'assign [app_id="^com\.anthropic\.Claude$"] workspace number 5'; do
+    if ! grep -Fxq "$rule" "$SWAY_CONFIG"; then
+        AI_LAYOUT_OK=false
+    fi
+done
+if $AI_LAYOUT_OK; then
+    pass "ChatGPT ws4 and Claude Desktop ws5 startup and routing"
+else
+    fail "AI desktop workspace configuration missing" "Update ~/dotfiles-sway and run bash ~/dotfiles-sway/setup.sh"
+fi
+if grep -Fxq '"$HOME/.local/bin/claude-desktop" &' "$DOTFILES/scripts/autostart.sh"; then
+    pass "Claude Desktop in manual autostart shortcut"
+else
+    fail "Claude Desktop missing from autostart.sh" "Update ~/dotfiles-sway"
+fi
+# Obsidian is on demand now; a stale title rule would pull it onto ChatGPT's ws4.
+if grep -Eq '^[[:space:]]*(exec .*[Oo]bsidian|assign .*[Oo]bsidian)' "$SWAY_CONFIG" "$DOTFILES/scripts/autostart.sh"; then
+    fail "Obsidian still autostarted or routed to a workspace" "Remove the Obsidian exec/assign lines"
+else
+    pass "Obsidian launches on demand (no autostart, no workspace)"
 fi
 
 # ── 1b. Whispering Open ───────────────────────────────────────────────────
@@ -642,6 +715,10 @@ if TS_STATUS="$(host tailscale status --json)"; then
     TS_STATE="$(printf '%s' "$TS_STATUS" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("BackendState", "Unknown"))')"
     if [[ "$TS_STATE" == Running ]]; then
         pass "Tailscale connected"
+    elif [[ "$TS_STATE" == Stopped ]] &&
+         host systemctl --user is-active --quiet home-network.service &&
+         host python3 "$DOTFILES/scripts/home-network.py" is-home; then
+        pass "Tailscale stopped while home policy is active (expected)"
     else
         pending "Tailscale account/connection ($TS_STATE)" "Use Tailscale tray menu or run: tailscale up"
     fi
@@ -714,6 +791,41 @@ else
          "cd ~/dotfiles-sway && git diff --summary | grep 'mode change'  # then: git update-index --chmod=+x <file>"
 fi
 
+section "Stirling PDF desktop"
+STIRLING_FIX="bash ~/dotfiles-sway/scripts/setup-stirling-pdf.sh"
+STIRLING_BIN="$HOME/.local/bin/stirling-pdf"
+STIRLING_DATA="${XDG_DATA_HOME:-$HOME/.local/share}"
+if [[ -s "$HOME/.local/lib/stirling-pdf/clipboard-compat.so" ]]; then
+    pass "Stirling PDF GTK clipboard compatibility shim"
+elif [[ "$PROFILE" == phase1 ]]; then
+    warn "Stirling PDF GTK clipboard shim pending post-reboot compiler setup"
+else
+    fail "Stirling PDF GTK clipboard shim missing" "bash ~/dotfiles-sway/scripts/setup-stirling-runtime.sh"
+fi
+if [[ -x "$STIRLING_BIN" ]]; then
+    pass "Stirling PDF executable"
+    STIRLING_ROOT="$(readlink -f "$HOME/.local/opt/stirling-pdf/current")"
+    if [[ -x "$STIRLING_ROOT/usr/lib/Stirling PDF/runtime/jre/bin/java" ]] && \
+       compgen -G "$STIRLING_ROOT/usr/lib/Stirling PDF/libs/stirling-pdf-*.jar" >/dev/null; then
+        pass "Stirling PDF bundled Java and PDF backend"
+    else
+        fail "Stirling PDF backend incomplete" "$STIRLING_FIX"
+    fi
+    STIRLING_LDD="$(ldd "$STIRLING_ROOT/usr/bin/Stirling-PDF" 2>&1)"
+    if [[ "$STIRLING_LDD" == *"not found"* ]]; then
+        fail "Stirling PDF runtime libraries missing" "bash ~/dotfiles-sway/packages.sh  # reboot afterwards"
+    else
+        pass "Stirling PDF shared libraries resolved"
+    fi
+else
+    fail "Stirling PDF executable missing" "$STIRLING_FIX"
+fi
+for item in "$STIRLING_DATA/applications/stirling-pdf.desktop" \
+            "$STIRLING_DATA/icons/hicolor/128x128/apps/Stirling-PDF.png" \
+            "$STIRLING_DATA/dotfiles-updates/stirling-pdf"; do
+    if [[ -s "$item" ]]; then pass "$item"; else fail "$item missing" "$STIRLING_FIX"; fi
+done
+
 # ── 5b. ChatGPT desktop app ──────────────────────────────────────────────
 section "5b. ChatGPT desktop (incl. Codex)"
 
@@ -767,6 +879,53 @@ if host rpm -q chatgpt >/dev/null 2>&1; then
          "sudo rpm-ostree uninstall chatgpt && systemctl reboot"
 else
     pass "chatgpt is not layered onto the OS image"
+fi
+
+# ── 5b2. Claude Desktop ──────────────────────────────────────────────────
+section "5b2. Claude Desktop"
+CLAUDE_FIX="bash ~/dotfiles-sway/scripts/setup-claude-desktop.sh"
+CLAUDE_WRAPPER="$HOME/.local/bin/claude-desktop"
+# The launcher must be the generated wrapper: a plain symlink starts Electron
+# without --password-store, which falls back to plaintext basic_text on Sway and
+# drops the sign-in on every restart (measured 2026-10-29).
+if [[ -x "$CLAUDE_WRAPPER" && ! -L "$CLAUDE_WRAPPER" ]] \
+   && grep -q -- '--password-store=gnome-libsecret' "$CLAUDE_WRAPPER"; then
+    pass "Claude Desktop wrapper with keyring flag"
+else
+    fail "Claude Desktop wrapper missing or without keyring flag" "$CLAUDE_FIX"
+fi
+CLAUDE_DESKTOP_FILE="${XDG_DATA_HOME:-$HOME/.local/share}/applications/com.anthropic.Claude.desktop"
+# Collected first, matched second: `grep | grep -q` under pipefail can report a
+# SIGPIPE failure despite a successful match (see AI_ERRORS.md).
+CLAUDE_EXEC_LINES="$(grep '^Exec=' "$CLAUDE_DESKTOP_FILE" 2>/dev/null || true)"
+if [[ -n "$CLAUDE_EXEC_LINES" ]] && ! grep -vqF "Exec=$CLAUDE_WRAPPER" <<< "$CLAUDE_EXEC_LINES"; then
+    pass "Claude Desktop entry (every Exec goes through the wrapper)"
+else
+    fail "Claude Desktop entry missing or bypassing the wrapper" "$CLAUDE_FIX"
+fi
+if [[ -f "${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles-updates/claude-desktop" ]]; then
+    pass "Claude Desktop update manifest"
+else
+    fail "Claude Desktop update manifest MISSING (new releases would never be detected)" "$CLAUDE_FIX"
+fi
+
+# ── 5b3. Electron keyring (Flatpaks) ─────────────────────────────────────
+section "5b3. Electron apps use the GNOME keyring"
+KEYRING_FIX="bash ~/dotfiles-sway/scripts/setup-electron-keyring.sh"
+if flatpak info md.obsidian.Obsidian >/dev/null 2>&1; then
+    if grep -qx -- '--password-store=gnome-libsecret' \
+        "$HOME/.var/app/md.obsidian.Obsidian/config/obsidian/user-flags.conf" 2>/dev/null; then
+        pass "Obsidian keyring flag"
+    else
+        fail "Obsidian would store secrets as basic_text" "$KEYRING_FIX"
+    fi
+fi
+if flatpak info com.visualstudio.code >/dev/null 2>&1; then
+    if grep -q '"password-store"[[:space:]]*:[[:space:]]*"gnome-libsecret"' "$HOME/.vscode/argv.json" 2>/dev/null; then
+        pass "VS Code password-store = gnome-libsecret"
+    else
+        fail "VS Code would store secrets as basic_text" "$KEYRING_FIX"
+    fi
 fi
 
 # ── 5b. AdGuard for Linux ────────────────────────────────────────────────
@@ -1015,7 +1174,7 @@ fi
 if host systemctl is-enabled --quiet libvirt-guests.service &&
    host systemctl is-active --quiet libvirt-guests.service &&
    cmp -s "$DOTFILES/libvirt/libvirt-guests" /etc/sysconfig/libvirt-guests; then
-    pass "VM state save enabled at host shutdown (resume on demand)"
+    pass "VM state save enabled at host shutdown (resume at boot)"
 else
     fail "VM shutdown state-save policy missing or inactive" "bash ~/dotfiles-sway/scripts/setup-vm-state.sh"
 fi

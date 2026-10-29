@@ -12,8 +12,8 @@ touch "$LOG"
 chmod 600 "$LOG"
 exec >>"$LOG" 2>&1
 printf '\n[%s] Windows session launcher\n' "$(date -Is)"
-# Hold this lock for the viewer lifetime: repeated shortcuts cannot open copies.
-exec 9>"${XDG_RUNTIME_DIR:?A graphical user session is required}/$VM-viewer.lock"
+# Serialize launch requests. virt-manager reuses its existing per-domain window.
+exec 9>"${XDG_RUNTIME_DIR:?A graphical user session is required}/$VM-launcher.lock"
 flock -n 9 || exit 0
 
 # Allow the host libvirt socket to become ready after login.
@@ -39,4 +39,4 @@ case "$STATE" in
     running|paused|'in shutdown') ;;
     *) echo "Unsupported VM state: $STATE"; exit 1 ;;
 esac
-exec virt-viewer --attach --connect "$URI" --wait --reconnect --hotkeys=release-cursor=ctrl+alt --domain-name "$VM"
+exec virt-manager --connect "$URI" --show-domain-console "$VM"

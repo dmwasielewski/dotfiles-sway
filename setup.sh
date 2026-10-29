@@ -40,6 +40,12 @@ echo "==> Suppressing system screenshot warning..."
 mkdir -p ~/.config/sway/config.d
 echo -n > ~/.config/sway/config.d/60-bindings-screenshot.conf
 
+# Opt-in network policy is activated after package installation in P2.
+bash "$DOTFILES/scripts/setup-home-network.sh" --install-only
+
+# Login and lock appearance (host system files require sudo).
+bash "$DOTFILES/scripts/setup-login-appearance.sh" --check || bash "$DOTFILES/scripts/setup-login-appearance.sh"
+
 # Symlinks
 echo "==> Creating symlinks..."
 ln -sf "$DOTFILES/sway/config"                                ~/.config/sway/config
@@ -95,6 +101,13 @@ run_step_warn "YAZI_INSTALLED" "Setting up yazi" bash "$DOTFILES/scripts/setup-y
 # release (no root/reboot). Launched on demand — no autostart/keybinding; Neovim
 # stays the terminal editor. The asset is ~140 MB, so this can take a while.
 run_step_warn "ZED_INSTALLED" "Setting up Zed" bash "$DOTFILES/scripts/setup-zed.sh"
+
+# Official desktop PDF tools, user-local; included in orchestrator phase P1.
+run_step_warn "STIRLING_PDF_INSTALLED" "Setting up Stirling PDF" bash "$DOTFILES/scripts/setup-stirling-pdf.sh"
+
+# Claude Desktop (.deb unpacked user-local; autostarts on ws5). Non-blocking: a
+# ~170 MB third-party download must not abandon an unattended install.
+run_step_warn "CLAUDE_DESKTOP_INSTALLED" "Setting up Claude Desktop" bash "$DOTFILES/scripts/setup-claude-desktop.sh"
 
 # Zed advertises inode/directory to open project folders. Explicitly select the
 # GUI file manager for apps using xdg-open/GIO (including onedriver).
@@ -195,6 +208,11 @@ install_flatpak_app org.libreoffice.LibreOffice
 install_flatpak_app org.kde.kdenlive
 install_flatpak_app org.gnome.Calculator
 report_failed_flatpaks
+
+# Sway is not a desktop Chromium recognises, so Electron apps fall back to
+# plaintext secret storage unless told to use the (already running) keyring.
+run_step_warn "ELECTRON_KEYRING" "Pointing Electron Flatpaks at the GNOME keyring" \
+    bash "$DOTFILES/scripts/setup-electron-keyring.sh"
 
 echo "==> Installing Whispering Open from GitHub release..."
 run_step_warn "WHISPERING_OPEN_SETUP" "Installing Whispering Open from GitHub release" \

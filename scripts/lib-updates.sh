@@ -140,6 +140,13 @@ os_failure_is_empty_cache() {          # $1 = rpm-ostree error text
     done < <(printf '%s\n' "$1" | grep -oE '/[^[:space:]]+\.rpm' || true)
     return 1
 }
+# A new OSTree base may arrive before cached RPM metadata catches up.
+# Only dependency resolution failures qualify; never retry arbitrary signature
+# or scriptlet failures under this policy.
+os_failure_is_dependency_conflict() {
+    [[ "$1" == *"Could not depsolve transaction"* ]]
+}
+
 # staged_from_json: echo 1 if any deployment is staged (downloaded, pending the
 # next reboot), else 0. Reads `rpm-ostree status --json` on stdin so it is unit-
 # testable without rpm-ostree. The "staged" boolean is the authoritative signal —
@@ -617,9 +624,28 @@ userlocal_update_rows() {
 
 userlocal_count() { userlocal_update_rows | grep -c . || true; }
 
-# Absolute path of a manifest's updater script, resolved against the dotfiles repo.
+# Resolve a display label back to its manifest; labels are not filenames.
+# Duplicate labels are ambiguous and must never select an arbitrary updater.
+userlocal_manifest_for_name() {
+    local wanted="$1" m label match=""
+    while IFS= read -r m; do
+        label="$(_ul_field "$m" name)"
+        [[ -n "$label" ]] || label="$(_ul_field "$m" repo)"
+        [[ "$label" == "$wanted" ]] || continue
+        [[ -z "$match" ]] || return 1
+        match="$m"
+    done < <(userlocal_manifests)
+    [[ -n "$match" ]] || return 1
+    printf '%s\n' "$match"
+}
+
+# Resolve only existing scripts inside the configured repository.
 userlocal_updater_path() {             # $1=manifest path
-    local rel; rel="$(_ul_field "$1" updater)"
-    [[ -z "$rel" ]] && return 1
-    printf '%s/%s' "${DOTFILES:-$HOME/dotfiles-sway}" "$rel"
+    local rel root resolved
+    rel="$(_ul_field "$1" updater)"
+    [[ -n "$rel" && "$rel" != /* ]] || return 1
+    root="$(readlink -f "${DOTFILES:-$HOME/dotfiles-sway}")"
+    resolved="$(readlink -f "$root/$rel")" || return 1
+    [[ "$resolved" == "$root/"* && -f "$resolved" ]] || return 1
+    printf '%s\n' "$resolved"
 }

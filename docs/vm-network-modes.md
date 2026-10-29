@@ -4,10 +4,10 @@ The laptop keeps four distinct libvirt networks, ordered by readable names:
 
 | Name | Subnet | Host access | Public Internet |
 |---|---|---|---|
-| `01-Host-Internet` | `192.168.170.0/24` | Yes | Yes |
-| `02-Host-NoInternet` | `192.168.171.0/24` | Yes | No |
-| `03-Lab-NoHost-Internet` | `192.168.172.0/24` | DHCP/DNS only | Yes |
-| `04-Lab-NoHost-NoInternet` | `192.168.173.0/24` | DHCP/DNS only | No |
+| `01-Host-Internet` | `192.168.101.0/24` | Yes | Yes |
+| `02-Host-NoInternet` | `192.168.102.0/24` | Yes | No |
+| `03-Lab-NoHost-Internet` | `192.168.103.0/24` | DHCP/DNS only | Yes |
+| `04-Lab-NoHost-NoInternet` | `192.168.104.0/24` | DHCP/DNS only | No |
 
 Bridges remain `virbr170` through `virbr173`. All modes provide DHCP and local
 DNS, with `.1` as gateway/DNS, pool `.100`–`.200`, and the local domain `lab.test`.
@@ -22,7 +22,7 @@ security hierarchy. NoHost does not disable clipboard or other guest integration
 
 `setup-kvm.sh` reuses/creates `01-Host-Internet`; it no longer creates the redundant
 `dotfiles-nat` network. On a fresh system it selects the first free /24 from
-170, 174, 175 and 176 to avoid conflicts, including nested validation guests.
+101, 105, 106 and 107 to avoid conflicts, including nested validation guests.
 The VM validation script uses that network by default. The other three modes
 and their firewall are restored from the laptop's visible configuration bundle:
 `~/Downloads/Laboratorium-cyber/sieci-do-przelaczania`.
@@ -51,9 +51,9 @@ the guest. `virsh --connect qemu:///system net-list --all` lists current modes.
 `setup-kvm.sh` runs `setup-vm-state.sh` to install `libvirt/libvirt-guests` under
 `/etc/sysconfig` and enable/start `libvirt-guests.service`. On host shutdown,
 libvirt saves running persistent guests' RAM and device state with managedsave,
-then stops their QEMU processes. Saved guests are not automatically resumed by
-the boot service (`ON_BOOT=ignore`). The Sway personal Windows launcher invokes
-`virsh start`, which restores its managed state. Other guests resume on demand.
+then stops their QEMU processes. The boot service resumes guests recorded as running at shutdown
+(`ON_BOOT=start`). VMs that were already shut off are not started by this policy.
+The Sway personal Windows launcher reuses an already running guest.
 `SYNC_TIME=1` asks guest agents to synchronize guest time when service-based
 restoration is used; the personal launcher uses normal libvirt start.
 
@@ -72,3 +72,49 @@ and manual managedsave stopped win11edu-damian with a retained save image.
 Normal virsh start restored that state, and the Windows guest agent responded.
 The VM was left running. Full verification: 201 passed, 0 failed, 1 warning.
 An actual host shutdown/reboot was not performed during this validation.
+
+For the separate 2026-10-16 Windows frozen-clock/black-display incident and its
+Hyper-V timer correction, see [Windows saved-state troubleshooting](windows-vm-black-screen.md).
+That correction passed one manual managed-save restore; full host reboot remains
+unverified. Network policy and VM workspace routing were not changed by it.
+
+## Subnet numbering (2026-10-16)
+
+The four laptop subnets now use 101, 102, 103 and 104 to match menu prefixes 01–04. Bridge names remain virbr170–virbr173. Network UUIDs and VM network selections are preserved. DNS records, DHCP ranges/reservations and the NoHost firewall DNS exceptions use the new addresses. Backups and traffic-test reports are in the visible network bundle. This does not move any VM between network modes. Shut-off guests obtain their new addresses at the next boot; a saved running guest may need DHCP renewal.
+
+
+### Host-wide restart and poweroff policy (2026-10-25)
+
+The same system `libvirt-guests.service` stop action runs during ordinary
+`reboot`, `systemctl reboot`, `systemctl poweroff`, desktop power-menu actions,
+and the updater reboot. It targets persistent QEMU/KVM guests on
+`qemu:///system`, not VirtualBox or session-scoped libvirt instances.
+`ON_SHUTDOWN=suspend` means managed save to disk, not merely pausing RAM.
+The installed unit has `TimeoutStopSec=0` (infinite), so normal system shutdown
+waits for its save operation rather than terminating it on the default timer.
+`ON_BOOT=start` restores the guests recorded by this service at shutdown.
+
+This is not a guarantee that a failed managed save aborts system shutdown:
+systemd can continue shutdown after a stop-action failure. Disk-full, unsupported
+passthrough, forced reboot and power loss remain failure conditions. Do not
+advertise the hook as a fail-closed reboot interlock. Verify free disk space and
+review `journalctl -u libvirt-guests -b -1` after the first normal reboot.
+No real reboot/poweroff or guest interruption was performed for this change.
+
+
+### Reproduction on a fresh Fedora Sway Atomic installation
+
+The automatic path is `orchestrate.sh` phase P2 → `scripts/setup-kvm.sh` →
+`scripts/setup-vm-state.sh` → `/etc/sysconfig/libvirt-guests`. The installer
+preserves the first pre-existing configuration as
+`/etc/sysconfig/libvirt-guests.before-dotfiles`, installs the versioned policy,
+and enables/starts the service without restarting it. Its shared state records
+`KVM_GUEST_STATE_SAVE=done`. A failure propagates to P2 rather than silently
+finishing installation. `scripts/verify.sh` checks service enablement, active
+state and byte-for-byte policy agreement.
+
+Verified on 2026-10-25 after interactive sudo: installed policy matched the
+repository (`ON_BOOT=start`, `ON_SHUTDOWN=suspend`, `PERSISTENT_ONLY=true`),
+service enabled/active, stop timeout infinite, installer step done. Personal
+Windows remained running; other defined guests were shut off. No host reboot
+was performed, so automatic boot-time restoration remains end-to-end untested.

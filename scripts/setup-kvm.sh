@@ -20,7 +20,7 @@ KVM_BRIDGE_NAME="${KVM_BRIDGE_NAME:-virbr170}"
 
 pick_kvm_subnet() {
     local candidate
-    local candidates=("192.168.170" "192.168.174" "192.168.175" "192.168.176")
+    local candidates=("192.168.101" "192.168.105" "192.168.106" "192.168.107")
 
     for candidate in "${candidates[@]}"; do
         if ! ip -4 route show "${candidate}.0/24" 2>/dev/null | grep -q .; then
@@ -54,9 +54,9 @@ configure_repo_network() {
   <name>01-Host-Internet</name>
   <forward mode='nat'/>
   <bridge name='virbr170' stp='on' delay='0'/>
-  <ip address='192.168.170.1' netmask='255.255.255.0'>
+  <ip address='192.168.101.1' netmask='255.255.255.0'>
     <dhcp>
-      <range start='192.168.170.2' end='192.168.170.254'/>
+      <range start='192.168.101.2' end='192.168.101.254'/>
     </dhcp>
   </ip>
 </network>
@@ -64,7 +64,7 @@ XML
         sed -i \
             -e "s/01-Host-Internet/$KVM_NETWORK_NAME/g" \
             -e "s/virbr170/$KVM_BRIDGE_NAME/g" \
-            -e "s/192.168.170/${subnet}/g" \
+            -e "s/192.168.101/${subnet}/g" \
             "$network_xml"
         sudo virsh --connect qemu:///system net-define "$network_xml"
     fi
@@ -119,7 +119,7 @@ echo -e "\n${CYAN}==> Configuring dedicated libvirt NAT network...${NC}"
 configure_repo_network
 step_done "KVM_NETWORK_DOTFILES_NAT"
 
-# Save all running persistent guests before host poweroff; resume on demand.
+# Save running persistent guests at host shutdown; restore them at host boot.
 bash "$DOTFILES/scripts/setup-vm-state.sh"
 
 # ── Verify KVM ───────────────────────────────────────────────────────────

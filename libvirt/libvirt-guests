@@ -1,6 +1,6 @@
-# Save running persistent guests before host shutdown; resume them on demand.
+# Save running persistent guests before host shutdown; resume them at host boot.
 URIS="qemu:///system"
-ON_BOOT="ignore"
+ON_BOOT="start"
 ON_SHUTDOWN="suspend"
 PERSISTENT_ONLY="true"
 BYPASS_CACHE=0

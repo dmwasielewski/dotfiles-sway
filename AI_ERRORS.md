@@ -1433,7 +1433,9 @@ routing. Keep actual policy/CA outside public Git; reject destination conflicts.
 ## Sway workspace routing must match the actual VM GUI identity
 
 2026-10-10: the host virt-manager window reports Wayland `app_id="virt-manager"`.
-Route that ID to workspace 6 and retain an XWayland `class` fallback. Keep
+Originally routed to workspace 6; since 2026-10-15 the manager belongs on
+workspace 7 while the personal virt-viewer console stays on 6. Retain an
+XWayland `class` fallback. Keep
 `sway/config` login startup and `scripts/autostart.sh` manual startup in sync,
 using `--connect qemu:///system`. A Sway reload applies routing for new windows;
 move existing windows explicitly or reopen the manager to validate assignment.
@@ -1488,3 +1490,232 @@ listen=none. The live fix produced active QEMU SPICE channels (including display
 and the correctly titled personal Windows window without rebooting the guest.
 Verify the connection itself using query-spice or actual display rendering;
 process/window existence and guest-agent responses do not prove viewer access.
+
+## Stirling PDF desktop RPM relocation (2026-10-14)
+
+The Linux desktop RPM includes `/usr/bin/Stirling-PDF` plus its Java runtime and
+backend under `/usr/lib/Stirling PDF`. Keep this relative tree when extracting
+user-local; copying only the executable omits the PDF backend. Validate the
+upstream SHA256 before extracting and preserve spaces in resource paths. Native
+shared libraries are GTK3 and WebKitGTK 4.1. A desktop entry and installed binary
+are not evidence that the window rendered or PDF tools succeeded.
+
+Verified v3.1.0 renders (`app_id=stirling-pdf`) and merges PDFs through its local
+backend. On this host the backend reports missing OCRmyPDF, Tesseract, LibreOffice
+and other optional tools, disabling 17 endpoints. Document those feature limits
+instead of claiming every desktop PDF tool is available.
+
+## Stirling PDF clipboard and misleading connection error (2026-10-14)
+
+WebKitGTK 2.54.1 `ClipboardGtk3.cpp::formats` constructs a span from GTK's
+signed target count. GTK returned NULL/-1 on this host, confirmed by a native
+GTK probe. The app repeatedly crashed with SIGSEGV in `Clipboard::formats`.
+XWayland allowed one paste but another identical crash followed: it is not a
+complete fix. The application-scoped shim in `scripts/native/stirling-clipboard.c`
+normalizes missing/negative target arrays to NULL/0 and preserves valid arrays
+and callback context. Unit tests plus a real GTK probe verified this; the user
+confirmed the app remained open while pasting and attempting connection.
+
+Do not infer the desktop connection failure from curl or TLS alone. A debugger
+invocation of the actual Tauri HTTP plugin returned HTTP 403 with the body
+`Invalid CORS request`. The server accepted `Origin: http://tauri.localhost`
+and its own HTTPS origin, but rejected `Origin: tauri://localhost` and
+`https://tauri.localhost`. Add the required Linux desktop origin to the server's
+existing allowed-origin list, preserving the existing policy. Do not disable TLS,
+open firewall rules or wildcard CORS in response to the generic UI error.
+
+The approved server correction appended only `tauri://localhost` to the
+existing Compose CORS environment, kept a backup and recreated only Stirling.
+After backend startup, the previously rejected Linux origin returned HTTP 200
+with status UP. A transient 502 during startup was not a new DNS/TLS fault.
+
+The user then confirmed desktop connection reaches the server login screen.
+A comparison kept Linux/Windows/web origins at HTTP 200 and an unrelated origin
+at HTTP 403. This confirms the scoped CORS correction, not a firewall change.
+
+## Login background differs from lock background (2026-10-15)
+
+SDDM login and swaylock after suspend are independent. A retained SDDM override
+is not evidence an upgrade reset it: the boot log loaded the copied theme and
+the image matched, while swaylock still used Fedora's default.jxl. Configure
+both, bundle the chosen image, and check both paths. Do not claim rendering is
+verified from config files alone. Install system appearance in orchestrator P0
+before the narrower unattended sudo policy; do not broaden sudoers for this.
+
+## Stirling desktop FileMonitor retry loop (2026-10-15)
+
+The local backend emitted `Not monitoring any directories` every five seconds
+when `~/.config/Stirling-PDF/pipeline/watchedFolders` did not exist. Its v3.1.0
+FileMonitor retries registration only if the root exists. Creating the empty app
+directory produced `Registered directory` on the next cycle. Ensure it in runtime
+setup and the launcher; do not hide the warning or alter NAS/firewall settings.
+
+## Portable home detection and app transitions (2026-10-15)
+
+A NetworkManager profile UUID is local to the saved profile; a freshly created
+profile on another laptop cannot be assumed to reuse it. Restore private Wi-Fi
+SSID/key-mgmt policy through the encrypted vault instead. Do not export runtime
+app-state snapshots to another laptop. Do not equate losing all physical links
+with leaving home: suspend would otherwise restore VPN apps and override user
+choices. Apply only stable home/away transitions and preserve manual toggles.
+
+## VM manager routing is separate from console autostart (2026-10-15)
+
+The personal Windows console reports app_id `virt-viewer`; virt-manager reports
+`virt-manager`, including its own VM console windows. Preserve the personal
+launcher and workspace 6 rules. Assign virt-manager and VirtualBox to workspace
+7 without adding startup commands. VirtualBox's installed desktop entry declares
+StartupWMClass `VirtualBox Manager`; retain native Wayland and XWayland matches.
+Assignments apply to newly mapped windows after reload; move existing manager
+windows explicitly. The setup.sh Sway symlink already reproduces these changes.
+
+Live validation confirmed virt-viewer on workspace 6, virt-manager on 7, and
+VirtualBox with XWayland class `VirtualBox Manager` on 7 after reload. Sway
+validation passed; verify.sh reported 213 passed, zero failed, one warning.
+
+## Competing SPICE viewers leave the personal console waiting (2026-10-15)
+
+Opening the same guest in virt-manager displaced the separate virt-viewer
+connection; virt-viewer showed Waiting for guest domain to re-start while the
+guest was still running. --reconnect waits for a domain lifecycle event and
+does not fix this handoff. Use virt-manager's --show-domain-console for login
+startup too: it reuses the same per-domain window. Match the personal guest's
+title before generic manager assignments and cover late title changes with
+for_window rules. Keep the manager list manual on workspace 7.
+
+## Subnet changes also affect NoHost DNS exceptions (2026-10-16)
+
+The vm-network-modes firewall keys on bridges for isolation, but its DNS exceptions also match gateway IP addresses. Renumber DHCP/DNS records and both input/output DNS exceptions together while all guests are off. Preserve UUIDs and bridge names. Temporary test ports need time to reach bridge forwarding state: immediate DNS tests falsely failed, while a four-second settling interval produced correct replies. Generic host TCP tests may be blocked by the normal host firewall even in Host modes; use an allowed control such as ICMP and verify denied traffic separately.
+
+## Update everything: display name is not manifest identity (2026-10-16)
+
+The 18:14 and 18:20 update logs reached `BEGIN user-local update Stirling PDF`
+after successful Fedora, Flatpak and container steps, with no corresponding
+OK/FAIL entry. `do_userlocal` constructed a manifest filename from the display
+name, looking for `Stirling PDF` instead of `stirling-pdf`; `Onedriver` versus
+`onedriver` had the same latent bug. The missing-updater branch only printed to
+the terminal, leaving the persistent log incomplete.
+
+Fix: resolve display labels through existing manifest contents, reject ambiguous
+labels and updater paths outside the repository, log missing updater failures,
+and keep update input on FD 3. The regression test reproduced four failures
+before the fix and now covers names with spaces, case differences, missing and
+failed updaters, duplicate labels, path escape and stdin-consuming commands.
+Never hide the problem by returning success, changing a single installed
+manifest name, or assuming package-manager success means all update sources ran.
+
+Live validation: `setup-stirling-pdf.sh` completed the blocked app update from
+v3.1.0 to v3.2.0, including upstream SHA256 verification and runtime setup.
+The focused identity regression passed all 9 assertions. Full host verification
+reported 212 passed, 1 failed (pre-existing missing `~/.config/sway/config`),
+and 1 warning; do not call that a clean full-system verification.
+
+
+## A connected viewer can still show a stalled Windows guest (2026-10-16)
+
+The personal Windows VM restored with active SPICE display channels but an
+entirely black QEMU framebuffer. Repeated guest-get-time values were identical,
+although some Guest Agent process queries worked. Agent ping therefore did not
+prove a healthy Windows desktop. VBS was running and stimer was enabled without
+its direct-mode feature, required by QEMU for nested Hyper-V. A minimal persistent
+stimer/direct=on change, approved cold restart, and one managedsave/start test
+restored the desktop and advancing time. Normal Agent/ACPI shutdown had failed;
+forced stopping was used only for the approved recovery.
+
+The evidence supports a timer/restore incompatibility, not a proven exact blocked
+thread or a proven QXL crash. Do not call a cold boot alone proof that saved-state
+restoration is fixed. Full Fedora reboot remains untested. Preserve original
+XML, keep private raw evidence in Downloads, and audit other Windows templates
+without silently changing them. See docs/windows-vm-black-screen.md for commands,
+prevention, rollback and validation limits. Keep this distinct from the earlier
+competing-viewer connection failure.
+
+## Fedora base and layered build dependencies out of sync (2026-10-20)
+
+The 09:16 OS update to 44.20261020.0 failed with a depsolve conflict. Optional
+host module/build layers pulled `akmods` -> `rpm-build`; the new base contained
+systemd 259.10 and rpm 6.0.2 while the enabled RPM repositories could not provide
+matching build dependencies (the fallback rpm-build required rpm 6.0.1).
+`rpm-ostree refresh-md --force` completed, but a real upgrade still failed:
+this was not merely a stale local cache. Do not interpret the protected-systemd
+message as permission to remove systemd or force downgrades.
+
+The updater now tries one forced metadata refresh and one upgrade retry for
+this failure class, with one shared lock across recovery. Persistent conflicts
+are explained and recorded as failures; unrelated signature failures are not
+retried under this policy. No layer is removed automatically. An optional
+conflicting layer can be removed only after explicit approval, or the user can
+wait for synchronized repositories. Build tools should stay in containers when
+host installation is unnecessary. Application/container updates stay independent.
+
+An additional reproduced diagnostic bug: `last_error_line` searched all output
+after the first matching BEGIN marker, including older attempts with that same
+marker. It now resets on each marker; a silent failed refresh cannot reuse a
+previous attempt's dependency error. The new regression test failed before the
+fix and covers recovery success, persistent conflict, refresh failure, stale
+error isolation, retry limits and signature-error exclusion.
+
+Live resolution, explicitly approved by Damian: `rpm-ostree upgrade
+--uninstall=VirtualBox --uninstall=akmod-VirtualBox` succeeded and staged
+44.20261020.0. Comparing booted and staged requested-package sets confirmed
+exactly those two layers removed, no requested layers added, and qemu-kvm,
+libvirt and virt-manager retained. No VM files were touched and no reboot was
+performed. The full transaction was appended to the persistent update log.
+
+Validation: all 87 assertions across 13 update regression test files passed
+after deployment; Bash syntax checks and `git diff --check` also passed.
+The current system continues running 44.20261018.0 until the user reboots.
+Upstream reference for matching base/layer RPM dependencies and updates-archive:
+https://coreos.github.io/rpm-ostree/architecture-core/
+
+### Alternatives and limits of the 2026-10-20 resolution
+
+Do not claim VirtualBox removal was technically unavoidable. The preserving
+repair tried was `refresh-md --force` followed by another upgrade, and it failed
+with the same dependency conflict. Waiting for a matching repository dependency
+set would preserve VirtualBox but postpone this OS upgrade; availability and
+timing were not established. Installing specific signed dependencies or custom
+builds was not investigated and must not be presented as a verified fix.
+Removal was an explicitly approved trade-off to stage the OS upgrade immediately,
+not the sole conceivable repair. VM files and KVM were preserved. Any future
+VirtualBox reinstallation requires a compatible dependency set and separate
+user authorization; keep it out of default installation automation.
+
+
+## VM save on shutdown is not a reboot failure interlock (2026-10-25)
+
+`libvirt-guests.service` uses managedsave and an unlimited stop timeout. This
+orders a normal host shutdown after saving persistent system-QEMU guests.
+A failed save does not automatically cancel systemd shutdown. Do not promise
+that no restart can proceed on failure or that forced poweroff is covered.
+Use ON_BOOT=start to resume the recorded running guests, and preserve existing
+on-demand launchers. Apply the policy without restarting the active unit;
+that stop action would interrupt live VMs. A configuration check is not an
+end-to-end host reboot test.
+
+## A running keyring is not a keyring the app uses (2026-10-29)
+
+Claude Desktop showed "No system keyring is available" and logged
+`isEncryptionAvailable=false on linux at startup (backend=basic_text)`. The first
+plan — install gnome-keyring, start it from `sway/config` — was wrong and was not
+applied: `gnome-keyring` is in the Fedora Sway Atomic base image, PAM starts and
+unlocks it at login, `busctl --user status org.freedesktop.secrets` shows it as the
+owner, and a `secret-tool` store/lookup round trip works with no prompt.
+
+The real cause is upstream behaviour: Chromium picks its secret-storage backend
+from the desktop environment and does not recognise Sway, so Electron falls back to
+`basic_text`. The fix is per app, `--password-store=gnome-libsecret` (Claude
+wrapper; Obsidian `user-flags.conf`; VS Code `argv.json`). Do NOT override
+`XDG_CURRENT_DESKTOP` globally — it also routes xdg-desktop-portal backends.
+
+Two false signals to avoid:
+- **A "<App> Safe Storage" item in the keyring is not proof the app uses it.** Claude
+  created one at 11:56:18 and logged `basic_text` at 11:56:21; its cookies were
+  `v11` (keyring) while its safeStorage API was not.
+- **Diagnose per app, don't flag everything.** Cookie databases are a cheap
+  measurement — values prefixed `v10` are basic_text, `v11` keyring. ChatGPT and
+  Bitwarden were already `v11`; a ChatGPT wrapper was written and reverted.
+
+Related drift found on the way: `~/.config/sway/config` was a plain copy, not the
+symlink `setup.sh` creates, so repo edits never reached the running Sway. Check
+`ls -l ~/.config/sway/config` before believing a config change is live.

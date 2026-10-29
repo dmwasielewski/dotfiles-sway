@@ -39,6 +39,17 @@ class Tests(unittest.TestCase):
         (self.source/'ca.pem').write_text('unverified')
         with self.assertRaises(ValueError): helper.restore(self.source, self.dest)
         self.assertFalse(self.dest.exists())
+    def test_home_wifi_portable_restore(self):
+        name='home-network.json'
+        (self.source/name).write_text('{"wifi":[{"ssid":"Example","security":"sae"}]}')
+        helper.restore(self.source,self.dest)
+        self.assertEqual((self.dest/name).stat().st_mode & 0o777, 0o600)
+        self.assertEqual((self.dest/name).read_bytes(), (self.source/name).read_bytes())
+    def test_invalid_home_policy_prevents_all_restore(self):
+        (self.source/'home-network.json').write_text('{"wifi":[]}')
+        (self.source/'tailscale-accept-routes').write_text('true')
+        with self.assertRaises(ValueError): helper.restore(self.source,self.dest)
+        self.assertFalse(self.dest.exists())
     def test_phase_order(self):
         script = (Path(__file__).resolve().parents[2]/'orchestrate.sh').read_text()
         self.assertLess(script.index('restore-homelab-config.py'), script.index('setup-proxmox-client.sh'))

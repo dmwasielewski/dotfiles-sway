@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Restore validated opt-in homelab files from harvested encrypted-vault staging."""
 import importlib.util
+import json
 import os
 from pathlib import Path
 import sys
@@ -35,6 +36,8 @@ def restore(source, dest):
     if (source / 'tailscale-accept-routes').exists() or (source / 'tailscale-accept-routes').is_symlink():
         if add('tailscale-accept-routes').read_text().strip() not in ('true', 'false'):
             raise ValueError('Invalid subnet-route preference')
+    if (source / 'home-network.json').exists() or (source / 'home-network.json').is_symlink():
+        module('home-network').validate_policy(json.loads(add('home-network.json').read_text()))
     if len({p.name for p in files}) != len(files):
         raise ValueError('Duplicate staged filenames')
     if dest.is_symlink():

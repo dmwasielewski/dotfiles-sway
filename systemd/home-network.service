@@ -1,0 +1,14 @@
+[Unit]
+Description=Home network application transitions
+ConditionPathExists=%h/.config/dotfiles/home-network.json
+
+[Service]
+Type=simple
+Environment=PATH=/usr/local/bin:/usr/bin:/bin:/opt/adguard-cli
+ExecStart=/usr/bin/python3 %h/dotfiles-sway/scripts/home-network.py watch
+# Failed transitions require inspection; do not loop over manual overrides.
+Restart=no
+TimeoutStopSec=180
+
+[Install]
+WantedBy=default.target
