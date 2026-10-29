@@ -116,11 +116,18 @@ cmd_status() {
     (( cap <= 40 )) && classes+=(warning)
     (( cap <= 20 )) && classes+=(critical)
 
+    # Colour rule (Damian, 2026-10-29), on AC only:
+    #   charging                         -> green  (.charging)
+    #   not charging, above ${CARE} %    -> amber  (.above-care) — in either mode:
+    #     a full battery after 100 % mode, or one still above 80 % in 80 % mode
+    #   not charging, at/below ${CARE} % -> neutral bar colour
+    # Off AC the usual warning/critical levels apply and no amber is added.
+    if [[ "$status" != "Charging" ]] && on_ac && (( cap > CARE )); then
+        classes+=(above-care)
+    fi
+
     if supported; then
         if [[ "$limit" == "$FULL" ]]; then
-            # Amber only once charging has stopped: while it charges the icon is
-            # green in either mode; at 100 % it turns amber as a reminder.
-            [[ "$status" != "Charging" ]] && classes+=(limit-full)
             lines+=("Charge limit: ${FULL}% (full charge) — click for ${CARE}% (battery care)")
         elif [[ "$limit" == "$CARE" ]]; then
             lines+=("Charge limit: ${CARE}% (battery care) — click for ${FULL}% (full charge)")

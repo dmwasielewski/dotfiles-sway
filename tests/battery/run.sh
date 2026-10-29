@@ -41,14 +41,14 @@ out="$(run status)"
 valid_json "$out"; assert_rc $? 0 "status is valid JSON"
 assert_contains "$out" '"plugged"' "plugged class on AC"
 assert_contains "$out" 'battery care' "tooltip names care mode"
-assert_absent "$out" 'limit-full' "no amber class at 80 %"
+assert_contains "$out" '"above-care"' "amber: 80 % mode but battery still at 100 %"
 assert_contains "$out" 'Health: 37.0 / 70.0 Wh (52%)' "health line from energy values"
 
 echo "== status: full mode is amber =="
 fixture b 100 "Not charging" 1 100
 choose 100
 out="$(run status)"
-assert_contains "$out" '"limit-full"' "limit-full class at 100 %"
+assert_contains "$out" '"above-care"' "amber: full after 100 % mode"
 assert_contains "$out" 'full charge) — click for 80%' "tooltip offers switch back"
 
 echo "== status: charging towards 100 % is green, not amber =="
@@ -56,7 +56,18 @@ fixture b2 85 Charging 1 100
 choose 100
 out="$(run status)"
 assert_contains "$out" '"charging"' "charging class while charging"
-assert_absent "$out" 'limit-full' "no amber while still charging"
+assert_absent "$out" 'above-care' "no amber while still charging"
+
+echo "== status: 80 % mode at 80 % on AC is neutral =="
+fixture b3 80 "Not charging" 1 80
+out="$(run status)"
+assert_absent "$out" 'above-care' "grey once down to the 80 % limit"
+assert_absent "$out" '"charging"' "not green when not charging"
+
+echo "== status: off AC above 80 % is not amber =="
+fixture b4 95 Discharging 0 80
+out="$(run status)"
+assert_absent "$out" 'above-care' "no amber on battery power"
 
 echo "== status: critical keeps its class alongside full mode =="
 fixture c 15 Discharging 0 100
