@@ -48,6 +48,24 @@ fwupd does handle the SN850X SSD and the Secure Boot certificates/dbx.
 The battery holds about half its original charge. Worth re-measuring now and
 then; replacement is a hardware decision, not something this repo automates.
 
+Why it wore so fast at only 117 cycles: the laptop runs on AC almost all the
+time and the charge limit is **100 %** (`charge_control_end_threshold = 100`);
+upower's history since 2026-10-22 is 100 % "fully-charged" in every entry.
+Lithium cells age fastest held full and warm. The firmware reports only
+`ASUS Battery` / `ASUSTeK`, no part number or serial.
+
+Decision 2026-10-29 (Damian): keep 100 % on the current battery and replace it.
+When the new battery goes in, revisit a charge limit (the hardware supports one;
+it is not set by this repo yet) — otherwise the replacement ages the same way.
+
+**Replacement part** (per sellers, not ASUS — read the label under the bottom
+cover before ordering): **C31N2105**, alt. part 0B200-04140000, 70 Wh, 11.61 V,
+3-cell. **C31N2105-1 is a different part** (different screw holes) — not
+interchangeable. UK prices seen 2026-10-29: compatible replacements about
+£51–55; a genuine ASUS 0B200-04140000 from an ASUS reseller about €149, but that
+listing is the -1 variant. Replace immediately if the battery swells (raised
+touchpad or bulging bottom cover).
+
 ## How to re-measure
 
 ```bash
