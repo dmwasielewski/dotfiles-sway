@@ -262,6 +262,29 @@ else
     pass "Obsidian launches on demand (no autostart, no workspace)"
 fi
 
+# ── 1a3. Battery charge limit (Waybar battery toggle) ─────────────────────
+section "1a3. Battery charge limit"
+BATT_FIX="bash ~/dotfiles-sway/scripts/setup-battery-charge-limit.sh"
+if grep -Fq '"custom/battery",' "$DOTFILES/waybar/config"; then
+    pass "Waybar uses the charge-limit battery module"
+else
+    fail "Waybar battery module is not custom/battery" "Update ~/dotfiles-sway/waybar/config"
+fi
+BATT_CHECK="$(bash "$DOTFILES/scripts/setup-battery-charge-limit.sh" --check 2>&1)" && BATT_RC=0 || BATT_RC=$?
+if [[ "$BATT_CHECK" == *"not supported"* ]]; then
+    pass "Battery charge limit not supported on this hardware — skipped"
+elif [[ "$BATT_RC" -eq 0 ]]; then
+    BATT_ATTR="$(ls /sys/class/power_supply/*/charge_control_end_threshold 2>/dev/null | head -1)"
+    BATT_WANT="$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/battery-charge-limit" 2>/dev/null || echo 80)"
+    if [[ "$(cat "$BATT_ATTR" 2>/dev/null)" == "$BATT_WANT" ]]; then
+        pass "Battery charge limit ${BATT_WANT}% applied, toggle works without sudo"
+    else
+        fail "Battery charge limit is $(cat "$BATT_ATTR" 2>/dev/null)%, saved choice is ${BATT_WANT}%" "$BATT_FIX"
+    fi
+else
+    fail "Battery charge-limit toggle not installed ($(tr '\n' ';' <<< "$BATT_CHECK"))" "$BATT_FIX"
+fi
+
 # ── 1b. Whispering Open ───────────────────────────────────────────────────
 section "1b. Whispering Open"
 

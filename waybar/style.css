@@ -51,6 +51,7 @@ button:hover {
 /* ── Shared padding ─────────────────────────────────────── */
 #clock,
 #battery,
+#custom-battery,
 #cpu,
 #memory,
 #disk,
@@ -265,13 +266,16 @@ button:hover {
 }
 
 /* ── Battery ────────────────────────────────────────────── */
-#battery {
+#battery,
+#custom-battery {
     background-color: #1e2230;
     color: #8a9bb5;
 }
 
 #battery.charging,
-#battery.plugged {
+#battery.plugged,
+#custom-battery.charging,
+#custom-battery.plugged {
     background-color: #1a2a1a;
     color: #6ab56a;
 }
@@ -282,17 +286,28 @@ button:hover {
 }
 */
 
-#battery.full {
+#battery.full,
+#custom-battery.full {
     background-color: #1e2230;
     color: #8a9bb5;
 }
 
-#battery.warning:not(.charging) {
+/* Charge limit 100 % (full charge) — the warning amber, as a reminder to switch
+   back to 80 % battery care. Placed after .plugged/.full so it wins on AC;
+   warning/critical below are more specific and still take precedence. */
+#custom-battery.limit-full {
     background-color: #2a2010;
     color: #c8a060;
 }
 
-#battery.critical:not(.charging) {
+#battery.warning:not(.charging),
+#custom-battery.warning:not(.charging) {
+    background-color: #2a2010;
+    color: #c8a060;
+}
+
+#battery.critical:not(.charging),
+#custom-battery.critical:not(.charging) {
     background-color: #2a0000;
     color: #ff0000;
     animation-name: blink;

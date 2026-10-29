@@ -487,7 +487,7 @@ Dark muted blue-slate palette — low contrast, easy on the eyes.
 
 **Centre:** `window` (focused window title)
 
-**Right:** `claude` · `idle_inhibitor` · `pulseaudio` · `network` · `power-profiles-daemon` · `cpu` · `memory` · `temperature` · `backlight` · `adguard` · `updates` · `battery` · `clock` · `tray` · `nordvpn`
+**Right:** `claude` · `idle_inhibitor` · `pulseaudio` · `network` · `power-profiles-daemon` · `cpu` · `memory` · `temperature` · `backlight` · `adguard` · `updates` · `battery` (click: charge limit 80/100 %) · `clock` · `tray` · `nordvpn`
 
 ### Alert thresholds
 
@@ -497,6 +497,21 @@ Dark muted blue-slate palette — low contrast, easy on the eyes.
 | Memory | 70% | 80% (blinking) |
 | Temperature | 85°C | 95°C (blinking) |
 | Battery | 40% | 20% (blinking) |
+
+**Battery charge limit (like MyASUS Battery Care).** Click the battery icon to
+switch between **80 %** (battery care, default — for a laptop that lives on the
+charger) and **100 %** (full charge, e.g. before a day at university). In 100 %
+mode the icon turns warning-amber as a reminder; hover shows the mode, time left
+and battery health. The choice is saved and re-applied after a reboot (first
+real reboot test pending as of 2026-10-29). One-time install (asks for the
+sudo password once, run it in a terminal):
+
+```bash
+bash ~/dotfiles-sway/scripts/setup-battery-charge-limit.sh
+```
+
+Switching 100 → 80 % does not drain a full battery; it only stops charging above
+80 % from then on.
 
 ### Updates indicator
 
@@ -679,6 +694,7 @@ dotfiles-sway/
 │   ├── setup-chatgpt.sh                # ChatGPT desktop app (incl. Codex): official RPM unpacked user-local into ~/.local/opt
 │   ├── setup-claude-desktop.sh         # Claude Desktop: official .deb unpacked user-local + keyring wrapper
 │   ├── setup-electron-keyring.sh       # Points Flatpak Electron apps (Obsidian, VS Code) at the GNOME keyring
+│   ├── setup-battery-charge-limit.sh   # udev rule + Waybar battery toggle 80/100 % (battery-charge-limit.sh)
 │   ├── setup-adguard.sh               # AdGuard for Linux CLI install — writes state
 │   ├── setup-whispering-open.sh       # Whispering Open GitHub release download — non-blocking
 │   ├── setup-damian-container.sh      # Toolbox damianf: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state

@@ -1,0 +1,14 @@
+# Installed by dotfiles-sway/scripts/setup-battery-charge-limit.sh into
+# /etc/udev/rules.d/. Lets members of `wheel` change the battery charge limit
+# (charge_control_end_threshold) without sudo, so the Waybar battery toggle never
+# asks for a password. Only that one attribute is made group-writable.
+#
+# Two triggers on purpose: the attribute is added by a vendor battery hook
+# (asus-wmi on ASUS), which can register after the battery's own `add` event —
+# a rule on the battery alone could miss it at boot. The platform-driver bind
+# re-applies the permission once the hook exists.
+ACTION=="add|change", SUBSYSTEM=="power_supply", ATTR{type}=="Battery", TEST=="charge_control_end_threshold", \
+    RUN+="/usr/bin/chgrp wheel /sys%p/charge_control_end_threshold", \
+    RUN+="/usr/bin/chmod g+w /sys%p/charge_control_end_threshold"
+ACTION=="bind", SUBSYSTEM=="platform", DRIVER=="asus-nb-wmi", \
+    RUN+="/bin/sh -c 'for a in /sys/class/power_supply/*/charge_control_end_threshold; do [ -e \"$$a\" ] && chgrp wheel \"$$a\" && chmod g+w \"$$a\"; done'"

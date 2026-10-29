@@ -1719,3 +1719,16 @@ Two false signals to avoid:
 Related drift found on the way: `~/.config/sway/config` was a plain copy, not the
 symlink `setup.sh` creates, so repo edits never reached the running Sway. Check
 `ls -l ~/.config/sway/config` before believing a config change is live.
+
+## A polled status that "self-heals" races the toggle that changes it (2026-10-29)
+
+`scripts/battery-charge-limit.sh status` runs every 5 s from Waybar and re-applies
+the saved charge limit when sysfs drifts (firmware resets at boot/resume). The
+first live test toggled 80→100→80 and ended at **100**: Waybar's `status` ran
+between `toggle`'s write and its save, read the new firmware value as drift and
+wrote the old one back. 26 unit tests passed because each ran one command at a
+time. Fixed with one `flock` in `$XDG_RUNTIME_DIR`: `toggle`/`apply` take it,
+`status` heals only if it gets it without waiting (`flock -n`). A test now holds
+the lock and asserts `status` leaves the in-flight value alone. Lesson: any
+"repair drift" loop must share a lock with every writer, and a live test must
+cross at least one poll interval (here: toggle, wait 6 s, read back — four times).

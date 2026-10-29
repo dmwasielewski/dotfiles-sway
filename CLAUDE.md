@@ -89,6 +89,7 @@ dotfiles-sway/
     ├── setup-chatgpt.sh               ← ChatGPT desktop app (incl. Codex): official RPM unpacked user-local into ~/.local/opt
     ├── setup-claude-desktop.sh        ← Claude Desktop: official .deb unpacked user-local + keyring wrapper
     ├── setup-electron-keyring.sh      ← Points Flatpak Electron apps (Obsidian, VS Code) at the GNOME keyring
+    ├── setup-battery-charge-limit.sh  ← udev rule + Waybar battery toggle 80/100 % (battery-charge-limit.sh)
     ├── setup-adguard.sh               ← AdGuard for Linux CLI install — writes state
     ├── setup-whispering-open.sh       ← Whispering Open latest GitHub release download — non-blocking
     ├── setup-damian-container.sh      ← Toolbox damianf: node, npm, gh, Claude Code, Codex CLI, ShellGPT + plugins — writes state
@@ -501,7 +502,7 @@ with Monday-first weeks; left click toggles time and the weekday/date display.
 - Position: **bottom**, height 25px
 - Dark muted blue-slate theme (low contrast, easy on the eyes)
 - App icon group: tray (ChatGPT) → OneDrive → AdGuard → NordVPN; shared slate background and no internal gaps.
-- Modules right → left: `power` · app group (`nordvpn`, `adguard`, `onedriver`, tray) · clock · `updates` · battery · backlight · temp · RAM · CPU · power profile · network · audio · idle inhibitor · `claude` status
+- Modules right → left: `power` · app group (`nordvpn`, `adguard`, `onedriver`, tray) · clock · `updates` · `battery` (charge-limit toggle) · backlight · temp · RAM · CPU · power profile · network · audio · idle inhibitor · `claude` status
 - `custom/adguard`: calls `~/.local/bin/adguard-waybar` every 10s — shows `AG`; click toggles protection on/off
 - `custom/claude`: calls `~/.npm-global/bin/ccstatusline waybar` every 5s — shows Claude Code state (idle/working/waiting/error) with colour coding
 - `custom/nordvpn`: calls `~/.local/bin/nordvpn-waybar` every 15s — shows `VPN`; left click toggles connect/disconnect; right click opens rofi domain whitelist prompt (`nordvpn-whitelist-domain.sh`)
@@ -515,6 +516,7 @@ with Monday-first weeks; left click toggles time and the weekday/date display.
   - `updates-menu.sh` (interactive, runs in foot): one OS check per session (shared cache) so summary and list always agree; always shows every section with last-updated dates; menu options remain 1) Flatpak 2) Containers 3) Language packages 4) User-local apps 5) Fedora OS 6) Everything 7) Show update list q) Cancel. **Everything executes OS first**, then Flatpak → containers → language → user-local, continuing on error and prompting for a reboot only after the independent work finishes. OS updates are atomic (rpm-ostree) so a failed upgrade is inherently safe.
   - **Update log:** every action is timestamped and tee'd to `~/.local/state/dotfiles-updates.log` (output survives after the terminal closes). On any failure the menu prints the log path. Review with `tail -50 ~/.local/state/dotfiles-updates.log`.
 - `custom/power`: shows ⏻ icon; click opens rofi power menu (shutdown/reboot/suspend/hibernate/logout)
+- `custom/battery`: `~/.local/bin/battery-charge-limit status` every 5s (signal 9 redraws at once). It **replaces the built-in `battery` module**, which cannot colour itself by the charge limit; it keeps the same glyphs, green on AC, amber below 40 % and blinking red below 20 %. **Left click toggles the charge limit 80 % (battery care) ↔ 100 % (full charge)**, like MyASUS Battery Care on Windows; in 100 % mode the icon uses the warning amber (`#c8a060` on `#2a2010`) as a reminder to switch back. Tooltip: limit mode, state, time left/to limit, health (Wh vs design). The choice is saved in `~/.config/dotfiles/battery-charge-limit` (default 80) and re-applied by `status` whenever the firmware value drifts (boot/resume resets); toggle and self-heal share a `flock` (see AI_ERRORS). Verified live 2026-10-29: four toggles across poll intervals, sysfs read back each time, bar screenshot amber/green. **Not yet verified: permission and value after a real reboot.** Writing `charge_control_end_threshold` needs no sudo because `udev/90-dotfiles-battery-charge-limit.rules` (installed once by `scripts/setup-battery-charge-limit.sh`, run from `setup.sh`) makes that one attribute group-writable for `wheel`; it fires on the battery and on the `asus-nb-wmi` driver bind, because the vendor hook may add the attribute after the battery appears. Every write is read back; a refused write is reported, never shown as the new mode. Battery discovered by sysfs `type`, never `BAT0`. Hardware without the attribute: plain battery, toggle refuses, `verify.sh` skips. Tests: `bash tests/battery/run.sh`.
 
 **Alert thresholds:**
 | Module | Warning | Critical |

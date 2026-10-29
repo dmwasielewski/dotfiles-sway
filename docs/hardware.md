@@ -54,9 +54,11 @@ upower's history since 2026-10-22 is 100 % "fully-charged" in every entry.
 Lithium cells age fastest held full and warm. The firmware reports only
 `ASUS Battery` / `ASUSTeK`, no part number or serial.
 
-Decision 2026-10-29 (Damian): keep 100 % on the current battery and replace it.
-When the new battery goes in, revisit a charge limit (the hardware supports one;
-it is not set by this repo yet) — otherwise the replacement ages the same way.
+**Charge limit:** click the Waybar battery icon to switch between 80 % (battery
+care, default) and 100 % (full charge before a day away from the charger) — see
+README *Battery charge limit*. Installed by `scripts/setup-battery-charge-limit.sh`.
+Decision 2026-10-29 (Damian): the current battery will be replaced anyway; the
+80 % default protects the replacement from ageing the same way.
 
 **Replacement part** (per sellers, not ASUS — read the label under the bottom
 cover before ordering): **C31N2105**, alt. part 0B200-04140000, 70 Wh, 11.61 V,

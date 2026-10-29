@@ -105,6 +105,12 @@ run_step_warn "ZED_INSTALLED" "Setting up Zed" bash "$DOTFILES/scripts/setup-zed
 # Official desktop PDF tools, user-local; included in orchestrator phase P1.
 run_step_warn "STIRLING_PDF_INSTALLED" "Setting up Stirling PDF" bash "$DOTFILES/scripts/setup-stirling-pdf.sh"
 
+# Battery charge limit toggle on the Waybar battery icon (80 % care / 100 % full).
+# Installs one udev rule (sudo) so the click never asks for a password; a clean
+# skip on hardware without a charge limit.
+run_step_warn "BATTERY_CHARGE_LIMIT" "Setting up the battery charge-limit toggle" \
+    bash "$DOTFILES/scripts/setup-battery-charge-limit.sh"
+
 # Claude Desktop (.deb unpacked user-local; autostarts on ws5). Non-blocking: a
 # ~170 MB third-party download must not abandon an unattended install.
 run_step_warn "CLAUDE_DESKTOP_INSTALLED" "Setting up Claude Desktop" bash "$DOTFILES/scripts/setup-claude-desktop.sh"

@@ -24,7 +24,7 @@
         "memory",
         "temperature",
         "backlight",
-        "battery",
+        "custom/battery",
         "custom/updates",
         "clock",
         "group/apps",
@@ -185,20 +185,17 @@
         "format-icons": ["󰃞 ","󰃞 ","󰃞 ","󰃟","󰃟","󰃠","󰃠","󰃠","🌕"]
 
     },
-    "battery": {
-        "states": {
-           // "good": 95,
-            "warning": 40,
-            "critical": 20
-        },
-        "format": "{capacity}% {icon}",
-        "format-full": "{capacity}% {icon}",
-        "format-charging": "{capacity}% ",
-        "format-plugged": "{capacity}% ",
-        "format-alt": "{time} {icon}",
-        // "format-good": "", // An empty format will hide the module
-        // "format-full": "",
-        "format-icons": ["", "", "", "", ""] 
+    // Battery with the 80 %/100 % charge limit toggle (MyASUS "Battery Care").
+    // Replaces the built-in "battery" module, which cannot colour itself by the
+    // limit. Same glyphs and warning/critical states; click switches the limit,
+    // the tooltip shows the mode, time left and health. Signal 9 = redraw now.
+    "custom/battery": {
+        "exec": "~/.local/bin/battery-charge-limit status",
+        "return-type": "json",
+        "interval": 5,
+        "signal": 9,
+        "tooltip": true,
+        "on-click": "~/.local/bin/battery-charge-limit toggle"
     },
     "battery#bat2": {
         "bat": "BAT2"
