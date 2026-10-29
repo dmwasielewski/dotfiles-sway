@@ -68,6 +68,14 @@ ASUS exposes no `charge_behaviour` (no software force-discharge) — only
 `charge_control_end_threshold`. To get to 80 %: unplug and work until 80 %
 (~7 Wh, roughly 30–45 min), or just let the next day off the charger do it.
 
+ASUS documents both behaviours for MyASUS Battery Care (FAQ 1032726): above the
+limit on AC the battery "may simply maintain its current charge level rather than
+actively discharging", and **the firmware resets the limit to 100 % at every
+start-up** (boot, restart, BIOS setup) until the OS re-applies it. Here that
+re-apply is the `status` self-heal run by Waybar right after login, so between
+power-on and login the battery may charge past 80 %, exactly as on Windows.
+<https://www.asus.com/support/faq/1032726/>
+
 **Replacement part** (per sellers, not ASUS — read the label under the bottom
 cover before ordering): **C31N2105**, alt. part 0B200-04140000, 70 Wh, 11.61 V,
 3-cell. **C31N2105-1 is a different part** (different screw holes) — not
