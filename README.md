@@ -1191,7 +1191,9 @@ Design + plan: `docs/superpowers/specs/2026-06-12-secrets-vault-design.md`,
 
 QEMU/KVM installed via rpm-ostree — hardware-accelerated virtualisation using AMD-V.
 
-### Hardware (Ryzen 5 5600H — 6c/12t, 38 GB RAM, 1.8 TB NVMe)
+### Hardware (ASUS Vivobook 15X OLED M1503QA — Ryzen 5 5600H 6c/12t, 38 GB RAM, 1.8 TB NVMe)
+
+Full measured inventory, BIOS/firmware status and battery health: [docs/hardware.md](docs/hardware.md).
 | VM | vCPU | RAM | Disk |
 |---|---|---|---|
 | Windows 11 | 4 | 8 GB | 80 GB |

@@ -357,7 +357,7 @@ Current selectable laptop networks and restore details: [VM network modes](docs/
 
 ### Layer 6: KVM Virtual Machines
 
-Host hardware: **Ryzen 5 5600H** (6c/12t), **38 GB RAM**, **1.8 TB NVMe**. All three VMs can run simultaneously.
+Host hardware: ASUS Vivobook 15X OLED **M1503QA**, **Ryzen 5 5600H** (6c/12t), **38 GB RAM**, **1.8 TB NVMe**, BIOS 312. All three VMs can run simultaneously. Full measured inventory, firmware/BIOS status (BIOS is not on fwupd — check the ASUS page) and battery health: [docs/hardware.md](docs/hardware.md).
 
 | VM | vCPU | RAM | Disk | Status |
 |---|---|---|---|---|
