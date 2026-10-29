@@ -60,17 +60,24 @@ README *Battery charge limit*. Installed by `scripts/setup-battery-charge-limit.
 Decision 2026-10-29 (Damian): the current battery will be replaced anyway; the
 80 % default protects the replacement from ageing the same way.
 
-The limit only **stops charging**; it never discharges. Measured 2026-10-29 with
-the limit at 80 % and the battery at 100 % on AC: `energy_now` stayed at
-37 018 000 µWh for a full minute (brief `Discharging` blips at <1 W moved
-nothing), so the battery stays at 100 % until it is used off the charger. This
-ASUS exposes no `charge_behaviour` (no software force-discharge) — only
-`charge_control_end_threshold`. To get to 80 %: unplug and work until 80 %
-(~7 Wh, roughly 30–45 min), or just let the next day off the charger do it.
+What happens above the limit on AC depends on the firmware's state, measured
+2026-10-29 with the limit at 80 %:
+- Battery at 100 %, charger never unplugged after setting the limit:
+  `energy_now` stayed at 37 018 000 µWh for a full minute (`Not charging`, brief
+  `Discharging` blips < 1 W moved nothing).
+- After unplugging (down to 94 %) and plugging back in: `status=Discharging` at
+  ~8–9 W **with AC online** — the firmware ran the laptop from the battery,
+  94→92 % within minutes, to bring it down to the 80 % limit; then the charger
+  takes over.
 
-ASUS documents both behaviours for MyASUS Battery Care (FAQ 1032726): above the
-limit on AC the battery "may simply maintain its current charge level rather than
-actively discharging", and **the firmware resets the limit to 100 % at every
+So do not promise either behaviour; the tooltip shows which is happening
+("running on battery down to the 80% limit"). This ASUS exposes no
+`charge_behaviour` (no software-controlled force-discharge) — only
+`charge_control_end_threshold`.
+
+ASUS's MyASUS FAQ 1032726 says above the limit on AC the battery "may simply
+maintain its current charge level rather than actively discharging" — "may":
+the measurement above shows this unit sometimes does discharge. Also **the firmware resets the limit to 100 % at every
 start-up** (boot, restart, BIOS setup) until the OS re-applies it. Here that
 re-apply is the `status` self-heal run by Waybar right after login, so between
 power-on and login the battery may charge past 80 %, exactly as on Windows.

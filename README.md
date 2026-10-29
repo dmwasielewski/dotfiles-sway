@@ -511,8 +511,10 @@ sudo password once, run it in a terminal):
 bash ~/dotfiles-sway/scripts/setup-battery-charge-limit.sh
 ```
 
-Switching 100 → 80 % does not drain a full battery; it only stops charging above
-80 % from then on.
+Above 80 % in 80 % mode the battery is not charged: depending on the firmware's
+state it either holds its level or runs the laptop from the battery down to 80 %
+while the charger is plugged in (the tooltip says which). Either way the icon is
+amber until 80 %, then neutral. See `docs/hardware.md` for the measurements.
 
 ### Updates indicator
 

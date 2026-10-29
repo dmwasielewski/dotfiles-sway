@@ -143,6 +143,10 @@ cmd_status() {
     fi
 
     local st="${status,,}"; [[ "$status" == "Not charging" ]] && st="not charging (limit reached)"
+    # Above the limit on AC the ASUS firmware runs the laptop from the battery
+    # until it is down to the limit (measured 2026-10-29: ~8–9 W, 94→80 %).
+    [[ "$status" == "Discharging" ]] && on_ac && [[ -n "$limit" ]] && (( cap > limit )) &&
+        st="running on battery down to the ${limit}% limit"
     lines+=("Battery: ${cap}%, ${st}$(on_ac && echo ', on AC')")
 
     # Time estimate from energy and power, when the battery reports them.

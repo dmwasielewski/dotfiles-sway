@@ -64,6 +64,14 @@ out="$(run status)"
 assert_absent "$out" 'above-care' "grey once down to the 80 % limit"
 assert_absent "$out" '"charging"' "not green when not charging"
 
+echo "== status: on AC above the limit, firmware discharges to it =="
+fixture b5 93 Discharging 1 80
+choose 80
+out="$(run status)"
+assert_contains "$out" '"above-care"' "amber while draining to the limit"
+assert_absent "$out" '"charging"' "not green: it is not charging"
+assert_contains "$out" 'running on battery down to the 80% limit' "tooltip explains the drain"
+
 echo "== status: off AC above 80 % is not amber =="
 fixture b4 95 Discharging 0 80
 out="$(run status)"
