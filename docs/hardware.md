@@ -60,6 +60,14 @@ README *Battery charge limit*. Installed by `scripts/setup-battery-charge-limit.
 Decision 2026-10-29 (Damian): the current battery will be replaced anyway; the
 80 % default protects the replacement from ageing the same way.
 
+The limit only **stops charging**; it never discharges. Measured 2026-10-29 with
+the limit at 80 % and the battery at 100 % on AC: `energy_now` stayed at
+37 018 000 µWh for a full minute (brief `Discharging` blips at <1 W moved
+nothing), so the battery stays at 100 % until it is used off the charger. This
+ASUS exposes no `charge_behaviour` (no software force-discharge) — only
+`charge_control_end_threshold`. To get to 80 %: unplug and work until 80 %
+(~7 Wh, roughly 30–45 min), or just let the next day off the charger do it.
+
 **Replacement part** (per sellers, not ASUS — read the label under the bottom
 cover before ordering): **C31N2105**, alt. part 0B200-04140000, 70 Wh, 11.61 V,
 3-cell. **C31N2105-1 is a different part** (different screw holes) — not
