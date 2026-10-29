@@ -118,7 +118,9 @@ cmd_status() {
 
     if supported; then
         if [[ "$limit" == "$FULL" ]]; then
-            classes+=(limit-full)
+            # Amber only once charging has stopped: while it charges the icon is
+            # green in either mode; at 100 % it turns amber as a reminder.
+            [[ "$status" != "Charging" ]] && classes+=(limit-full)
             lines+=("Charge limit: ${FULL}% (full charge) — click for ${CARE}% (battery care)")
         elif [[ "$limit" == "$CARE" ]]; then
             lines+=("Charge limit: ${CARE}% (battery care) — click for ${FULL}% (full charge)")

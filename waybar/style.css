@@ -272,10 +272,11 @@ button:hover {
     color: #8a9bb5;
 }
 
+/* custom-battery: green ONLY while charging. Plugged in with the limit reached
+   it stays the neutral bar colour (no distraction); see limit-full below. */
 #battery.charging,
 #battery.plugged,
-#custom-battery.charging,
-#custom-battery.plugged {
+#custom-battery.charging {
     background-color: #1a2a1a;
     color: #6ab56a;
 }
@@ -292,9 +293,9 @@ button:hover {
     color: #8a9bb5;
 }
 
-/* Charge limit 100 % (full charge) — the warning amber, as a reminder to switch
-   back to 80 % battery care. Placed after .plugged/.full so it wins on AC;
-   warning/critical below are more specific and still take precedence. */
+/* Charge limit 100 % reached (not charging) — the warning amber, as a reminder
+   to switch back to 80 % battery care. The script omits this class while
+   charging, so charging stays green. Warning/critical below still win. */
 #custom-battery.limit-full {
     background-color: #2a2010;
     color: #c8a060;

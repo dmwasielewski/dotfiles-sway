@@ -51,6 +51,13 @@ out="$(run status)"
 assert_contains "$out" '"limit-full"' "limit-full class at 100 %"
 assert_contains "$out" 'full charge) — click for 80%' "tooltip offers switch back"
 
+echo "== status: charging towards 100 % is green, not amber =="
+fixture b2 85 Charging 1 100
+choose 100
+out="$(run status)"
+assert_contains "$out" '"charging"' "charging class while charging"
+assert_absent "$out" 'limit-full' "no amber while still charging"
+
 echo "== status: critical keeps its class alongside full mode =="
 fixture c 15 Discharging 0 100
 choose 100
