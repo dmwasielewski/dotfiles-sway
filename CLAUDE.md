@@ -343,6 +343,8 @@ Voice typing still runs through toolbox `damianf` by default; do not assume `dam
 
 Managed by `scripts/setup-security-container.sh`. Use `distrobox enter security` to enter.
 
+**Rootless — no raw sockets.** `sudo` inside is not host root, so nmap `-sS`/`-sU`/`-O`/`-A` and ICMP/ARP discovery fail with `Couldn't open a raw socket … Operation not permitted` (measured 2026-10-30). Inside it use `nmap --unprivileged -sT …`; for raw-socket scans use the `kali-lab` VM. Do not propose `--privileged`/rootful distrobox as a quick fix without Damian deciding — it gives the pentest toolkit real root on the host.
+
 | Category | Tools |
 |---|---|
 | Network | `nmap`, `masscan`, `wireshark`, `tcpdump`, `netcat`, `socat` |

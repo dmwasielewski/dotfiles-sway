@@ -1287,6 +1287,25 @@ bash ~/dotfiles-sway/scripts/setup-security-container.sh
 distrobox enter security
 ```
 
+### Limitation: no raw sockets (nmap SYN/UDP/OS scans)
+
+The container is **rootless** Podman: `sudo` inside is root only in the
+container's user namespace, not on the host. Raw sockets on the real NIC need
+`CAP_NET_RAW` in the host's namespace, so these fail with
+`Couldn't open a raw socket. Error: (1) Operation not permitted`:
+`sudo nmap` default/`-sS`, `-sU`, `-O`, `-A`, and ARP/ICMP host discovery.
+
+Use the unprivileged connect scan here (no sudo):
+
+```bash
+nmap --unprivileged -sn 192.168.122.0/24       # host discovery via TCP
+nmap --unprivileged -sT -sV -sC TARGET          # ports, versions, default scripts
+nmap --unprivileged -sT -p- -T4 -oA scan TARGET # all ports, saved output
+```
+
+For SYN, UDP and OS-detection scans use the `kali-lab` VM (real root, same lab
+network as the targets). Scan only machines you own or are authorised to test.
+
 ### Tools installed
 
 | Category | Tools |
