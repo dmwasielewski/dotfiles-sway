@@ -508,7 +508,11 @@ charger) and **100 %** (full charge, e.g. before a day at university). The bar s
 green while charging, warning-amber whenever it is not charging but above 80 %
 (e.g. full after 100 % mode), and the normal bar colour at 80 % or below; hover shows the mode, time left
 and battery health. The choice is saved and re-applied after a reboot
-(verified 2026-11-01). One-time install (asks for the
+(verified 2026-11-01). ASUS firmware resets the limit to 100 % at every
+power-on, so a small system service re-applies your choice right after the disk
+is unlocked, before you log in. The only time the battery can still charge past
+80 % is while the laptop waits at the disk passphrase prompt (the setting lives
+on the encrypted disk); on the charger while powered off, the limit holds. One-time install (asks for the
 sudo password once, run it in a terminal):
 
 ```bash

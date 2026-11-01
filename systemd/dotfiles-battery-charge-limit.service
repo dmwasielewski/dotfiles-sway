@@ -1,0 +1,14 @@
+# Installed by scripts/setup-battery-charge-limit.sh into /etc/systemd/system/.
+# Applies the saved battery charge limit early in boot, before login, because the
+# ASUS firmware resets it to 100 % at every power-on (see the boot script).
+[Unit]
+Description=Apply the saved battery charge limit (dotfiles)
+# Homes (and the saved choice inside them) are local mounts.
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/dotfiles-battery-charge-limit-boot
+
+[Install]
+WantedBy=multi-user.target

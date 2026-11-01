@@ -149,4 +149,23 @@ export BATTERY_SYSFS_ROOT="$root/i/sys"
 out="$(run status)"
 assert_contains "$out" '"text":""' "empty text hides the module"
 
+echo "== boot: applies the newest saved choice among real users =="
+BOOT="$(cd ../.. && pwd)/scripts/battery-charge-limit-boot.sh"
+b="$root/boot"; rm -rf "$b"; mkdir -p "$b/u1/.config/dotfiles" "$b/u2/.config/dotfiles" "$b/sys"
+printf '80\n'  > "$b/u1/.config/dotfiles/battery-charge-limit"; touch -d '2026-01-01' "$b/u1/.config/dotfiles/battery-charge-limit"
+printf '100\n' > "$b/u2/.config/dotfiles/battery-charge-limit"
+cat > "$b/passwd" <<PW
+root:x:0:0::/root:/bin/bash
+alice:x:1000:1000::$b/u1:/bin/bash
+bob:x:1001:1001::$b/u2:/bin/bash
+nobody:x:65534:65534::$b/u2:/sbin/nologin
+PW
+printf '#!/bin/bash\necho "$XDG_CONFIG_HOME $1" > "%s/called"\n' "$b" > "$b/tool"; chmod +x "$b/tool"
+out="$(BATTERY_LIMIT_TOOL="$b/tool" BATTERY_PASSWD_CMD="cat $b/passwd" bash "$BOOT")"
+assert_eq "$(cat "$b/called")" "$b/u2/.config apply" "newest file (bob, 100 %) wins"
+assert_contains "$out" "$b/u2/.config/dotfiles/battery-charge-limit" "logs which file"
+rm -f "$b"/u*/.config/dotfiles/battery-charge-limit
+out="$(BATTERY_LIMIT_TOOL="$b/tool" BATTERY_PASSWD_CMD="cat $b/passwd" bash "$BOOT")"
+assert_eq "$(cat "$b/called")" "/nonexistent apply" "no saved file -> tool default"
+
 assert_summary

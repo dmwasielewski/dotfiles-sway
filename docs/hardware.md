@@ -83,6 +83,26 @@ re-apply is the `status` self-heal run by Waybar right after login, so between
 power-on and login the battery may charge past 80 %, exactly as on Windows.
 <https://www.asus.com/support/faq/1032726/>
 
+**Boot gap — measured and closed (2026-11-01).** Powered off on the charger the
+limit held: 8 % at shutdown on 30.10 → 79/80 % at power-on 46 h later. The gap
+was between power-on and login: the firmware's 100 % reset applied until Waybar
+started, and one reboot that waited 10 min at the LUKS prompt went 80 → 87 %.
+`dotfiles-battery-charge-limit.service` now re-applies the saved choice ~1 s
+after the disk unlock, before login. Still uncovered: the time spent at the LUKS
+passphrase prompt itself (the saved choice is on the encrypted disk). Typing the
+passphrase promptly keeps that to about 1–2 %; above the limit the firmware later
+drains back to it on AC.
+
+**Runtime on battery (measured, current 37 Wh battery):**
+- 2026-10-30, Windows VM running, normal use: 74 → 48 % in 12.5 min and
+  43 → 8 % in 25 min ≈ 31–46 W average → **about 50–70 min** from full.
+- 2026-11-01, live `power_now` with the Windows VM running: 13–42 W, ~27 W
+  average → **about 80 min** from full.
+- Without the VM and with light use the draw should be much lower, but that has
+  not been measured yet. The Waybar battery tooltip shows a live "Time left"
+  from `energy_now / power_now` whenever the laptop runs on battery.
+The VM is the biggest lever: shut it down before a day on battery.
+
 **Replacement part** (per sellers, not ASUS — read the label under the bottom
 cover before ordering): **C31N2105**, alt. part 0B200-04140000, 70 Wh, 11.61 V,
 3-cell. **C31N2105-1 is a different part** (different screw holes) — not
