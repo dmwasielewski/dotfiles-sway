@@ -436,9 +436,12 @@ lock binding), so repo changes never reached the running Sway. It was backed up 
 `~/.config/sway/config.backup-2026-10-29` and replaced with the symlink `setup.sh`
 creates.
 
-`Mod+Shift+S` re-runs the autostart script. The personal Windows launcher
-starts a shut-off VM and opens `virt-manager --connect qemu:///system
---show-domain-console win11edu-damian`. virt-manager reuses the same per-domain
+`Mod+Shift+S` re-runs the autostart script. **Since 2026-11-01 Windows is not
+started automatically** (battery: measured ~27 W with the VM vs 8.7 W without).
+At login and from autostart the launcher runs with `--no-start`: it opens
+`virt-manager --connect qemu:///system --show-domain-console win11edu-damian` on
+workspace 6 but leaves a shut-off guest off — Damian starts it with the console's
+Run button. Without `--no-start` the launcher still starts a shut-off VM. virt-manager reuses the same per-domain
 window, avoiding a competing virt-viewer connection. Route this title-specific
 console to workspace 6 before general manager rules, with for_window rules for
 late title changes. The manager list and VirtualBox are manual on workspace 7;
@@ -446,8 +449,9 @@ only the personal console opens at login. Keep startup paths in sync and the
 launcher executable. This does not enable libvirt domain autostart.
 `setup-kvm.sh` invokes `setup-vm-state.sh`: install libvirt/libvirt-guests into
 /etc/sysconfig and enable/start libvirt-guests.service. ON_SHUTDOWN=suspend saves
-running persistent guests, ON_BOOT=start restores those guests at the next host
-boot. The personal Windows launcher reuses an already running guest. Keep shared installer state/logs and
+running persistent guests; ON_BOOT=ignore (since 2026-11-01) keeps that saved
+state on disk without starting the guest at boot — the next manual start restores
+it instead of cold-booting. The personal Windows launcher reuses an already running guest. Keep shared installer state/logs and
 verify.sh policy checks. Do not restart an active service: stopping it saves VMs.
 Managed-save RAM files are required resume state, not disposable backups.
 The personal console now uses virt-manager. If using a separate virt-viewer
@@ -1423,9 +1427,10 @@ log all failures before continuing. Run `bash tests/updates/run.sh` after change
 ### VM host shutdown policy
 
 `libvirt/libvirt-guests` is installed by `scripts/setup-vm-state.sh`:
-`ON_SHUTDOWN=suspend`, `ON_BOOT=start`, `PERSISTENT_ONLY=true`, system QEMU URI.
-Ordinary host reboot/poweroff waits for the libvirt-guests stop action and resumes
-previously running guests at boot. Never restart/stop this unit just to apply
+`ON_SHUTDOWN=suspend`, `ON_BOOT=ignore`, `PERSISTENT_ONLY=true`, system QEMU URI.
+Ordinary host reboot/poweroff waits for the libvirt-guests stop action; guests are
+not restarted at boot (battery, Damian 2026-11-01) — their saved state is restored
+when started by hand. Never restart/stop this unit just to apply
 configuration: doing so saves live guests. Never claim that ExecStop failure
 cancels shutdown; this hook is not a fail-closed interlock.
 

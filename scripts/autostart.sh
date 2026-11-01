@@ -17,6 +17,7 @@ disown
 "$HOME/.local/bin/claude-desktop" &
 disown
 
-# Personal Windows desktop, pinned to ws6; the launcher avoids duplicates.
-"$HOME/dotfiles-sway/scripts/launch-win11edu-damian.sh" &
+# Personal Windows console on ws6 — opened without starting Windows (battery);
+# start it with the console's Run button. The launcher avoids duplicates.
+"$HOME/dotfiles-sway/scripts/launch-win11edu-damian.sh" --no-start &
 disown

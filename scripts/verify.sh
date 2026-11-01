@@ -177,7 +177,7 @@ section "1a. Personal Windows workspace"
 SWAY_CONFIG="$HOME/.config/sway/config"
 VM_LAYOUT_OK=true
 for rule in \
-    'exec ~/dotfiles-sway/scripts/launch-win11edu-damian.sh' \
+    'exec ~/dotfiles-sway/scripts/launch-win11edu-damian.sh --no-start' \
     'assign [app_id="(?i)^virt-manager$" title="^win11edu-damian on "] workspace number 6' \
     'assign [class="(?i)^virt-manager$" title="^win11edu-damian on "] workspace number 6' \
     'for_window [app_id="(?i)^virt-manager$" title="^win11edu-damian on "] move container to workspace number 6' \
@@ -187,11 +187,11 @@ for rule in \
     fi
 done
 if $VM_LAYOUT_OK; then
-    pass "Windows VM login startup and workspace 6 routing"
+    pass "Windows console at login (no auto-start) and workspace 6 routing"
 else
     fail "Windows VM workspace 6 configuration missing" "Update ~/dotfiles-sway and run bash ~/dotfiles-sway/setup.sh"
 fi
-if grep -Fxq '"$HOME/dotfiles-sway/scripts/launch-win11edu-damian.sh" &' "$DOTFILES/scripts/autostart.sh"; then
+if grep -Fxq '"$HOME/dotfiles-sway/scripts/launch-win11edu-damian.sh" --no-start &' "$DOTFILES/scripts/autostart.sh"; then
     pass "Windows VM manual autostart shortcut"
 else
     fail "Windows VM missing from autostart.sh" "Update ~/dotfiles-sway"
@@ -1197,7 +1197,7 @@ fi
 if host systemctl is-enabled --quiet libvirt-guests.service &&
    host systemctl is-active --quiet libvirt-guests.service &&
    cmp -s "$DOTFILES/libvirt/libvirt-guests" /etc/sysconfig/libvirt-guests; then
-    pass "VM state save enabled at host shutdown (resume at boot)"
+    pass "VM state saved at host shutdown (kept; Windows not auto-started at boot)"
 else
     fail "VM shutdown state-save policy missing or inactive" "bash ~/dotfiles-sway/scripts/setup-vm-state.sh"
 fi

@@ -340,7 +340,7 @@ Solid black (`#000000`) — no image, no distractions.
 | 3 | Thunderbird |
 | 4 | ChatGPT desktop (ChatGPT + Work + Codex) |
 | 5 | Claude Desktop |
-| 6 | Personal Windows (win11edu-damian via virt-manager console; login startup) |
+| 6 | Personal Windows console (win11edu-damian; opens at login, Windows itself starts only when you press Run) |
 | 7 | virt-manager and VirtualBox (manual launch only) |
 
 Apps are launched by `exec` lines in `sway/config` and pinned to workspaces by
@@ -367,8 +367,10 @@ Super+7 for managers. Closing a console leaves Windows running.
 Logs: `~/.local/state/dotfiles-vm/win11edu-damian.log`.
 
 `setup-kvm.sh` also configures `libvirt-guests.service` to save the RAM/device
-state of running persistent VMs before host shutdown. Guests that were running are automatically resumed
-after host boot; the personal Windows login launcher reuses the running VM. Manual enablement on an existing installation:
+state of running persistent VMs before host shutdown. They are **not** started again
+at boot, to save battery (Windows costs ~18 W: 27 W with it vs 8.7 W without);
+the saved state stays on disk and is restored when you press Run in the console
+on workspace 6, so Windows continues where it left off instead of booting. Manual enablement on an existing installation:
 `bash ~/dotfiles-sway/scripts/setup-vm-state.sh`. See
 [VM state save and restore](docs/vm-network-modes.md#host-shutdown-and-managed-guest-save).
 Allow disk space for saved RAM and let normal host shutdown finish.

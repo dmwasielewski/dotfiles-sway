@@ -320,7 +320,8 @@ exec firefox
 exec chatgpt
 # Wrapper written by setup-claude-desktop.sh; it adds the keyring flag (see there).
 exec ~/.local/bin/claude-desktop
-exec ~/dotfiles-sway/scripts/launch-win11edu-damian.sh
+# Console only: Windows is started by hand (Run button) to save battery.
+exec ~/dotfiles-sway/scripts/launch-win11edu-damian.sh --no-start
 bindsym $mod+Shift+s exec ~/dotfiles-sway/scripts/autostart.sh
 
 # ── Floating rules for utility terminals ──

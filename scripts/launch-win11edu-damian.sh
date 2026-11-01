@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
-# Start the personal Windows VM and open its console in Sway workspace 6.
+# Open the personal Windows VM's console in Sway workspace 6.
+#
+#   launch-win11edu-damian.sh             start the VM if it is off, open console
+#   launch-win11edu-damian.sh --no-start  open the console only (used at login)
+#
+# Since 2026-11-01 the login path uses --no-start: Windows costs ~18 W on battery
+# (measured 27 W with it vs 8.7 W without), so it is started by hand with the
+# console's Run button. A state saved at host shutdown is kept and restored on
+# that start (libvirt resumes a managed-save image instead of a cold boot).
 set -euo pipefail
+NO_START=false
+[[ "${1:-}" == "--no-start" ]] && NO_START=true
 export LC_ALL=C
 VM=win11edu-damian
 URI=qemu:///system
@@ -35,7 +45,13 @@ if ! STATE=$(virsh --connect "$URI" domstate "$VM" 2>/dev/null); then
     exit 0
 fi
 case "$STATE" in
-    'shut off') virsh --connect "$URI" start "$VM" ;;
+    'shut off')
+        if $NO_START; then
+            echo 'Console only (--no-start): Windows stays off until started by hand.'
+        else
+            virsh --connect "$URI" start "$VM"
+        fi
+        ;;
     running|paused|'in shutdown') ;;
     *) echo "Unsupported VM state: $STATE"; exit 1 ;;
 esac

@@ -51,9 +51,11 @@ the guest. `virsh --connect qemu:///system net-list --all` lists current modes.
 `setup-kvm.sh` runs `setup-vm-state.sh` to install `libvirt/libvirt-guests` under
 `/etc/sysconfig` and enable/start `libvirt-guests.service`. On host shutdown,
 libvirt saves running persistent guests' RAM and device state with managedsave,
-then stops their QEMU processes. The boot service resumes guests recorded as running at shutdown
-(`ON_BOOT=start`). VMs that were already shut off are not started by this policy.
-The Sway personal Windows launcher reuses an already running guest.
+then stops their QEMU processes. Since 2026-11-01 `ON_BOOT=ignore`: guests are not
+restarted at boot (battery — ~27 W with the Windows VM vs 8.7 W without). The
+saved state stays on disk, and a manual start (the console's Run button, or
+`virsh start`) restores it instead of cold-booting. The Sway login launcher opens
+the console only (`--no-start`); it reuses an already running guest.
 `SYNC_TIME=1` asks guest agents to synchronize guest time when service-based
 restoration is used; the personal launcher uses normal libvirt start.
 
@@ -121,7 +123,7 @@ and the updater reboot. It targets persistent QEMU/KVM guests on
 `ON_SHUTDOWN=suspend` means managed save to disk, not merely pausing RAM.
 The installed unit has `TimeoutStopSec=0` (infinite), so normal system shutdown
 waits for its save operation rather than terminating it on the default timer.
-`ON_BOOT=start` restores the guests recorded by this service at shutdown.
+`ON_BOOT=ignore` leaves the saved guests stopped until started by hand (was `start` until 2026-11-01).
 
 This is not a guarantee that a failed managed save aborts system shutdown:
 systemd can continue shutdown after a stop-action failure. Disk-full, unsupported
