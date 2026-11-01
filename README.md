@@ -507,8 +507,8 @@ charger) and **100 %** (full charge, e.g. before a day at university). The bar s
 `level/limit`, e.g. `93%/80%` or `94%/100%`, with a bolt while charging. On the charger the icon is
 green while charging, warning-amber whenever it is not charging but above 80 %
 (e.g. full after 100 % mode), and the normal bar colour at 80 % or below; hover shows the mode, time left
-and battery health. The choice is saved and re-applied after a reboot (first
-real reboot test pending as of 2026-10-29). One-time install (asks for the
+and battery health. The choice is saved and re-applied after a reboot
+(verified 2026-11-01). One-time install (asks for the
 sudo password once, run it in a terminal):
 
 ```bash

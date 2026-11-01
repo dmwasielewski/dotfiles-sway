@@ -97,8 +97,15 @@ the host shutdown completes. Installing it runs `daemon-reload` only — no serv
 restart, so running guests are not saved by installation.
 
 The cause of the 8-minute hang itself is not proven; keep the timeout even if
-the ordering fix appears to prevent repeats. A real reboot with a running guest
-is still required to validate the change.
+the ordering fix appears to prevent repeats.
+
+**Validated by a real reboot on 2026-11-01** with win11edu-damian running:
+13:54:41 save started → 13:54:46 "Suspending win11edu-damian: done" (5 s) →
+13:54:46 libvirt-guests stopped → only then libvirtd and virtlogd stopped. The
+fallback did not run. At the next boot the guest was resumed ("Resuming guest
+win11edu-damian: done"). The 10-minute gap before the resume in that boot was the
+LUKS passphrase prompt in the initrd (`systemd-analyze time`: initrd 10 min,
+userspace 8 s), not libvirt.
 
 ## Subnet numbering (2026-10-16)
 
