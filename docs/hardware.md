@@ -98,10 +98,21 @@ drains back to it on AC.
   43 → 8 % in 25 min ≈ 31–46 W average → **about 50–70 min** from full.
 - 2026-11-01, live `power_now` with the Windows VM running: 13–42 W, ~27 W
   average → **about 80 min** from full.
-- Without the VM and with light use the draw should be much lower, but that has
-  not been measured yet. The Waybar battery tooltip shows a live "Time left"
-  from `energy_now / power_now` whenever the laptop runs on battery.
-The VM is the biggest lever: shut it down before a day on battery.
+- 2026-11-01, **Windows VM shut down**, on battery, normal desktop use: 12
+  samples over 60 s, 8.2–9.7 W, **8.7 W average** (3× less than with the VM).
+- The Waybar battery tooltip shows a live "Time left" from
+  `energy_now / power_now` whenever the laptop runs on battery.
+
+Estimated runtime from full (energy ÷ measured draw):
+
+| Load | Draw | Current 37 Wh | New 70 Wh (100 %) | New, 80 % mode (56 Wh) |
+|---|---|---|---|---|
+| Windows VM running | ~27 W (13–46 W) | ~1.4 h | ~2.6 h | ~2.1 h |
+| VM off, normal use | 8.7 W | ~4.3 h | **~8 h** | ~6.4 h |
+
+A 4-hour day away from the charger needs ≤ 9 W average on the current battery
+and ≤ 17.5 W on a new one: with the VM off the current battery is borderline,
+a new one is comfortable. The VM is the biggest lever — shut it down first.
 
 **Replacement part** (per sellers, not ASUS — read the label under the bottom
 cover before ordering): **C31N2105**, alt. part 0B200-04140000, 70 Wh, 11.61 V,
