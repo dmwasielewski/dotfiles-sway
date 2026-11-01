@@ -78,6 +78,28 @@ Hyper-V timer correction, see [Windows saved-state troubleshooting](windows-vm-b
 That correction passed one manual managed-save restore; full host reboot remains
 unverified. Network policy and VM workspace routing were not changed by it.
 
+### Shutdown ordering, stop timeout and fallback (2026-11-01)
+
+Measured failures with the vendor unit alone: on 2026-10-29 libvirtd stopped
+before the save ("Can't connect to qemu:///system. Skipping." — nothing saved);
+on 2026-10-30 14:20 a managedsave hung for over 8 minutes under an infinite stop
+timeout until the laptop was powered off by hand; on 2026-10-30 14:34 libvirtd
+stopped mid-save and the save succeeded only by timing. Successful saves of
+win11edu-damian take 4–7 s.
+
+`setup-vm-state.sh` now installs a drop-in (`libvirt/libvirt-guests-dotfiles.conf`)
+that orders libvirt-guests after `libvirtd`, `virtqemud`, `virtlogd` and
+`virtlockd` (so they stop after the save), sets `TimeoutStopSec=180`, and adds an
+ExecStopPost fallback (`libvirt/libvirt-guests-fallback.sh`). When the stop does
+not succeed, the fallback aborts the save job, requests an ACPI shutdown for up
+to 90 s, and only then powers the guest off. That guest loses its RAM state, but
+the host shutdown completes. Installing it runs `daemon-reload` only — no service
+restart, so running guests are not saved by installation.
+
+The cause of the 8-minute hang itself is not proven; keep the timeout even if
+the ordering fix appears to prevent repeats. A real reboot with a running guest
+is still required to validate the change.
+
 ## Subnet numbering (2026-10-16)
 
 The four laptop subnets now use 101, 102, 103 and 104 to match menu prefixes 01–04. Bridge names remain virbr170–virbr173. Network UUIDs and VM network selections are preserved. DNS records, DHCP ranges/reservations and the NoHost firewall DNS exceptions use the new addresses. Backups and traffic-test reports are in the visible network bundle. This does not move any VM between network modes. Shut-off guests obtain their new addresses at the next boot; a saved running guest may need DHCP renewal.

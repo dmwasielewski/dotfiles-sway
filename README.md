@@ -377,6 +377,9 @@ runs `setup-kvm.sh`, which runs `setup-vm-state.sh`. No per-VM setup is needed
 for persistent guests on `qemu:///system`. Both normal reboot and poweroff are
 covered, including the updater and terminal commands. `verify.sh` checks that
 the installed policy matches the repository and the service is enabled/active.
+The same script orders the save before `libvirtd`/`virtlogd` stop and gives it a
+180 s limit: if a save ever hangs, the guest is shut down cleanly (or, after 90 s,
+powered off) and the laptop still powers off instead of waiting forever.
 A save failure does not automatically cancel shutdown; forced reboot or loss of
 power is not protected. A full host reboot test is still pending.
 

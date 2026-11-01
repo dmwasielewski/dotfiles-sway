@@ -1732,3 +1732,17 @@ time. Fixed with one `flock` in `$XDG_RUNTIME_DIR`: `toggle`/`apply` take it,
 the lock and asserts `status` leaves the in-flight value alone. Lesson: any
 "repair drift" loop must share a lock with every writer, and a live test must
 cross at least one poll interval (here: toggle, wait 6 s, read back — four times).
+
+## A shutdown hook with an infinite timeout and socket-only ordering (2026-11-01)
+
+`libvirt-guests.service` (vendor) orders itself only `After=libvirtd.socket`, so at
+host shutdown systemd stopped `libvirtd.service`/`virtlogd` in parallel with the
+guest save: once nothing was saved ("Can't connect … Skipping."), once libvirtd
+died mid-save and it worked by luck. The unit also has `TimeoutStopSec=0`, so a
+managedsave that hung (cause unproven) blocked power-off for 8+ minutes. Fix in
+`libvirt/libvirt-guests-dotfiles.conf`: `After=` the services, `TimeoutStopSec=180`,
+and an ExecStopPost fallback (abort job → ACPI shutdown → destroy). Lessons:
+- Read the stop order across several boots (`journalctl -b -N`) before trusting
+  one successful reboot — the order was random and two of four saves raced.
+- Any hook that can block shutdown needs a finite timeout and a defined fallback.
+- `After=X.socket` does not keep `X.service` alive during your ExecStop.

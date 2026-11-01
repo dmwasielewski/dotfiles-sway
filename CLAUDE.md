@@ -1428,3 +1428,23 @@ Ordinary host reboot/poweroff waits for the libvirt-guests stop action and resum
 previously running guests at boot. Never restart/stop this unit just to apply
 configuration: doing so saves live guests. Never claim that ExecStop failure
 cancels shutdown; this hook is not a fail-closed interlock.
+
+**Shutdown ordering, timeout and fallback** (`libvirt/libvirt-guests-dotfiles.conf`
+→ `/etc/systemd/system/libvirt-guests.service.d/50-dotfiles.conf`, plus
+`libvirt/libvirt-guests-fallback.sh` → `/usr/local/libexec/dotfiles-libvirt-guests-fallback`,
+both installed by `setup-vm-state.sh`, followed by `daemon-reload` only):
+- The vendor unit orders itself after the libvirt *sockets* only, so systemd
+  stopped `libvirtd`/`virtlogd` in parallel with the save. Measured: 2026-10-29
+  "Can't connect to qemu:///system. Skipping." (nothing saved); 2026-10-30 14:34
+  libvirtd stopped mid-save (succeeded by luck). Fix: `After=libvirtd.service
+  virtqemud.service virtlogd.service virtlockd.service` — stopped after the save.
+- The vendor unit has `TimeoutStopSec=0` (infinite). 2026-10-30 14:20 a
+  managedsave of win11edu-damian hung for 8+ min and the laptop had to be powered
+  off by hand. Now `TimeoutStopSec=180` (normal save measured 4–7 s).
+- On timeout/failure the ExecStopPost fallback aborts the save job, sends an ACPI
+  shutdown (90 s), and only then `virsh destroy`s. The guest's RAM state is lost
+  in that path; the host shutdown no longer hangs.
+- **Root cause of the 8-minute hang is not proven** (virtlogd was also stopped in
+  a successful save). Do not describe it as fixed — the timeout and fallback are
+  a safety net. `verify.sh` checks drop-in, fallback, merged `After=` and timeout.
+  Tests: `bash tests/vm-state/run.sh` (stub virsh).

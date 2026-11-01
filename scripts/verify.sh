@@ -1202,6 +1202,20 @@ else
     fail "VM shutdown state-save policy missing or inactive" "bash ~/dotfiles-sway/scripts/setup-vm-state.sh"
 fi
 
+# Shutdown ordering, stop timeout and fallback (libvirt/libvirt-guests-dotfiles.conf).
+# Without them the save raced libvirtd (2026-10-29: nothing saved) and a hung save
+# blocked power-off indefinitely (2026-10-30).
+VMSTOP_AFTER="$(host systemctl show libvirt-guests.service -p After --value 2>/dev/null)"
+VMSTOP_TIMEOUT="$(host systemctl show libvirt-guests.service -p TimeoutStopUSec --value 2>/dev/null)"
+if cmp -s "$DOTFILES/libvirt/libvirt-guests-dotfiles.conf" /etc/systemd/system/libvirt-guests.service.d/50-dotfiles.conf &&
+   cmp -s "$DOTFILES/libvirt/libvirt-guests-fallback.sh" /usr/local/libexec/dotfiles-libvirt-guests-fallback &&
+   [[ " $VMSTOP_AFTER " == *" libvirtd.service "* && "$VMSTOP_TIMEOUT" != "infinity" && -n "$VMSTOP_TIMEOUT" ]]; then
+    pass "VM save waits for libvirtd, stop timeout ${VMSTOP_TIMEOUT}, fallback installed"
+else
+    fail "VM save shutdown ordering/timeout/fallback missing (timeout: ${VMSTOP_TIMEOUT:-?})" \
+         "bash ~/dotfiles-sway/scripts/setup-vm-state.sh"
+fi
+
 if host ls /dev/kvm &>/dev/null 2>&1; then
     pass "/dev/kvm available (KVM works)"
 else
