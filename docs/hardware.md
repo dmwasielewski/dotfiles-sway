@@ -110,6 +110,19 @@ Estimated runtime from full (energy ÷ measured draw):
 | Windows VM running | ~27 W (13–46 W) | ~1.4 h | ~2.6 h | ~2.1 h |
 | VM off, normal use | 8.7 W | ~4.3 h | **~8 h** | ~6.4 h |
 
+What else moves the draw (measured 2026-11-01, on battery, VM off, light use,
+~30–35 s averages, each repeated):
+
+| Change | Draw | Saving |
+|---|---|---|
+| Screen brightness 17 % → 50 % → 100 % | 7.9 → 8.4 → 9.0 W | only ~1.1 W from max to min |
+| Power profile power-saver (ACPI `quiet`) vs balanced | 8.1 vs 8.6–8.7 W | ~0.5–0.6 W at light load |
+| Windows VM running vs off | ~27 vs 8.7 W | **~18 W** |
+
+Brightness and the power-saver profile are minor at light load (the profile may
+matter more under heavy CPU load, not measured); the VM dominates. The ACPI
+platform profile follows power-profiles-daemon (`/sys/firmware/acpi/platform_profile`).
+
 A 4-hour day away from the charger needs ≤ 9 W average on the current battery
 and ≤ 17.5 W on a new one: with the VM off the current battery is borderline,
 a new one is comfortable. The VM is the biggest lever — shut it down first.

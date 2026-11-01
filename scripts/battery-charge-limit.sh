@@ -157,6 +157,13 @@ cmd_status() {
     full="$(cat "$BAT/energy_full" 2>/dev/null || echo 0)"
     power="$(cat "$BAT/power_now" 2>/dev/null || echo 0)"
     if (( power > 0 )); then
+        # Live power through the battery. On battery this is the laptop's whole
+        # draw; while charging it is the charge rate, not the system's draw.
+        if [[ "$status" == "Charging" ]]; then
+            lines+=("Charging at: $(awk -v p="$power" 'BEGIN{printf "%.1f W", p/1e6}')")
+        else
+            lines+=("Power draw: $(awk -v p="$power" 'BEGIN{printf "%.1f W", p/1e6}')")
+        fi
         if [[ "$status" == "Discharging" ]]; then
             lines+=("Time left: $(hm "$(awk -v n="$now" -v p="$power" 'BEGIN{print n/p}')")")
         elif [[ "$status" == "Charging" && -n "$limit" ]]; then

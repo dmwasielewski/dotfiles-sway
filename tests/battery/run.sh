@@ -83,6 +83,16 @@ assert_contains "$(run status)" '"text":"93%/80% ' "93%/80% in care mode"
 fixture b8 60 Discharging 0 none
 assert_contains "$(run status)" '"text":"60% ' "no /limit without the attribute"
 
+echo "== status: tooltip shows live power in watts =="
+fixture p1 72 Discharging 0 80
+choose 80
+echo 8300000 > "$BATTERY_SYSFS_ROOT/class/power_supply/BATX/power_now"
+assert_contains "$(run status)" 'Power draw: 8.3 W' "draw on battery"
+fixture p2 60 Charging 1 80
+choose 80
+echo 25400000 > "$BATTERY_SYSFS_ROOT/class/power_supply/BATX/power_now"
+assert_contains "$(run status)" 'Charging at: 25.4 W' "charge rate while charging"
+
 echo "== status: off AC above 80 % is not amber =="
 fixture b4 95 Discharging 0 80
 out="$(run status)"
