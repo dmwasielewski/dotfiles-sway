@@ -611,6 +611,24 @@ Never bypass package signatures or remove protected system components to retain
 an optional application. See the upstream explanation of
 [base/layer package matching and updates-archive](https://coreos.github.io/rpm-ostree/architecture-core/).
 
+### Third-party repo signing key rotation (2026-11-08)
+
+`FAIL toolbox damianf` with `Signature verification failed … Import of the key
+didn't help, wrong key?` came from the manually added `warpdotdev` repo, not
+from the container. Warp added a new signing subkey (`…5AC01A19A09FA9A6`,
+2026-10-30) to its existing primary key (`…D60F803F`) and revoked the old
+signing subkey on 2026-11-03; the container still held the old copy in
+`/etc/pki/rpm-gpg/RPM-GPG-KEY-warpdotdev`.
+
+Fix, inside the container: download the vendor key from its official URL
+(`https://releases.warp.dev/linux/keys/warp.asc`), check with
+`gpg --show-keys --with-subkey-fingerprints` that the primary fingerprint is
+unchanged and that the new subkey matches the key ID dnf reported, replace the
+file (old copy kept as `.old-<date>`), `rpmkeys --delete` the old certificate,
+`rpm --import` the new file, confirm with `rpm -K <cached rpm>` (`signatures OK`),
+then rerun the update. Never set `gpgcheck=0` and never import a key whose
+primary fingerprint changed without checking the vendor's announcement first.
+
 ### Update regression tests
 
 Run `bash tests/updates/run.sh`. The runner isolates HOME and all XDG paths and
