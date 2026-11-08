@@ -15,7 +15,7 @@ The audit's headline finding: the repo does **not** yet deliver the advertised
 run post-reboot scripts, and several steps report success before the component
 actually works. These are ordered by the audit's priority list.
 
-### 🔴 1. Resumable orchestrator + reboot handoff — ✅ BUILT (2026-06-13); ✅ VM end-to-end 2026-09-02; real hardware: see #16
+### 🔴 1. Resumable orchestrator + reboot handoff — ✅ BUILT (2026-06-13); ✅ VM end-to-end 2026-09-02; sudo gap #16 fixed; real hardware not yet run
 A minimal **phase runner** now bridges P0 (launch) → P1 (bootstrap) → rpm-ostree
 reboot → P2 (post-reboot, via a systemd **user** service) → P3 (finalize), unattended.
 Built: `orchestrate.sh`, `scripts/lib-orchestrate.sh` (state keys REPO_COMMIT/PHASE/
@@ -30,7 +30,7 @@ Spec `docs/superpowers/specs/2026-06-13-orchestrator-design.md`, plan
 it consumes is also built (`scripts/vault/`). **Status (2026-11-08):** linger resume
 proven 2026-08-19 and a full clean-VM run passed 2026-09-02 (163/0, see #5).
 **Remaining:** one more VM run for the fixes made since (#5 "still open"), and the
-real-hardware sudo gap in #16. Manifest-driven rebuild (#8) and full versioned state (#7) stay deferred.
+real-hardware run (the sudo gap in #16 is fixed). Manifest-driven rebuild (#8) and full versioned state (#7) stay deferred.
 
 ### 🔴 2. `setup.sh` no longer hard-depends on a to-be-layered package — ✅ DONE (2026-06-11)
 `setup.sh` exited if `unzip` was missing, but `packages.sh` (which layers `unzip`)
@@ -311,7 +311,7 @@ user-local steps after an OS failure, and delays the reboot prompt until those
 steps finish. Hermetic regressions: `test_os_cache_recovery.sh` and
 `test_os_first.sh`.
 
-### 🔴 16. Phase 2 on real hardware: the temporary sudoers drop-in is too narrow — OPEN (found 2026-11-08)
+### 🔴 16. Phase 2 on real hardware: the temporary sudoers drop-in is too narrow — ✅ FIXED (option c, 2026-11-08); real-hardware run pending
 
 Found by reading the code while documenting the unattended install, then
 **measured** in a throwaway `fedora-toolbox:44` container with a `wheel` user and
@@ -341,8 +341,20 @@ runs from a user service after the reboot — no cached credential, no terminal:
 uses; removed in P3 either way). Then test with a VM kickstart that installs
 **only** the real drop-in — otherwise the VM keeps hiding this class of bug.
 
-**Workaround now:** when `PHASE_FAILED=P2`, run the failed step by hand in a
-terminal and then `~/dotfiles-sway/orchestrate.sh resume`.
+**Decision (Damian, 2026-11-08): option c.** `provisioning_sudoers_content` now
+emits `<user> ALL=(ALL) NOPASSWD: ALL` for the installing user only, P0 → P3.
+Reasons: the old list already held `rpm-ostree` and `systemctl` (each equivalent
+to root), so it was not a real boundary; it went stale with every new step; and
+only an identical grant makes the VM test what the laptop runs. Safeguards:
+`remove_provisioning_sudoers` proves removal (`sudo test -e`) and P3 fails if the
+file survives; `verify.sh` warns when passwordless sudo is still active after
+`INSTALL_COMPLETE` (`sudo -k -n true`). Measured in a container with the new
+drop-in: the user may run anything, another `wheel` user is still refused, and
+after removal the password is required again. Tests:
+`tests/orchestrate/test_sudoers_content.sh`.
+
+**Still open:** one unattended run on real hardware (or a VM run, which is now
+representative), plus the #5 re-run.
 
 ---
 

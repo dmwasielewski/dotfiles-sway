@@ -137,9 +137,12 @@ bash <(curl -fsSL https://raw.githubusercontent.com/dmwasielewski/dotfiles-sway/
 One LUKS passphrase + one sudo password, then P0 → P1 → reboot → P2 (user
 service via linger, nobody logged in) → P3. Full description, monitoring,
 resume and **proof status** in README → *Fresh install → Automated install from
-the vault USB*. Do not describe it as proven on real hardware: the clean-VM run
-passed (2026-09-02) but the VM grants `NOPASSWD: ALL`, and the real temporary
-sudoers drop-in does not cover several P2 steps (BACKLOG #16). Empty vault
+the vault USB*. Clean-VM run passed (2026-09-02); real hardware has not run it.
+The P0 drop-in `/etc/sudoers.d/10-dotfiles-provisioning` grants the installing
+user `NOPASSWD: ALL` until P3 (Damian's decision, BACKLOG #16 option c — a
+command list went stale and the VM, which also has NOPASSWD ALL, could not see
+it). Do not narrow it back to a list without re-measuring every P1/P2 sudo call
+in a container with the real drop-in. P3 must prove removal. Empty vault
 secrets are skipped by `vault-apply-manifest.sh`, never planted.
 
 The manual sequence below is what the orchestrator runs; it is the fallback.

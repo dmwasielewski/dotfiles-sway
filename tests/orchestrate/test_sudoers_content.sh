@@ -3,16 +3,14 @@ source "$(dirname "$0")/assert.sh"
 DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 source "$DIR/scripts/lib-orchestrate.sh"
 out="$(provisioning_sudoers_content damian)"
-assert_contains "$out" "damian ALL=(ALL) NOPASSWD:" "names the user"
-assert_contains "$out" "/usr/bin/rpm-ostree" "allows rpm-ostree"
-assert_contains "$out" "/usr/bin/systemctl"  "allows systemctl"
-assert_contains "$out" "/usr/sbin/usermod"   "allows usermod"
-assert_contains "$out" "/usr/bin/loginctl"   "allows loginctl (enable-linger)"
-assert_contains "$out" "/usr/bin/python3 /etc/dotfiles/adguard-tailscale-dns.py install" "allows only protected DNS installer"
-[[ "$out" != *"/home/damian/dotfiles-sway/scripts/adguard-tailscale-dns.py"* ]] && echo "  ok: no user-writable DNS installer grant" || { echo "  FAIL: user-writable installer"; ASSERT_FAIL=$((ASSERT_FAIL+1)); }
-assert_contains "$out" "/usr/bin/python3 /etc/dotfiles/nordvpn-tailscale-transport.py install" "allows protected transport installer"
-# must NOT be a blanket ALL command grant
-[[ "$out" != *"NOPASSWD: ALL"* ]] && echo "  ok: not a blanket grant" || { echo "  FAIL: blanket"; ASSERT_FAIL=$((ASSERT_FAIL+1)); }
+# BACKLOG #16 option c (2026-11-08): passwordless for this one user, for the
+# provisioning window only — a command list kept going stale and the VM, which
+# grants NOPASSWD: ALL, could never see it.
+assert_contains "$out" "damian ALL=(ALL) NOPASSWD: ALL" "passwordless for the provisioning user"
+[[ "$out" != *"%wheel"* && "$out" != *"ALL ALL="* ]] && echo "  ok: scoped to one user, not a group" || { echo "  FAIL: grant is wider than one user"; ASSERT_FAIL=$((ASSERT_FAIL+1)); }
+assert_contains "$out" "removed in P3" "says it is temporary"
+assert_contains "$out" "sudo rm /etc/sudoers.d/10-dotfiles-provisioning" "tells a finder how to remove it"
+assert_eq "$(grep -vc '^#' <<< "$out")" "1" "exactly one rule"
 
 # A malformed drop-in in /etc/sudoers.d can break sudo for the whole system, and
 # once it has, sudo can no longer be used to remove it. So the syntax check must
@@ -48,4 +46,22 @@ PATH="$tmpd:$PATH" ORCH_SUDOERS="$tmpd/target" write_provisioning_sudoers >/dev/
 assert_eq "$rc" "1" "returns non-zero when the generated file is invalid"
 grep -q "install" "$ORDER_LOG" && { echo "  FAIL: installed an invalid sudoers file"; ASSERT_FAIL=$((ASSERT_FAIL+1)); } || echo "  ok: refused to install an invalid sudoers file"
 
+
+# Removal must be proven: rm that silently fails would leave the blanket grant.
+cat > "$tmpd/sudo" <<'STUB'
+#!/bin/bash
+[[ "$1" == rm ]] && exit 0          # pretends to remove...
+[[ "$1" == test ]] && exit 0        # ...but the file is still there
+exit 0
+STUB
+chmod +x "$tmpd/sudo"
+PATH="$tmpd:$PATH" remove_provisioning_sudoers >/dev/null 2>&1 && rc=0 || rc=$?
+assert_eq "$rc" "1" "remove reports failure when the drop-in is still present"
+cat > "$tmpd/sudo" <<'STUB'
+#!/bin/bash
+[[ "$1" == test ]] && exit 1        # gone
+exit 0
+STUB
+PATH="$tmpd:$PATH" remove_provisioning_sudoers >/dev/null 2>&1 && rc=0 || rc=$?
+assert_eq "$rc" "0" "remove succeeds once the drop-in is gone"
 assert_summary

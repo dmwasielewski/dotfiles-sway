@@ -84,10 +84,10 @@ anyone logging in.
 | Phase | Runs | What it does |
 |---|---|---|
 | launcher | `scripts/install-from-usb.sh` | clones the repo, `vault unlock`, one `sudo -v`, copies the vault to `~/.local/state/dotfiles-secrets` (mode 0700), refuses to continue if 0 files were copied, `vault lock` — the USB can be removed from here on |
-| **P0** | `orchestrate.sh run` | restores private homelab config from the vault copy, seeds the protected network helpers into `/etc/dotfiles`, Proxmox HTTPS trust, login/lock wallpaper, writes the **temporary** sudoers drop-in `/etc/sudoers.d/10-dotfiles-provisioning`, records `REPO_COMMIT` |
+| **P0** | `orchestrate.sh run` | restores private homelab config from the vault copy, seeds the protected network helpers into `/etc/dotfiles`, Proxmox HTTPS trust, login/lock wallpaper, writes the **temporary** drop-in `/etc/sudoers.d/10-dotfiles-provisioning` (passwordless sudo for this user until P3), records `REPO_COMMIT` |
 | **P1** | same run | `setup.sh` (symlinks, Flatpaks, fonts, user-local apps) + `packages.sh` (rpm-ostree layer), enables the user service `dotfiles-phase2.service` with linger, records the deployment ID, **reboots** |
 | **P2** | `dotfiles-phase2.service` → `orchestrate.sh resume` | after the reboot, with nobody logged in: hardware check, Stirling runtime, Tailscale, KVM (+ VM shutdown policy), NordVPN (tolerated if its repo is down), AdGuard/NordVPN–Tailscale helpers, home network, the three containers (`damianf`, `damianu`, `security`), OneDrive, **applies the vault manifest**, then `verify.sh --profile post-reboot` |
-| **P3** | same service | removes the sudoers drop-in, wipes the secret staging copy, records `INSTALL_COMPLETE`, disables the service |
+| **P3** | same service | removes the sudoers drop-in and proves it is gone, wipes the secret staging copy, records `INSTALL_COMPLETE`, disables the service |
 
 **Secrets.** `install/manifest.toml` *inside the vault* says where each secret
 goes: `env` (an `export` line in `~/.bashrc.d/ai-keys.bash`), `file` (e.g. the
@@ -131,21 +131,20 @@ in-app logins).
   (`TimeoutStartSec=infinity`, P3 records completion before disabling itself),
   and everything added since — Claude Desktop, battery charge limit, the
   libvirt-guests shutdown policy and its drop-in, the empty-secret skip.
-- ⚠ **Real hardware has never run it.** The disposable VM's kickstart grants
-  `%wheel NOPASSWD: ALL`, which hides how narrow the temporary sudoers drop-in
-  is: only `rpm-ostree`, `systemctl`, `loginctl`, `usermod`, `mkdir`, `tee`,
-  `tailscale set --operator` and the two seeded network helpers. After the
-  reboot there is no cached sudo credential and no terminal. Measured on
-  2026-11-08 in a throwaway container with exactly that drop-in: `sudo -n mkdir`
-  allowed; `sudo -n true`, `install`, `cp`, `cmp`, `rm` refused ("a password is
-  required"). So phase 2 on a real laptop stops at `setup-kvm.sh`: its
-  `require_sudo_session` tests `sudo -n true`, then falls back to `sudo -v`,
-  which needs a terminal. (Not yet run on the laptop itself.)
-  `sudo virsh`, `sudo install`/`cp`/`cmp` (`setup-vm-state.sh`), `sudo udevadm`
-  (battery, phase 1) and `sudo firewall-cmd` (`packages.sh`) are not covered
-  either. Widening the drop-in is a security decision and is tracked as
-  BACKLOG #16. Until then: when `PHASE_FAILED=P2`, run the failed step by hand
-  in a terminal (it asks for your password) and then `orchestrate.sh resume`.
+- ⚠ **Real hardware has never run it** — but the gap that would have stopped it
+  is closed. Until 2026-11-08 the temporary sudoers drop-in allowed only eight
+  commands; measured in a container with it, `sudo -n true`, `install`, `cp`,
+  `cmp` and `rm` were refused, so phase 2 would have stopped at `setup-kvm.sh`.
+  The VM never saw this because its kickstart grants `NOPASSWD: ALL`.
+  **Now (Damian's choice, BACKLOG #16 option c)** the drop-in grants passwordless
+  sudo to the installing user only, from P0 to P3. Measured: that user may run
+  anything without a password, another `wheel` user still needs one, and after
+  removal the password is required again. The VM now tests the same privilege
+  the laptop gets. P3 proves the file is gone (`sudo test -e`) and fails — the
+  service retries on the next boot — if it is not. If an install is abandoned
+  before P3, the grant stays: `sudo rm /etc/sudoers.d/10-dotfiles-provisioning`
+  (`verify.sh` warns when passwordless sudo is still active after
+  `INSTALL_COMPLETE`).
 
 To rerun the VM validation: `bash ~/dotfiles-sway/scripts/create-fedora-sway-vm.sh`
 (orchestrator mode is the default).

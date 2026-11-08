@@ -91,7 +91,9 @@ phase_P2() {
 }
 
 phase_P3() {
-    remove_provisioning_sudoers
+    # A blanket provisioning grant must never outlive the install: if it cannot
+    # be removed, P3 fails, the service stays enabled and retries on next boot.
+    remove_provisioning_sudoers || return 1
     rm -rf "$STAGE"
     # Record completion BEFORE the service disables itself. On 2026-09-02 this
     # ran in the other order and P3 never got past the disable: systemd

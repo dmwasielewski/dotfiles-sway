@@ -1790,3 +1790,7 @@ Lesson: before documenting a behaviour as fact, find the line that does it.
   key-server URLs were corrupt. The podman test passed because it set its own
   `KEY_SOURCES`. Defaults containing braces go in a separately quoted variable;
   test the default path, not only the override.
+- Resolution (same day, Damian chose option c): the drop-in is now `NOPASSWD: ALL`
+  for the installing user until P3, with removal proven. Narrowing it to a command
+  list again requires re-measuring every P1/P2 sudo call against the real drop-in
+  in a container — a list nobody re-measures is how phase 2 broke unseen.

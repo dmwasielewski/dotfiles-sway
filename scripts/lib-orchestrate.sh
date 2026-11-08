@@ -84,13 +84,25 @@ current_deployment_id() {
 
 ORCH_SUDOERS=/etc/sudoers.d/10-dotfiles-provisioning
 
-# Pure: emit the scoped sudoers content for $1=user. Limited to the provisioning
-# commands the orchestrated scripts actually call unattended.
+# Pure: emit the provisioning sudoers content for $1=user.
+#
+# Passwordless sudo for that ONE user, for the provisioning window only: written
+# in P0 (while the user is present and has just typed the password), removed in
+# P3. Damian's decision, 2026-11-08 (BACKLOG #16, option c). It replaced a list
+# of eight commands that phase 2 on real hardware outgrew: measured in a
+# container with that list, `sudo -n true`, `install`, `cp`, `cmp`, `rm` were
+# refused, so setup-kvm.sh's `require_sudo_session` probe stopped phase 2 —
+# while every VM run passed, because the VM kickstart grants NOPASSWD: ALL. A
+# list would keep going stale with each new step; this makes the VM test what the
+# laptop runs. rpm-ostree and systemctl were on the old list, and either is
+# equivalent to root, so the old list was not a meaningful security boundary.
 provisioning_sudoers_content() {
     local user="$1"
     cat <<EOF
-# Temporary, written by the dotfiles orchestrator; removed in phase P3 (finalize).
-$user ALL=(ALL) NOPASSWD: /usr/bin/python3 /etc/dotfiles/nordvpn-tailscale-transport.py install, /usr/bin/python3 /etc/dotfiles/adguard-tailscale-dns.py install, /usr/bin/tailscale set --operator=$user, /usr/bin/rpm-ostree, /usr/bin/systemctl, /usr/bin/loginctl, /usr/sbin/usermod, /usr/bin/mkdir, /usr/bin/tee
+# Temporary, written by the dotfiles orchestrator in P0; removed in P3 (finalize).
+# If you find this file and no install is running, delete it:
+#   sudo rm /etc/sudoers.d/10-dotfiles-provisioning
+$user ALL=(ALL) NOPASSWD: ALL
 EOF
 }
 
@@ -119,4 +131,12 @@ write_provisioning_sudoers() {
         sudo rm -f "$ORCH_SUDOERS"; return 1
     fi
 }
-remove_provisioning_sudoers() { sudo rm -f "$ORCH_SUDOERS"; }
+# Remove, then prove it is gone: a blanket grant must not outlive the install
+# because an rm failed quietly.
+remove_provisioning_sudoers() {
+    sudo rm -f "$ORCH_SUDOERS"
+    if sudo test -e "$ORCH_SUDOERS"; then
+        echo "orchestrate: FAILED to remove $ORCH_SUDOERS — passwordless sudo is still active; remove it by hand" >&2
+        return 1
+    fi
+}

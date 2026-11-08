@@ -11,7 +11,7 @@ These steps are **host-run**, not CI. They validate the full unattended flow
 sudo credential, harvests secrets to `~/.local/state/dotfiles-secrets`, and runs
 `orchestrate.sh run`:
 
-- **P0** writes the scoped `/etc/sudoers.d/10-dotfiles-provisioning`, records `REPO_COMMIT`.
+- **P0** writes the temporary `/etc/sudoers.d/10-dotfiles-provisioning` (passwordless for the installing user until P3), records `REPO_COMMIT`.
 - **P1** runs `setup.sh` + `packages.sh`, enables `dotfiles-phase2.service` (linger), reboots.
 - **P2** (the user service, after reboot) runs hardware/Tailscale/KVM/container setups, applies the
   vault manifest, and `verify.sh --profile post-reboot`.
@@ -25,9 +25,11 @@ sudo credential, harvests secrets to `~/.local/state/dotfiles-secrets`, and runs
    ```
    The disposable-VM kickstart grants `%wheel NOPASSWD` (verified in
    `kickstarts/fedora-sway-atomic.ks`), so P0's sudo is a no-op there.
-   **Blind spot:** because of that grant, a VM run cannot detect a step that
-   needs a privileged command the real temporary drop-in does not allow
-   (BACKLOG #16). Passing here is not proof for real hardware.
+   Since 2026-11-08 the real P0 drop-in grants the same (`NOPASSWD: ALL` for
+   the installing user until P3, BACKLOG #16), so this no longer hides
+   privilege gaps. After P3 the kickstart's own grant remains, so the VM cannot
+   show that sudo asks for a password again — that part was measured in a
+   container instead.
 
    The script defaults to `VM_INSTALL_MODE=orchestrator`: it clones the repo,
    runs `orchestrate.sh run`, survives the phase-1 reboot, waits for the guest,

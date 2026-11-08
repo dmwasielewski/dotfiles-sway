@@ -115,6 +115,19 @@ else
     warn "Install log not found ($LOG_FILE) — it will be created by bootstrap.sh or setup scripts"
 fi
 
+# The unattended install grants this user passwordless sudo for the
+# provisioning window and removes it in P3 (BACKLOG #16). The file itself is
+# unreadable here (/etc/sudoers.d is 0750 root), so test the effect: once the
+# install recorded completion, sudo should ask for a password again (`-k` ignores
+# a cached password from a recent sudo, so only a NOPASSWD rule passes). A warning,
+# not a failure: the disposable VM's kickstart grants NOPASSWD on purpose.
+section "Provisioning sudo"
+if grep -q '^INSTALL_COMPLETE=.' "$STATE_FILE" 2>/dev/null && sudo -k -n true 2>/dev/null; then
+    warn "Passwordless sudo is still active after the install completed — if not intended: sudo rm /etc/sudoers.d/10-dotfiles-provisioning"
+else
+    pass "No leftover provisioning sudo after a completed install"
+fi
+
 # ── 1. Config symlinks ───────────────────────────────────────────────────
 section "1. Config symlinks"
 
