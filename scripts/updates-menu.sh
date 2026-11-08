@@ -279,6 +279,31 @@ ensure_container_repos_resilient() {
     ' 2>/dev/null || true
 }
 
+# Vendor signing-key rotation (2026-11-08, warpdotdev): dnf rejects every new
+# package with "OpenPGP check … has failed: Import of the key didn't help" when a
+# vendor added a new signing subkey that the container's copy of its certificate
+# does not have. After such a failure, container-key-refresh.sh refreshes ONLY
+# certificates the container already trusts (pinned by primary fingerprint),
+# proves the fix in a throwaway rpm root, and the upgrade is retried once.
+# A new primary key is never trusted automatically; gpgcheck is never touched.
+failed_signature_rpms() {           # $1 = BEGIN marker of this container's run
+    awk -v m="$1" 'index($0,m) {seen=1; n=0; next} seen {line[++n]=$0}
+        END {for (i=1;i<=n;i++) print line[i]}' "$LOG" 2>/dev/null |
+        sed -n 's/.*OpenPGP check for package "[^"]*" (\(\/[^)]*\.rpm\)).*/\1/p' | sort -u
+}
+refresh_rotated_keys() {            # $1 kind  $2 name  $3 marker; 0 = retry is worthwhile
+    local kind="$1" name="$2" runner rpms=()
+    mapfile -t rpms < <(failed_signature_rpms "$3")
+    [[ "${#rpms[@]}" -gt 0 ]] || return 1
+    [[ "$kind" == "toolbox" ]] && runner=(toolbox run --container "$name") \
+                               || runner=(distrobox enter "$name" --)
+    echo "  ↻ package signature check failed — checking for a rotated vendor signing key…"
+    if run_logged "${runner[@]}" sudo -n bash -s -- "${rpms[@]}" < "$SCRIPT_DIR/container-key-refresh.sh"; then
+        log_line "KEY-REFRESH OK $kind $name"; return 0
+    fi
+    log_line "KEY-REFRESH FAILED $kind $name"; return 1
+}
+
 ensure_container_nopasswd() {
     local kind="$1" name="$2" runner
     [[ "$kind" == "toolbox" ]] && runner=(toolbox run --container "$name") \
@@ -316,6 +341,9 @@ do_containers() {
         log_line "BEGIN distrobox upgrade $name"
         if run_logged distrobox upgrade "$name"; then
             upd_record "container-$name"; log_line "OK distrobox $name"
+        elif refresh_rotated_keys distrobox "$name" "BEGIN distrobox upgrade $name" &&
+             run_logged distrobox upgrade "$name"; then
+            upd_record "container-$name"; log_line "OK distrobox $name (after signing-key refresh)"
         else
             echo "  ✗ $name failed (continuing)."; log_line "FAIL distrobox $name"; failed+=("$name"); rc=1
         fi
@@ -330,6 +358,9 @@ do_containers() {
         ensure_container_repos_resilient toolbox "$name"
         if run_logged toolbox run --container "$name" bash -c "$CONTAINER_UPGRADE_CMD"; then
             upd_record "container-$name"; log_line "OK toolbox $name"
+        elif refresh_rotated_keys toolbox "$name" "BEGIN toolbox upgrade $name" &&
+             run_logged toolbox run --container "$name" bash -c "$CONTAINER_UPGRADE_CMD"; then
+            upd_record "container-$name"; log_line "OK toolbox $name (after signing-key refresh)"
         else
             echo "  ✗ $name failed (continuing)."; log_line "FAIL toolbox $name"; failed+=("$name"); rc=1
         fi

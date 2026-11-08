@@ -1746,3 +1746,26 @@ and an ExecStopPost fallback (abort job → ACPI shutdown → destroy). Lessons:
   one successful reboot — the order was random and two of four saves raced.
 - Any hook that can block shutdown needs a finite timeout and a defined fallback.
 - `After=X.socket` does not keep `X.service` alive during your ExecStop.
+
+## A fixed-by-hand signing key is not a fix; `rpmkeys -K` hides the key ID (2026-11-08)
+
+The damianf toolbox update failed on `warpdotdev`: the vendor rotated its signing
+subkey and the container held the old certificate. The first fix was manual (fetch
+key, check fingerprint, import) and documented as a procedure — which only meant
+the next rotation, for any vendor, would fail the same way. It is now automatic in
+`updates-menu.sh` + `scripts/container-key-refresh.sh`, pinned to already-trusted
+primary fingerprints. Lessons:
+- **The package's own scriptlet rewrote the key file.** After the manual fix the
+  new Warp RPM's `%post` wrote its embedded certificate over
+  `/etc/pki/rpm-gpg/RPM-GPG-KEY-warpdotdev`; the rpm keyring kept the merged one.
+  Check where a vendor key comes from (`rpm -qf`, `rpm -q --scripts`) before
+  assuming a file you replaced stays replaced.
+- **`rpmkeys -K` without `-v` prints only `SIGNATURES NOT OK`** — no key ID, no
+  `NOKEY`. The first version of the helper parsed that and would never have fired;
+  only the real-tools podman test caught it (stub tests encode your assumptions).
+- **`set -o pipefail` + `cmd | grep -q`** returns `cmd`'s failure even when grep
+  matched; `rpmkeys -Kv` exits 1 on NOKEY, so assertions read "keyring changed"
+  when nothing changed. Capture the output first, then match.
+- rpm 6 `rpmkeys --import` of an updated certificate with the same primary
+  **merges** new subkeys and revocations (measured in a throwaway `--root`); no
+  delete is needed, and deleting first risks leaving the repo with no key at all.

@@ -611,23 +611,51 @@ Never bypass package signatures or remove protected system components to retain
 an optional application. See the upstream explanation of
 [base/layer package matching and updates-archive](https://coreos.github.io/rpm-ostree/architecture-core/).
 
-### Third-party repo signing key rotation (2026-11-08)
+### Third-party repo signing key rotation — handled automatically (2026-11-08)
 
-`FAIL toolbox damianf` with `Signature verification failed … Import of the key
-didn't help, wrong key?` came from the manually added `warpdotdev` repo, not
-from the container. Warp added a new signing subkey (`…5AC01A19A09FA9A6`,
-2026-10-30) to its existing primary key (`…D60F803F`) and revoked the old
-signing subkey on 2026-11-03; the container still held the old copy in
-`/etc/pki/rpm-gpg/RPM-GPG-KEY-warpdotdev`.
+**What happened.** `FAIL toolbox damianf` with `Signature verification failed …
+Import of the key didn't help, wrong key?` came from the manually added
+`warpdotdev` repo, not from the container. Warp added a new signing subkey
+(`…5AC01A19A09FA9A6`, 2026-10-30) to its existing primary key (`…D60F803F`) and
+revoked the old signing subkey on 2026-11-03. The container's rpm keyring and its
+local `/etc/pki/rpm-gpg/RPM-GPG-KEY-warpdotdev` held the old certificate, and dnf
+re-imported that same stale file, so every new Warp package was rejected.
 
-Fix, inside the container: download the vendor key from its official URL
-(`https://releases.warp.dev/linux/keys/warp.asc`), check with
-`gpg --show-keys --with-subkey-fingerprints` that the primary fingerprint is
-unchanged and that the new subkey matches the key ID dnf reported, replace the
-file (old copy kept as `.old-<date>`), `rpmkeys --delete` the old certificate,
-`rpm --import` the new file, confirm with `rpm -K <cached rpm>` (`signatures OK`),
-then rerun the update. Never set `gpgcheck=0` and never import a key whose
-primary fingerprint changed without checking the vendor's announcement first.
+**What the update menu does now.** When a container upgrade (toolbox or
+dnf-based distrobox) fails and the log of that run contains
+`OpenPGP check for package "…" (/path/to.rpm)`, the menu pipes
+`scripts/container-key-refresh.sh` into the container as root and then retries
+the upgrade **once**:
+
+1. `rpmkeys -Kv <rpm>` names the missing signing key ID (`NOKEY`).
+2. For each certificate the container **already trusts** (`rpmkeys --list`), the
+   updated certificate is fetched **by its full primary fingerprint** from the key
+   servers in `KEY_SOURCES` (default `keys.openpgp.org`, `keyserver.ubuntu.com`).
+3. gpg must parse the download as exactly that primary key, carrying a
+   non-revoked signing subkey with the missing ID. A key server cannot forge that
+   subkey binding without the vendor's private primary key.
+4. The fix is proven in a throwaway rpm root (current certificate + download must
+   verify the failed package) before the live keyring is touched.
+5. `rpmkeys --import` merges the new subkey into the existing certificate (rpm 6
+   merges; measured). Local `gpgkey=file://` copies of that certificate are
+   rewritten, the old file kept as `.bak-YYYYMMDD`, so dnf cannot fall back to
+   the stale copy again.
+
+**What it refuses.** A signing key that belongs to **no** already-trusted
+certificate — a new or replaced primary key — is never trusted automatically:
+the upgrade stays failed with that reason in the log, for a human to check the
+vendor's announcement. `gpgcheck` is never disabled, there is exactly one retry,
+and any other error (network, dependency) never triggers a key refresh.
+
+**Not covered:** apt-based containers (`security`, `damianu`) use per-repo
+`signed-by` keyrings; a key rotation there still needs a manual key update.
+
+Tests: `tests/updates/test_container_key_rotation.sh` (menu wiring, stubs: one
+retry, refusal, unrelated error, failing retry) and
+`tests/updates/integration/key-rotation-podman.sh` (real gpg/rpm/rpmsign in a
+throwaway podman container: rotation reproduced, stranger's certificate refused,
+genuine one imported, package verifies, key file updated). `verify.sh` checks the
+helper is present.
 
 ### Update regression tests
 

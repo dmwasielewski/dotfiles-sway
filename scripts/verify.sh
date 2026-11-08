@@ -165,6 +165,13 @@ check_symlink "nordvpn-whitelist-domain"   "$HOME/.local/bin/nordvpn-whitelist-d
 check_symlink "updates-waybar"             "$HOME/.local/bin/updates-waybar"
 check_symlink "updates-do"                 "$HOME/.local/bin/updates-do"
 check_symlink "updates-menu"               "$HOME/.local/bin/updates-menu"
+# The update menu pipes this into dnf containers after a signature failure
+# (vendor signing-key rotation). Missing = that recovery silently never runs.
+if [[ -x "$DOTFILES/scripts/container-key-refresh.sh" ]]; then
+    pass "container signing-key refresh helper present"
+else
+    fail "container signing-key refresh helper missing or not executable" "chmod +x $DOTFILES/scripts/container-key-refresh.sh"
+fi
 check_symlink "damianf entry shortcut"     "$HOME/.local/bin/damianf"
 check_symlink "damianu entry shortcut"     "$HOME/.local/bin/damianu"
 check_symlink "bat cross-distro wrapper"   "$HOME/.local/bin/bat"
