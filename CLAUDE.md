@@ -128,6 +128,22 @@ Runtime diagnostic files:
 
 ## Fresh install — full sequence
 
+### Recommended: unattended install from the vault USB
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/dmwasielewski/dotfiles-sway/main/scripts/install-from-usb.sh)
+```
+
+One LUKS passphrase + one sudo password, then P0 → P1 → reboot → P2 (user
+service via linger, nobody logged in) → P3. Full description, monitoring,
+resume and **proof status** in README → *Fresh install → Automated install from
+the vault USB*. Do not describe it as proven on real hardware: the clean-VM run
+passed (2026-09-02) but the VM grants `NOPASSWD: ALL`, and the real temporary
+sudoers drop-in does not cover several P2 steps (BACKLOG #16). Empty vault
+secrets are skipped by `vault-apply-manifest.sh`, never planted.
+
+The manual sequence below is what the orchestrator runs; it is the fallback.
+
 ### Before bootstrap
 
 ```bash
@@ -188,7 +204,7 @@ bash ~/dotfiles-sway/scripts/setup-onedriver.sh          # native OneDrive + Way
 
 ### Step 4 — Manual post-install steps (not automated yet)
 
-- Set `ANTHROPIC_API_KEY` in private `~/.bashrc.d/ai-keys.bash`
+- Set `ANTHROPIC_API_KEY` in private `~/.bashrc.d/ai-keys.bash` (the unattended install plants it from the vault when `ai/anthropic.key` is filled)
 - Pair Bluetooth devices manually via `bluetoothctl`
 - Set up virtual machines — see KVM section below
 - Log in to: Bitwarden, Obsidian, Spotify, GitHub (gh auth login), ChatGPT desktop, Claude Desktop
@@ -756,6 +772,12 @@ source the install consumes. **Secrets never enter any repo.**
 - Backup B2: `clone-vault.sh` (second LUKS USB) + `backup-vault.sh` → `vault.age`
   (`age` ciphertext, layered via `packages.sh`) into a **private** `dotfiles-secrets`
   repo guarded by `vault-precommit-guard.sh` (only `vault.age` may be committed).
+  State 2026-11-08: one keyslot, no second USB, one tested age backup
+  (`~/vault-backup-2026-11-01.age`, to be moved off the laptop); the private repo
+  does not exist yet. All API key/token files are still empty placeholders.
+- `vault-apply-manifest.sh` skips an empty secret file (reports it, plants
+  nothing); it used to export empty keys, blank the Gemini key file and run
+  `nordvpn login --token ''` (`tests/vault/test_manifest_apply.sh`).
 - Tests: `bash tests/vault/run.sh` (data layer, toolbox); `tests/vault/integration/`
   is host-run against a loopback LUKS image (no real hardware).
 - Spec/plan: `docs/superpowers/specs/2026-06-12-secrets-vault-design.md`,

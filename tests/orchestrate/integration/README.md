@@ -25,6 +25,9 @@ sudo credential, harvests secrets to `~/.local/state/dotfiles-secrets`, and runs
    ```
    The disposable-VM kickstart grants `%wheel NOPASSWD` (verified in
    `kickstarts/fedora-sway-atomic.ks`), so P0's sudo is a no-op there.
+   **Blind spot:** because of that grant, a VM run cannot detect a step that
+   needs a privileged command the real temporary drop-in does not allow
+   (BACKLOG #16). Passing here is not proof for real hardware.
 
    The script defaults to `VM_INSTALL_MODE=orchestrator`: it clones the repo,
    runs `orchestrate.sh run`, survives the phase-1 reboot, waits for the guest,

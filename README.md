@@ -62,6 +62,96 @@ Personal dotfiles for Fedora Atomic Sway setup.
 
 ## Fresh install
 
+There are two ways to install. **The automated one is the goal of this repo**:
+one command, two passwords, no further input until the logins at the end. The
+manual step-by-step path below it stays documented because it is what the
+automated one runs, and it is the fallback when a phase fails.
+
+### Automated install from the vault USB (unattended)
+
+**You need:** a freshly installed Fedora Sway Atomic (Anaconda, disk encryption
+as you like), network access to GitHub, the **vault USB** plugged in, its LUKS
+passphrase, and your sudo password.
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/dmwasielewski/dotfiles-sway/main/scripts/install-from-usb.sh)
+```
+
+**What you type:** the vault passphrase once and the sudo password once. Then
+leave it: the machine reboots by itself and finishes after the reboot without
+anyone logging in.
+
+| Phase | Runs | What it does |
+|---|---|---|
+| launcher | `scripts/install-from-usb.sh` | clones the repo, `vault unlock`, one `sudo -v`, copies the vault to `~/.local/state/dotfiles-secrets` (mode 0700), refuses to continue if 0 files were copied, `vault lock` — the USB can be removed from here on |
+| **P0** | `orchestrate.sh run` | restores private homelab config from the vault copy, seeds the protected network helpers into `/etc/dotfiles`, Proxmox HTTPS trust, login/lock wallpaper, writes the **temporary** sudoers drop-in `/etc/sudoers.d/10-dotfiles-provisioning`, records `REPO_COMMIT` |
+| **P1** | same run | `setup.sh` (symlinks, Flatpaks, fonts, user-local apps) + `packages.sh` (rpm-ostree layer), enables the user service `dotfiles-phase2.service` with linger, records the deployment ID, **reboots** |
+| **P2** | `dotfiles-phase2.service` → `orchestrate.sh resume` | after the reboot, with nobody logged in: hardware check, Stirling runtime, Tailscale, KVM (+ VM shutdown policy), NordVPN (tolerated if its repo is down), AdGuard/NordVPN–Tailscale helpers, home network, the three containers (`damianf`, `damianu`, `security`), OneDrive, **applies the vault manifest**, then `verify.sh --profile post-reboot` |
+| **P3** | same service | removes the sudoers drop-in, wipes the secret staging copy, records `INSTALL_COMPLETE`, disables the service |
+
+**Secrets.** `install/manifest.toml` *inside the vault* says where each secret
+goes: `env` (an `export` line in `~/.bashrc.d/ai-keys.bash`), `file` (e.g. the
+Gemini key to `~/.config/voice-type/gemini-api-key`, mode 0600) or `command`
+(e.g. `nordvpn login --token {value}`). An **empty** secret file is skipped with
+a message (since 2026-11-08 — before that an empty placeholder exported an empty
+key, overwrote a working key file and ran a login with an empty token). On
+2026-11-08 only `accounts/accounts.env`, the manifest and the vault README are
+filled; every API key and token file is still an empty placeholder, so an install
+today would plant nothing for them. Fill them first (`vault unlock`, edit, take a
+new backup, `vault lock`).
+
+**Watching and resuming.**
+
+```bash
+journalctl --user -u dotfiles-phase2.service -f   # live phase-2 output
+cat ~/.dotfiles-install-state                      # PHASE, PHASE_FAILED, INSTALL_COMPLETE
+tail -200 ~/.dotfiles-install.log                  # full timestamped output
+```
+
+A failed phase is recorded in `PHASE_FAILED` and the state does not advance past
+it; the service stays enabled and retries on the next boot. To retry by hand
+after fixing the cause: `~/dotfiles-sway/orchestrate.sh resume`. Phase 2 took
+15 min 49 s on 2026-09-02 (containers and their toolchains); the unit has no
+start timeout on purpose.
+
+**After it finishes** only the account logins remain — see
+the [manual post-install steps table](CLAUDE.md#manual-post-install-steps-cannot-be-automated)
+(Claude, Codex, GitHub CLI, ChatGPT/Claude Desktop, OneDrive, Tailscale,
+NordVPN if no token was in the vault, AdGuard activation, Bluetooth pairing,
+in-app logins).
+
+**How far this is proven** (details in `BACKLOG.md` #1/#5 and
+`tests/orchestrate/integration/README.md`):
+
+- ✅ 2026-08-19 — linger resumes phase 2 after the reboot with nobody logged in
+  (service started 7 s after boot, first ssh login five minutes later).
+- ✅ 2026-09-02 — full run on a clean disposable VM, phase 2's own `verify.sh`:
+  163 passed, 0 failed.
+- ⚠ Not yet through a full run: the two fixes that run produced
+  (`TimeoutStartSec=infinity`, P3 records completion before disabling itself),
+  and everything added since — Claude Desktop, battery charge limit, the
+  libvirt-guests shutdown policy and its drop-in, the empty-secret skip.
+- ⚠ **Real hardware has never run it.** The disposable VM's kickstart grants
+  `%wheel NOPASSWD: ALL`, which hides how narrow the temporary sudoers drop-in
+  is: only `rpm-ostree`, `systemctl`, `loginctl`, `usermod`, `mkdir`, `tee`,
+  `tailscale set --operator` and the two seeded network helpers. After the
+  reboot there is no cached sudo credential and no terminal. Reading the code
+  (not measured on hardware), phase 2 on a real laptop would stop at
+  `setup-kvm.sh`: its `require_sudo_session` tests `sudo -n true`, which the
+  drop-in does not allow, then falls back to `sudo -v`, which needs a terminal.
+  `sudo virsh`, `sudo install`/`cp`/`cmp` (`setup-vm-state.sh`), `sudo udevadm`
+  (battery, phase 1) and `sudo firewall-cmd` (`packages.sh`) are not covered
+  either. Widening the drop-in is a security decision and is tracked as
+  BACKLOG #16. Until then: when `PHASE_FAILED=P2`, run the failed step by hand
+  in a terminal (it asks for your password) and then `orchestrate.sh resume`.
+
+To rerun the VM validation: `bash ~/dotfiles-sway/scripts/create-fedora-sway-vm.sh`
+(orchestrator mode is the default).
+
+### Manual install (step by step)
+
+The same steps the orchestrator runs, by hand, with you answering sudo prompts.
+
 ### Prerequisites
 
 For existing home access and trusted Proxmox HTTPS, restore the private files
@@ -1254,6 +1344,8 @@ scripts/vault/vault lock
 - **Device discovery:** by GPT `PARTLABEL=vault`, never a hardcoded `/dev/sdX`.
 - **Install use:** the orchestrator unlocks once, plants every secret named in `install/manifest.toml` (`env` / `file` / `command` actions), copies post-reboot secrets to a `0600` on-disk staging dir, and frees the USB — reboots no longer need it.
 - **Backup (B2):** `clone-vault.sh` to a second LUKS USB, plus `backup-vault.sh` → `vault.age` (age ciphertext) committed to a **private** `dotfiles-secrets` repo guarded by `vault-precommit-guard.sh` (only `vault.age` may be committed).
+  - **State on 2026-11-08:** the vault has one LUKS keyslot and no second USB. One `age` backup exists: `~/vault-backup-2026-11-01.age` (made with `backup-vault.sh`, decryption tested with `age -d … | tar -tvf -`); it is meant to be moved off the laptop. The private `dotfiles-secrets` repo has not been created. Take a new backup whenever secrets change.
+  - **Restore onto a new USB:** `sudo scripts/vault/setup-vault-usb.sh /dev/sdX`, `vault unlock`, then `age -d vault-backup-….age | tar -C ~/.vault -xf -`, `vault lock`.
 - **Setup:** `sudo scripts/vault/setup-vault-usb.sh /dev/sdX` (destructive; re-confirms the device and requires typing its path). `cryptsetup`/`parted` ship in the Fedora base; `age` is layered via `packages.sh`.
 - **Unattended install:** on a fresh Fedora Sway Atomic, plug the vault USB and run `bash <(curl -fsSL https://raw.githubusercontent.com/dmwasielewski/dotfiles-sway/main/scripts/install-from-usb.sh)` — it clones the repo, unlocks the vault, and runs the orchestrator (one LUKS passphrase + one sudo password, then unattended through the reboot).
 

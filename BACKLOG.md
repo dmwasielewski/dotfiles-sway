@@ -15,7 +15,7 @@ The audit's headline finding: the repo does **not** yet deliver the advertised
 run post-reboot scripts, and several steps report success before the component
 actually works. These are ordered by the audit's priority list.
 
-### 🔴 1. Resumable orchestrator + reboot handoff — ✅ BUILT (2026-06-13); VM validation pending
+### 🔴 1. Resumable orchestrator + reboot handoff — ✅ BUILT (2026-06-13); ✅ VM end-to-end 2026-09-02; real hardware: see #16
 A minimal **phase runner** now bridges P0 (launch) → P1 (bootstrap) → rpm-ostree
 reboot → P2 (post-reboot, via a systemd **user** service) → P3 (finalize), unattended.
 Built: `orchestrate.sh`, `scripts/lib-orchestrate.sh` (state keys REPO_COMMIT/PHASE/
@@ -27,9 +27,10 @@ Engine logic is unit-tested (`tests/orchestrate/`, all green); the real end-to-e
 is validated in the disposable VM — see `tests/orchestrate/integration/README.md`.
 Spec `docs/superpowers/specs/2026-06-13-orchestrator-design.md`, plan
 `docs/superpowers/plans/2026-06-13-orchestrator.md`. The **encrypted secrets vault**
-it consumes is also built (`scripts/vault/`). **Remaining:** run the VM end-to-end
-once (confirms the systemd-linger resume; Sway-autostart fallback documented if it
-fails). Manifest-driven rebuild (#8) and full versioned state (#7) stay deferred.
+it consumes is also built (`scripts/vault/`). **Status (2026-11-08):** linger resume
+proven 2026-08-19 and a full clean-VM run passed 2026-09-02 (163/0, see #5).
+**Remaining:** one more VM run for the fixes made since (#5 "still open"), and the
+real-hardware sudo gap in #16. Manifest-driven rebuild (#8) and full versioned state (#7) stay deferred.
 
 ### 🔴 2. `setup.sh` no longer hard-depends on a to-be-layered package — ✅ DONE (2026-06-11)
 `setup.sh` exited if `unzip` was missing, but `packages.sh` (which layers `unzip`)
@@ -309,6 +310,35 @@ attempts Fedora first, continues the independent Flatpak/container/language/
 user-local steps after an OS failure, and delays the reboot prompt until those
 steps finish. Hermetic regressions: `test_os_cache_recovery.sh` and
 `test_os_first.sh`.
+
+### 🔴 16. Phase 2 on real hardware: the temporary sudoers drop-in is too narrow — OPEN (found 2026-11-08)
+
+Found by reading the code while documenting the unattended install, **not
+measured on hardware**. The disposable VM's kickstart grants `%wheel NOPASSWD:
+ALL`, so every VM run (including the 2026-09-02 pass) is blind to it.
+
+`provisioning_sudoers_content` (`scripts/lib-orchestrate.sh`) allows only
+`rpm-ostree`, `systemctl`, `loginctl`, `usermod`, `mkdir`, `tee`,
+`tailscale set --operator=$USER` and the two seeded network helpers. Phase 2
+runs from a user service after the reboot — no cached credential, no terminal:
+
+- `setup-kvm.sh` → `require_sudo_session` tests `sudo -n true` (not allowed),
+  then `sudo -v` (needs a TTY) → phase 2 stops here.
+- also uncovered: `sudo virsh` (`setup-kvm.sh`), `sudo install`/`cp`/`cmp`
+  (`setup-vm-state.sh`, since 2026-10-12/11-01), `sudo install`/`udevadm`
+  (`setup-battery-charge-limit.sh`, phase 1, warn-only), `sudo firewall-cmd`
+  (`packages.sh`, phase 1 — inside the launcher's cached `sudo -v` window, so
+  it works only if phase 1 reaches it in time), `sudo rm` (`setup-chatgpt.sh`).
+
+**Options for Damian to decide** (security scope, not an AI call):
+(a) list each command with fixed arguments in the drop-in; (b) make
+`require_sudo_session` test a command the drop-in allows; (c) a time-limited
+`NOPASSWD: ALL` drop-in for the provisioning window only (what the VM already
+uses; removed in P3 either way). Then test with a VM kickstart that installs
+**only** the real drop-in — otherwise the VM keeps hiding this class of bug.
+
+**Workaround now:** when `PHASE_FAILED=P2`, run the failed step by hand in a
+terminal and then `~/dotfiles-sway/orchestrate.sh resume`.
 
 ---
 

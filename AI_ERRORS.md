@@ -1769,3 +1769,19 @@ primary fingerprints. Lessons:
 - rpm 6 `rpmkeys --import` of an updated certificate with the same primary
   **merges** new subkeys and revocations (measured in a throwaway `--root`); no
   delete is needed, and deleting first risks leaving the repo with no key at all.
+
+## "Empty file = skipped" was believed, never checked; the VM's sudo hides the real one (2026-11-08)
+
+Two findings while documenting the unattended install:
+- The working notes said empty vault placeholders are skipped by
+  `vault-apply-manifest.sh`. They were not: `vault_get` returns an empty string
+  successfully, so the installer exported `ANTHROPIC_API_KEY=''`, overwrote the
+  Gemini key file with an empty line and ran `nordvpn login --token ''`. With
+  every key file still empty, that is exactly what an install on 2026-11-08 would
+  have done. Fixed and covered by a test that fails against the old code.
+- The disposable-VM kickstart grants `%wheel NOPASSWD: ALL`. The real temporary
+  drop-in allows eight commands. So no VM run can find a step that needs another
+  privileged command, and `setup-kvm.sh`'s own `sudo -n true` probe is one of
+  them (BACKLOG #16). A test environment with more privilege than production
+  validates the wrong thing.
+Lesson: before documenting a behaviour as fact, find the line that does it.
