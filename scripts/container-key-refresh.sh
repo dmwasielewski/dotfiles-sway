@@ -25,7 +25,10 @@
 set -uo pipefail
 
 # Key servers that serve a certificate by full fingerprint. {FPR} is replaced.
-KEY_SOURCES="${KEY_SOURCES:-https://keys.openpgp.org/vks/v1/by-fingerprint/{FPR} https://keyserver.ubuntu.com/pks/lookup?op=get&options=mr&search=0x{FPR}}"
+# Not written as ${KEY_SOURCES:-…}: the first "}" of "{FPR}" would end that
+# expansion and silently corrupt both URLs (it did, caught 2026-11-08).
+DEFAULT_KEY_SOURCES='https://keys.openpgp.org/vks/v1/by-fingerprint/{FPR} https://keyserver.ubuntu.com/pks/lookup?op=get&options=mr&search=0x{FPR}'
+KEY_SOURCES="${KEY_SOURCES:-$DEFAULT_KEY_SOURCES}"
 REPO_DIR="${REPO_DIR:-/etc/yum.repos.d}"
 
 work="$(mktemp -d)"; trap 'rm -rf "$work"' EXIT
@@ -85,10 +88,18 @@ update_repo_key_files() {   # $1 fpr
                  sed -n 's/^[[:space:]]*gpgkey[[:space:]]*=//p' "$file" | tr -s ' ,' '\n' | sed -n 's|^file://||p'
              done | sort -u)
 }
+# True only for a file holding exactly ONE certificate, with that primary. A
+# bundle of several vendor keys is left alone rather than replaced by one cert.
+# Reads all of gpg's output (no early exit): under pipefail an early awk exit
+# lets gpg's SIGPIPE decide the result.
 cert_has_primary() {   # $1 file  $2 fpr
     local home="$work/gnupg"; mkdir -p "$home"; chmod 700 "$home"
     gpg --homedir "$home" --batch --with-colons --show-keys "$1" 2>/dev/null |
-        awk -F: -v want="$2" '$1=="pub"{p=1;next} p&&$1=="fpr"{exit !(tolower($10)==want)}'
+        awk -F: -v want="$2" '
+            $1=="pub" {npub++; cur="pub"; next}
+            $1=="sub" {cur="sub"; next}
+            $1=="fpr" && cur=="pub" {primary=tolower($10); cur=""}
+            END {exit !(npub==1 && primary==want)}'
 }
 
 fix_one() {   # $1 = failed rpm path

@@ -40,6 +40,13 @@ rpmsign --define "_gpg_name ${S2}!" --addsign "$RPM" >/dev/null 2>&1
 rpmkeys --import old.asc
 install -m644 old.asc /etc/pki/rpm-gpg/RPM-GPG-KEY-vendor
 printf '[vendor]\nname=v\nbaseurl=file:///nonexistent\ngpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-vendor\n' > /etc/yum.repos.d/vendor.repo
+# A second repo whose key file is a BUNDLE (vendor cert + another): must stay untouched.
+GNUPGHOME=/root/o; mkdir -p -m700 $GNUPGHOME
+gpg --batch --passphrase '' --quick-gen-key 'Other <o@example.test>' rsa3072 sign never 2>/dev/null
+gpg --armor --export > other.asc; export GNUPGHOME=/root/g
+cat old.asc other.asc > /etc/pki/rpm-gpg/RPM-GPG-KEY-bundle
+printf '[bundle]\nname=b\nbaseurl=file:///nonexistent\ngpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-bundle\n' > /etc/yum.repos.d/bundle.repo
+BUNDLE_SUM=$(sha256sum /etc/pki/rpm-gpg/RPM-GPG-KEY-bundle)
 fail=0; ok() { echo "  ok: $*"; }; bad() { echo "  FAIL: $*"; fail=1; }
 [[ "$(rpmkeys -Kv "$RPM" 2>&1)" == *NOKEY* ]] && ok "package starts NOKEY (rotation reproduced)" || bad "setup did not reproduce NOKEY"
 # A stranger's certificate offered at the same URL must be refused.
@@ -57,6 +64,7 @@ KEY_SOURCES="file:///root/ks/{FPR}" bash /repo/container-key-refresh.sh "$RPM"; 
 [[ "$(rpmkeys -K "$RPM" 2>&1)" == *"signatures OK"* ]] && ok "package verifies after refresh" || bad "package still fails"
 gpg --show-keys --with-colons /etc/pki/rpm-gpg/RPM-GPG-KEY-vendor | grep -qi "$S2" && ok "repo gpgkey file updated" || bad "gpgkey file stale"
 ls /etc/pki/rpm-gpg/RPM-GPG-KEY-vendor.bak-* >/dev/null && ok "old key file kept as backup" || bad "no backup"
+[[ "$(sha256sum /etc/pki/rpm-gpg/RPM-GPG-KEY-bundle)" == "$BUNDLE_SUM" ]] && ok "multi-cert bundle key file left untouched" || bad "bundle file was rewritten"
 # A package that is fine is not a missing-key failure.
 KEY_SOURCES="file:///root/ks/{FPR}" bash /repo/container-key-refresh.sh "$RPM"; rc=$?
 [[ $rc -eq 3 ]] && ok "already-valid package -> rc=3 (nothing to refresh)" || bad "valid package rc=$rc"

@@ -1785,3 +1785,8 @@ Two findings while documenting the unattended install:
   them (BACKLOG #16). A test environment with more privilege than production
   validates the wrong thing.
 Lesson: before documenting a behaviour as fact, find the line that does it.
+- Follow-up the same day: `KEY_SOURCES="${KEY_SOURCES:-https://…/{FPR} …{FPR}}"`
+  — the first `}` of `{FPR}` ends the `${…:-…}` expansion, so both default
+  key-server URLs were corrupt. The podman test passed because it set its own
+  `KEY_SOURCES`. Defaults containing braces go in a separately quoted variable;
+  test the default path, not only the override.

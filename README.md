@@ -135,10 +135,12 @@ in-app logins).
   `%wheel NOPASSWD: ALL`, which hides how narrow the temporary sudoers drop-in
   is: only `rpm-ostree`, `systemctl`, `loginctl`, `usermod`, `mkdir`, `tee`,
   `tailscale set --operator` and the two seeded network helpers. After the
-  reboot there is no cached sudo credential and no terminal. Reading the code
-  (not measured on hardware), phase 2 on a real laptop would stop at
-  `setup-kvm.sh`: its `require_sudo_session` tests `sudo -n true`, which the
-  drop-in does not allow, then falls back to `sudo -v`, which needs a terminal.
+  reboot there is no cached sudo credential and no terminal. Measured on
+  2026-11-08 in a throwaway container with exactly that drop-in: `sudo -n mkdir`
+  allowed; `sudo -n true`, `install`, `cp`, `cmp`, `rm` refused ("a password is
+  required"). So phase 2 on a real laptop stops at `setup-kvm.sh`: its
+  `require_sudo_session` tests `sudo -n true`, then falls back to `sudo -v`,
+  which needs a terminal. (Not yet run on the laptop itself.)
   `sudo virsh`, `sudo install`/`cp`/`cmp` (`setup-vm-state.sh`), `sudo udevadm`
   (battery, phase 1) and `sudo firewall-cmd` (`packages.sh`) are not covered
   either. Widening the drop-in is a security decision and is tracked as
@@ -737,6 +739,12 @@ the upgrade stays failed with that reason in the log, for a human to check the
 vendor's announcement. `gpgcheck` is never disabled, there is exactly one retry,
 and any other error (network, dependency) never triggers a key refresh.
 
+**Depends on:** the vendor publishing its updated certificate to a public key
+server (Warp's was on both default servers within days; both default URLs are
+checked against Warp's real certificate and by `test_key_sources_default.sh`).
+If it is not published there, the menu reports the refusal and the manual route
+remains: fetch the vendor's key file, compare the primary fingerprint, import.
+
 **Not covered:** apt-based containers (`security`, `damianu`) use per-repo
 `signed-by` keyrings; a key rotation there still needs a manual key update.
 
@@ -744,8 +752,9 @@ Tests: `tests/updates/test_container_key_rotation.sh` (menu wiring, stubs: one
 retry, refusal, unrelated error, failing retry) and
 `tests/updates/integration/key-rotation-podman.sh` (real gpg/rpm/rpmsign in a
 throwaway podman container: rotation reproduced, stranger's certificate refused,
-genuine one imported, package verifies, key file updated). `verify.sh` checks the
-helper is present.
+genuine one imported, package verifies, key file updated, a multi-certificate
+key bundle left untouched) and `tests/updates/test_key_sources_default.sh`.
+`verify.sh` checks the helper is present.
 
 ### Update regression tests
 

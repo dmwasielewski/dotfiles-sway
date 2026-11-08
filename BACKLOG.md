@@ -313,9 +313,13 @@ steps finish. Hermetic regressions: `test_os_cache_recovery.sh` and
 
 ### 🔴 16. Phase 2 on real hardware: the temporary sudoers drop-in is too narrow — OPEN (found 2026-11-08)
 
-Found by reading the code while documenting the unattended install, **not
-measured on hardware**. The disposable VM's kickstart grants `%wheel NOPASSWD:
-ALL`, so every VM run (including the 2026-09-02 pass) is blind to it.
+Found by reading the code while documenting the unattended install, then
+**measured** in a throwaway `fedora-toolbox:44` container with a `wheel` user and
+exactly `provisioning_sudoers_content`: `sudo -n /usr/bin/mkdir` allowed;
+`sudo -n true`, `install`, `cp`, `cmp`, `rm` refused with "a password is
+required" (`sudo -l` lists only the drop-in's commands). Not yet run on the
+laptop itself. The disposable VM's kickstart grants `%wheel NOPASSWD: ALL`, so
+every VM run (including the 2026-09-02 pass) is blind to it.
 
 `provisioning_sudoers_content` (`scripts/lib-orchestrate.sh`) allows only
 `rpm-ostree`, `systemctl`, `loginctl`, `usermod`, `mkdir`, `tee`,
