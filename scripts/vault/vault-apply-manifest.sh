@@ -29,6 +29,14 @@ python3 "$HERE/vault-parse-manifest.py" "$MANIFEST" | while IFS=$'\t' read -r ac
         [[ -n "$col" ]] && kv["${col%%=*}"]="${col#*=}"
     done
     value="$(vault_get "$source")" || { echo "vault-apply: missing $source" >&2; unset kv; continue; }
+    # The vault is created with empty placeholder files to be filled later. An
+    # empty one is "not provided yet", not a value: planting it would export an
+    # empty key, overwrite a working key file with nothing, or run a login with
+    # an empty token. Skip it, say so, and leave whatever is there untouched.
+    if [[ -z "${value//[[:space:]]/}" ]]; then
+        echo "vault-apply: $source is empty — skipped (fill it in the vault and rerun)" >&2
+        unset kv; continue
+    fi
     case "$action" in
         env)
             name="${kv[name]}"

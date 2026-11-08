@@ -33,4 +33,14 @@ assert_contains "$(cat "$TMP_CMDLOG")" "nordvpn login --token nord-xyz" "command
 bash "$APPLY" "$FIX"
 cnt="$(grep -c "export ANTHROPIC_API_KEY=" "$HOME/.bashrc.d/ai-keys.bash")"
 assert_eq "$cnt" "1" "env line not duplicated on rerun"
+
+# empty placeholder secrets are skipped: no empty export, no clobbered key file,
+# no login command with an empty token
+: > "$TMP_CMDLOG"
+: > "$VAULT_MOUNT/ai/anthropic.key"; printf '\n' > "$VAULT_MOUNT/ai/gemini.key"; : > "$VAULT_MOUNT/vpn/nordvpn-token"
+err="$(bash "$APPLY" "$FIX" 2>&1 >/dev/null)"
+assert_eq "$(grep -c "export ANTHROPIC_API_KEY=''" "$HOME/.bashrc.d/ai-keys.bash")" "0" "empty key not exported"
+assert_eq "$(cat "$HOME/.config/voice-type/gemini-api-key")" "gem-123" "existing key file not overwritten by an empty secret"
+assert_eq "$(cat "$TMP_CMDLOG")" "" "no command run with an empty token"
+assert_contains "$err" "ai/anthropic.key is empty — skipped" "skip is reported"
 assert_summary
